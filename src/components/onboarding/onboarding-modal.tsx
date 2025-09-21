@@ -53,6 +53,19 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
     }
   }, [isOpen, session?.user?.name, formData.username])
 
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [isOpen])
+
   if (!isOpen) return null
 
   const totalSteps = 5
@@ -123,9 +136,9 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
 
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-900 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-700">
+      <div className="bg-gray-900 rounded-lg shadow-xl w-full max-w-2xl h-[600px] flex flex-col border border-gray-700 relative">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-700">
+        <div className="flex items-center justify-between p-6 border-b border-gray-700 flex-shrink-0">
           <div>
             <h2 className="text-2xl font-bold text-white">Start Auto-Grading</h2>
             <p className="text-gray-300">Step {currentStep} of {totalSteps}</p>
@@ -136,7 +149,7 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
         </div>
 
         {/* Progress Bar */}
-        <div className="px-6 py-2">
+        <div className="px-6 py-2 flex-shrink-0">
           <div className="w-full bg-gray-700 rounded-full h-2">
             <div
               className="bg-blue-500 h-2 rounded-full transition-all duration-300"
@@ -146,7 +159,7 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
         </div>
 
         {/* Step Content */}
-        <div className="p-6 text-white">
+        <div className="flex-1 p-6 text-white overflow-y-auto">
           {/* Step 1: User Information */}
           {currentStep === 1 && (
             <div className="space-y-6">
@@ -157,10 +170,10 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
                 <div className="space-y-2 mb-4">
                   <label className="text-sm font-medium text-gray-300">Your Role</label>
                   <Select value={formData.role} onValueChange={(value) => updateFormData("role", value)}>
-                    <SelectTrigger className="bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500">
+                    <SelectTrigger className="w-full bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500">
                       <SelectValue placeholder="Select your role" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[60]">
                       <SelectItem value="teacher">Teacher</SelectItem>
                       <SelectItem value="principal">Principal</SelectItem>
                       <SelectItem value="admin">Administrator</SelectItem>
@@ -177,7 +190,8 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
                     placeholder="Enter your username"
                     value={formData.username}
                     onChange={(e) => updateFormData("username", e.target.value)}
-                    className={`bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500 ${errors.username ? "border-red-500" : ""}`}
+                    readOnly={!!session?.user?.name}
+                    className={`w-full bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500 ${errors.username ? "border-red-500" : ""} ${!!session?.user?.name ? "cursor-not-allowed opacity-75" : ""}`}
                   />
                   {errors.username && (
                     <p className="text-red-400 text-sm mt-1">{errors.username}</p>
@@ -188,10 +202,10 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-300">Institution Type</label>
                   <Select value={formData.institutionType} onValueChange={(value) => updateFormData("institutionType", value)}>
-                    <SelectTrigger className={`bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500 ${errors.institutionType ? "border-red-500" : ""}`}>
+                    <SelectTrigger className={`w-full bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500 ${errors.institutionType ? "border-red-500" : ""}`}>
                       <SelectValue placeholder="Select institution type" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[60]">
                       <SelectItem value="school">School</SelectItem>
                       <SelectItem value="college">College</SelectItem>
                       <SelectItem value="university">University</SelectItem>
@@ -224,7 +238,7 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
                     placeholder={`Enter your ${formData.institutionType || 'institution'} name`}
                     value={formData.institutionName}
                     onChange={(e) => updateFormData("institutionName", e.target.value)}
-                    className={`bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500 ${errors.institutionName ? "border-red-500" : ""}`}
+                    className={`w-full bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500 ${errors.institutionName ? "border-red-500" : ""}`}
                   />
                   {errors.institutionName && (
                     <p className="text-red-400 text-sm mt-1">{errors.institutionName}</p>
@@ -235,10 +249,10 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-300">Number of Students</label>
                   <Select value={formData.studentCount} onValueChange={(value) => updateFormData("studentCount", value)}>
-                    <SelectTrigger className={`bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500 ${errors.studentCount ? "border-red-500" : ""}`}>
+                    <SelectTrigger className={`w-full bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500 ${errors.studentCount ? "border-red-500" : ""}`}>
                       <SelectValue placeholder="Select student count range" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[60]">
                       <SelectItem value="1-50">1-50 students</SelectItem>
                       <SelectItem value="51-200">51-200 students</SelectItem>
                       <SelectItem value="201-500">201-500 students</SelectItem>
@@ -268,7 +282,7 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
                     placeholder="Enter subjects you teach (e.g., Mathematics, Science, English)"
                     value={formData.subjects}
                     onChange={(e) => updateFormData("subjects", e.target.value)}
-                    className={`bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500 ${errors.subjects ? "border-red-500" : ""}`}
+                    className={`w-full bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500 ${errors.subjects ? "border-red-500" : ""}`}
                   />
                   {errors.subjects && (
                     <p className="text-red-400 text-sm mt-1">{errors.subjects}</p>
@@ -282,10 +296,10 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-300">Teaching Experience</label>
                   <Select value={formData.experience} onValueChange={(value) => updateFormData("experience", value)}>
-                    <SelectTrigger className={`bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500 ${errors.experience ? "border-red-500" : ""}`}>
+                    <SelectTrigger className={`w-full bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500 ${errors.experience ? "border-red-500" : ""}`}>
                       <SelectValue placeholder="Select your experience level" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[60]">
                       <SelectItem value="0-2">0-2 years</SelectItem>
                       <SelectItem value="3-5">3-5 years</SelectItem>
                       <SelectItem value="6-10">6-10 years</SelectItem>
@@ -467,7 +481,7 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between p-6 border-t border-gray-700 bg-gray-800">
+        <div className="flex items-center justify-between p-6 border-t border-gray-700 bg-gray-800 flex-shrink-0">
           <Button
             variant="outline"
             onClick={handlePrevious}
@@ -502,12 +516,12 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
                     // Handle free plan completion and redirect to admin dashboard
                     console.log("Free plan setup complete:", formData)
                     onClose()
-                    router.push("/admin")
+                    router.push(`/admin/${session?.user?.id || session?.user?.email}`)
                   } else {
                     // Handle payment processing and redirect to admin dashboard
                     console.log("Processing payment:", formData)
                     onClose()
-                    router.push("/admin")
+                    router.push(`/admin/${session?.user?.id || session?.user?.email}`)
                   }
                 }
               }}

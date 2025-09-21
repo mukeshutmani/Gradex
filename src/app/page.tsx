@@ -1,125 +1,367 @@
-'use client'
-import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { useState } from "react";
-import { LogIn, GraduationCap, ShieldCheck, BarChart3 } from "lucide-react";
+"use client"
+
+import { useEffect, useState } from "react"
+import { useSession, signOut } from "next-auth/react"
+import { redirect, useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Footer } from "@/components/layout/footer"
+import { OnboardingModal } from "@/components/onboarding/onboarding-modal"
+import {
+  ClipboardCheck,
+  Users,
+  BookOpen,
+  Target,
+  TrendingUp,
+  Calendar,
+  Settings,
+  Bell,
+  Award,
+  PlayCircle,
+  FileCheck,
+  CheckCircle2,
+  Bot,
+  LogOut,
+  UserPlus,
+  Lock
+} from "lucide-react"
+
+export default function HomePage() {
+  const router = useRouter()
+  const { data: session, status } = useSession()
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false)
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
+
+  // Handle authentication check for auto-grading buttons
+  const handleStartAutoGrading = () => {
+    if (!session) {
+      // Show auth modal if user is not authenticated
+      setIsAuthModalOpen(true)
+    } else {
+      // Open onboarding modal if user is authenticated
+      setIsOnboardingOpen(true)
+    }
+  }
 
 
-
-export default function Home() {
-
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  
   return (
-     <div className="min-h-screen flex flex-col">
-      {/* Navbar */}
-      <header className="flex justify-between items-center px-6 py-4 shadow-sm bg-white sticky top-0 z-50">
-        <h1 className="text-2xl font-bold text-blue-600">GradeX</h1>
-        <nav className="hidden md:flex gap-6 text-gray-600 font-medium">
-          <a href="#features" className="hover:text-blue-600">Features</a>
-          <a href="#how" className="hover:text-blue-600">How It Works</a>
-          <a href="#contact" className="hover:text-blue-600">Contact</a>
-        </nav>
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button className="flex items-center gap-2"><LogIn size={18}/> Login</Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Login to GradeX</DialogTitle>
-            </DialogHeader>
-            <div className="flex flex-col gap-4">
-              <Input placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
-              <Input placeholder="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-              <Button>Continue</Button>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center">
+              <div className="flex items-center">
+                <ClipboardCheck className="h-8 w-8 text-primary" />
+                <span className="ml-2 text-xl font-bold text-gray-900">Gradex</span>
+              </div>
             </div>
-          </DialogContent>
-        </Dialog>
+            <div className="flex items-center space-x-4">
+              {session ? (
+                <>
+                  <Button variant="ghost" size="icon">
+                    <Bell className="h-5 w-5" />
+                  </Button>
+                  <Button variant="ghost" size="icon">
+                    <Settings className="h-5 w-5" />
+                  </Button>
+                  <div className="flex items-center space-x-3">
+                    <button
+                      onClick={() => router.push(`/admin/${session.user?.id || session.user?.email}`)}
+                      className="text-sm text-gray-700 hover:text-blue-600 hover:underline cursor-pointer transition-colors"
+                    >
+                      Welcome, {session.user?.name || session.user?.email}
+                    </button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => signOut({ callbackUrl: '/login' })}
+                      className="text-gray-600 hover:text-gray-900"
+                    >
+                      <LogOut className="h-4 w-4 mr-1" />
+                      Sign Out
+                    </Button>
+                  </div>
+                </>
+              ) : status !== "loading" ? (
+                <div className="flex items-center space-x-2">
+                  <Button variant="outline" onClick={() => router.push('/login')}>
+                    Login
+                  </Button>
+                  <Button onClick={() => router.push('/register')}>
+                    Register
+                  </Button>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="flex flex-col-reverse md:flex-row items-center justify-between px-6 md:px-16 py-12 bg-gray-50">
-        <motion.div
-          initial={{ opacity: 0, x: -50 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6 }}
-          className="max-w-xl text-center md:text-left"
-        >
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-800">AI-Powered Assignment Grading</h2>
-          <p className="mt-4 text-gray-600">Save hours of manual work. Get instant feedback, plagiarism detection, and performance analytics — all in one platform.</p>
-          <div className="mt-6 flex gap-4 justify-center md:justify-start">
-            <Button size="lg">Get Started</Button>
-            <Button variant="outline" size="lg">Book a Demo</Button>
-          </div>
-        </motion.div>
-        <motion.img
-          initial={{ opacity: 0, x: 50 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6 }}
-          src="/dashboard-mockup.png"
-          alt="Dashboard Preview"
-          className="w-full md:w-1/2 rounded-lg shadow-lg"
-        />
-      </section>
+      {/* Main Content */}
+      <main className="w-full px-4 sm:px-6 lg:px-8 py-8">
+        {/* Welcome Section */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            {session ? `Welcome back to Gradex, ${session.user?.name || 'User'}! 📝` : 'Welcome to Gradex! 📝'}
+          </h1>
+          <p className="text-lg text-gray-600 mb-6">
+            Gradex is an innovative platform that helps teachers with automatic assignment checking and grading.
+            We provide AI-powered solutions to streamline the evaluation process for colleges, schools, and universities.
+          </p>
 
-      {/* Features Section */}
-      <section id="features" className="px-6 md:px-16 py-16 bg-white">
-        <h3 className="text-3xl font-bold text-center mb-12">Features</h3>
-        <div className="grid md:grid-cols-3 gap-8">
-          <Card className="shadow-md">
-            <CardContent className="flex flex-col items-center text-center py-8">
-              <GraduationCap className="w-12 h-12 text-blue-600 mb-4" />
-              <h4 className="text-xl font-semibold mb-2">AI Auto-Grading</h4>
-              <p className="text-gray-600">Grade assignments in seconds with AI-powered evaluation.</p>
-            </CardContent>
-          </Card>
-          <Card className="shadow-md">
-            <CardContent className="flex flex-col items-center text-center py-8">
-              <ShieldCheck className="w-12 h-12 text-blue-600 mb-4" />
-              <h4 className="text-xl font-semibold mb-2">Plagiarism Detection</h4>
-              <p className="text-gray-600">Ensure originality with integrated plagiarism checks.</p>
-            </CardContent>
-          </Card>
-          <Card className="shadow-md">
-            <CardContent className="flex flex-col items-center text-center py-8">
-              <BarChart3 className="w-12 h-12 text-blue-600 mb-4" />
-              <h4 className="text-xl font-semibold mb-2">Analytics</h4>
-              <p className="text-gray-600">Track student performance trends over time.</p>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      {/* How It Works */}
-      <section id="how" className="px-6 md:px-16 py-16 bg-gray-50">
-        <h3 className="text-3xl font-bold text-center mb-12">How It Works</h3>
-        <div className="grid md:grid-cols-3 gap-8 text-center">
-          <div>
-            <div className="text-blue-600 font-bold text-2xl mb-2">1</div>
-            <h4 className="font-semibold mb-2">Upload</h4>
-            <p className="text-gray-600">Students submit PDF or DOCX files securely.</p>
-          </div>
-          <div>
-            <div className="text-blue-600 font-bold text-2xl mb-2">2</div>
-            <h4 className="font-semibold mb-2">Analyze</h4>
-            <p className="text-gray-600">AI grades & checks plagiarism instantly.</p>
-          </div>
-          <div>
-            <div className="text-blue-600 font-bold text-2xl mb-2">3</div>
-            <h4 className="font-semibold mb-2">Review & Publish</h4>
-            <p className="text-gray-600">Teachers finalize and publish results.</p>
+          {/* Start Your Plan Button */}
+          <div className="flex items-center space-x-4">
+            <Button size="lg" className="px-8" onClick={handleStartAutoGrading}>
+              <PlayCircle className="mr-2 h-5 w-5" />
+              Start Auto-Grading
+            </Button>
+            <Button variant="outline" size="lg">
+              Explore Features
+            </Button>
           </div>
         </div>
-      </section>
 
-      {/* Footer */}
-      <footer className="bg-blue-600 text-white text-center py-6 mt-auto">
-        <p>© {new Date().getFullYear()} GradeX. All rights reserved.</p>
-      </footer>
+        {/* Platform Services */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-semibold text-gray-900 mb-4">Our Services</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Bot className="mr-2 h-5 w-5 text-blue-500" />
+                  AI-Powered Grading
+                </CardTitle>
+                <CardDescription>
+                  Automated assignment checking with intelligent evaluation
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-600">
+                  Advanced AI algorithms that automatically grade assignments, essays, and tests with detailed feedback for students.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <FileCheck className="mr-2 h-5 w-5 text-green-500" />
+                  Assignment Management
+                </CardTitle>
+                <CardDescription>
+                  Streamlined workflow for assignment distribution and collection
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-600">
+                  Upload, distribute, and collect assignments seamlessly. Track submission status and manage deadlines efficiently.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <CheckCircle2 className="mr-2 h-5 w-5 text-purple-500" />
+                  Plagiarism Detection
+                </CardTitle>
+                <CardDescription>
+                  Advanced plagiarism checking and originality verification
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-600">
+                  Comprehensive plagiarism detection that ensures academic integrity and provides detailed similarity reports.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Dashboard Features */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-semibold text-gray-900 mb-4">Teacher Dashboard Features</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center text-lg">
+                  <TrendingUp className="mr-2 h-5 w-5 text-orange-500" />
+                  Grading Analytics
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-600">
+                  Monitor grading progress and view detailed analytics for your classes
+                </p>
+              </CardContent>
+              <CardFooter>
+                <Button variant="outline" size="sm" className="w-full">
+                  View Analytics
+                </Button>
+              </CardFooter>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center text-lg">
+                  <Calendar className="mr-2 h-5 w-5 text-blue-500" />
+                  Assignment Scheduler
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-600">
+                  Schedule assignments, set deadlines, and manage submission dates
+                </p>
+              </CardContent>
+              <CardFooter>
+                <Button variant="outline" size="sm" className="w-full">
+                  Manage Schedule
+                </Button>
+              </CardFooter>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center text-lg">
+                  <Award className="mr-2 h-5 w-5 text-yellow-500" />
+                  Grade Reports
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-600">
+                  Generate comprehensive grade reports and student performance summaries
+                </p>
+              </CardContent>
+              <CardFooter>
+                <Button variant="outline" size="sm" className="w-full">
+                  Generate Reports
+                </Button>
+              </CardFooter>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center text-lg">
+                  <Users className="mr-2 h-5 w-5 text-green-500" />
+                  Class Management
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-600">
+                  Manage student enrollment, view submissions, and track class progress
+                </p>
+              </CardContent>
+              <CardFooter>
+                <Button variant="outline" size="sm" className="w-full">
+                  Manage Classes
+                </Button>
+              </CardFooter>
+            </Card>
+          </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-2xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Button variant="outline" className="h-16 flex flex-col">
+              <ClipboardCheck className="h-6 w-6 mb-1" />
+              Upload Assignment
+            </Button>
+            <Button variant="outline" className="h-16 flex flex-col" onClick={handleStartAutoGrading}>
+              <Bot className="h-6 w-6 mb-1" />
+              Start Auto-Grade
+            </Button>
+            <Button variant="outline" className="h-16 flex flex-col">
+              <FileCheck className="h-6 w-6 mb-1" />
+              Review Submissions
+            </Button>
+            <Button variant="outline" className="h-16 flex flex-col">
+              <TrendingUp className="h-6 w-6 mb-1" />
+              View Reports
+            </Button>
+          </div>
+        </div>
+
+        {/* Getting Started Section */}
+        <div className="mt-8 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6">
+          <div className="text-center">
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Ready to Start Auto-Grading?</h3>
+            <p className="text-gray-600 mb-4">
+              Upload your first assignment and experience the power of AI-driven automatic grading and feedback generation.
+            </p>
+            <Button size="lg" className="px-8" onClick={handleStartAutoGrading}>
+              <PlayCircle className="mr-2 h-5 w-5" />
+              Start Auto-Grading Now
+            </Button>
+          </div>
+        </div>
+      </main>
+
+      <Footer />
+
+      <OnboardingModal
+        isOpen={isOnboardingOpen}
+        onClose={() => setIsOnboardingOpen(false)}
+      />
+
+      {/* Authentication Modal */}
+      <Dialog open={isAuthModalOpen} onOpenChange={setIsAuthModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lock className="h-5 w-5 text-blue-600" />
+              Authentication Required
+            </DialogTitle>
+            <DialogDescription className="text-gray-600">
+              You need to be logged in to start auto-grading assignments. Please login or create a new account to continue.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 mt-4">
+            <Button
+              onClick={() => {
+                setIsAuthModalOpen(false)
+                router.push('/login')
+              }}
+              className="w-full"
+            >
+              <Lock className="mr-2 h-4 w-4" />
+              Login to Existing Account
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsAuthModalOpen(false)
+                router.push('/register')
+              }}
+              className="w-full"
+            >
+              <UserPlus className="mr-2 h-4 w-4" />
+              Create New Account
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => setIsAuthModalOpen(false)}
+              className="w-full text-gray-500"
+            >
+              Cancel
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Loading Overlay */}
+      {status === "loading" && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
+          <div className="bg-white rounded-lg p-4 shadow-xl border pointer-events-auto">
+            <ClipboardCheck className="h-8 w-8 text-primary" style={{
+              animation: 'pulse 0.8s ease-in-out infinite'
+            }} />
+          </div>
+        </div>
+      )}
     </div>
-  );
+  )
 }

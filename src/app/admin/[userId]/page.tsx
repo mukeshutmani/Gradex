@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, use } from "react"
 import { useSession } from "next-auth/react"
 import { redirect } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -110,9 +110,10 @@ const mockStudentSubmissions = [
   }
 ]
 
-export default function AdminDashboard() {
+export default function AdminDashboard({ params }: { params: Promise<{ userId: string }> }) {
   const { data: session, status } = useSession()
   const [activeTab, setActiveTab] = useState("overview")
+  const { userId } = use(params)
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -143,7 +144,7 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <div className="flex items-center">
@@ -179,7 +180,7 @@ export default function AdminDashboard() {
 
       {/* Navigation Tabs */}
       <div className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="flex space-x-8">
             {[
               { id: "overview", label: "Overview", icon: TrendingUp },
@@ -206,7 +207,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="w-full px-4 sm:px-6 lg:px-8 py-8">
         {/* Overview Tab */}
         {activeTab === "overview" && (
           <div className="space-y-6">
