@@ -68,7 +68,7 @@ export default function HomePage() {
                   </Button>
                   <div className="flex items-center space-x-3">
                     <button
-                      onClick={() => router.push(`/admin/${session.user?.id || session.user?.email}`)}
+                      onClick={() => router.push(`/admin/${session.user?.email}`)}
                       className="text-sm text-gray-700 hover:text-blue-600 hover:underline cursor-pointer transition-colors"
                     >
                       Welcome, {session.user?.name || session.user?.email}

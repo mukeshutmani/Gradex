@@ -48,7 +48,7 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
     if (isOpen && session?.user?.name && !formData.username) {
       setFormData(prev => ({
         ...prev,
-        username: session.user.name || ""
+        username: session.user?.name || ""
       }))
     }
   }, [isOpen, session?.user?.name, formData.username])
@@ -516,12 +516,12 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
                     // Handle free plan completion and redirect to admin dashboard
                     console.log("Free plan setup complete:", formData)
                     onClose()
-                    router.push(`/admin/${session?.user?.id || session?.user?.email}`)
+                    router.push(`/admin/${session?.user?.email}`)
                   } else {
                     // Handle payment processing and redirect to admin dashboard
                     console.log("Processing payment:", formData)
                     onClose()
-                    router.push(`/admin/${session?.user?.id || session?.user?.email}`)
+                    router.push(`/admin/${session?.user?.email}`)
                   }
                 }
               }}
