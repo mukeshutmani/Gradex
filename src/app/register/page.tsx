@@ -1,0 +1,54 @@
+import { Metadata } from "next"
+import Link from "next/link"
+import { RegisterForm } from "@/components/auth/register-form"
+
+export const metadata: Metadata = {
+  title: "Register",
+  description: "Create a new account",
+}
+
+export default function RegisterPage() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        <div>
+          <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-primary">
+            <div className="text-primary-foreground font-bold text-xl">📝</div>
+          </div>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            Join Gradex
+          </h2>
+          <p className="mt-2 text-center text-sm text-gray-600">
+            Start automating your assignment grading today
+          </p>
+          <p className="mt-1 text-center text-sm text-gray-500">
+            Already have an account?{" "}
+            <Link
+              href="/login"
+              className="font-medium text-primary hover:text-primary/80"
+            >
+              Sign in here
+            </Link>
+          </p>
+        </div>
+
+        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+          <RegisterForm />
+        </div>
+
+        <div className="text-center">
+          <p className="text-xs text-gray-500">
+            By creating an account, you agree to our{" "}
+            <Link href="/terms" className="text-primary hover:text-primary/80">
+              Terms of Service
+            </Link>{" "}
+            and{" "}
+            <Link href="/privacy" className="text-primary hover:text-primary/80">
+              Privacy Policy
+            </Link>
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
