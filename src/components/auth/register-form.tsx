@@ -14,7 +14,7 @@ interface RegisterFormProps {
 
 export function RegisterForm({ className }: RegisterFormProps) {
   const [formData, setFormData] = useState({
-    name: "",
+    username: "",
     email: "",
     password: "",
     confirmPassword: ""
@@ -28,10 +28,10 @@ export function RegisterForm({ className }: RegisterFormProps) {
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
 
-    if (!formData.name.trim()) {
-      newErrors.name = "Name is required"
-    } else if (formData.name.trim().length < 2) {
-      newErrors.name = "Name must be at least 2 characters"
+    if (!formData.username.trim()) {
+      newErrors.username = "Username is required"
+    } else if (formData.username.trim().length < 2) {
+      newErrors.username = "Username must be at least 2 characters"
     }
 
     if (!formData.email.trim()) {
@@ -71,7 +71,7 @@ export function RegisterForm({ className }: RegisterFormProps) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          name: formData.name.trim(),
+          username: formData.username.trim(),
           email: formData.email.trim().toLowerCase(),
           password: formData.password,
         }),
@@ -126,21 +126,21 @@ export function RegisterForm({ className }: RegisterFormProps) {
     <div className={cn("grid gap-6", className)}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <label htmlFor="name" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-            Full Name
+          <label htmlFor="username" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+            Username
           </label>
           <Input
-            id="name"
+            id="username"
             type="text"
-            placeholder="Enter your full name"
-            value={formData.name}
-            onChange={(e) => handleInputChange("name", e.target.value)}
+            placeholder="Enter your username"
+            value={formData.username}
+            onChange={(e) => handleInputChange("username", e.target.value)}
             disabled={isLoading}
-            aria-invalid={!!errors.name}
-            className={errors.name ? "border-destructive" : ""}
+            aria-invalid={!!errors.username}
+            className={errors.username ? "border-destructive" : ""}
           />
-          {errors.name && (
-            <p className="text-sm text-destructive">{errors.name}</p>
+          {errors.username && (
+            <p className="text-sm text-destructive">{errors.username}</p>
           )}
         </div>
 

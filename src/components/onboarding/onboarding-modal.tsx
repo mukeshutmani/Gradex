@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -15,7 +16,7 @@ interface OnboardingModalProps {
 
 interface FormData {
   role: string
-  name: string
+  username: string
   institutionType: string
   institutionName: string
   studentCount: string
@@ -27,11 +28,12 @@ interface FormData {
 
 export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
   const router = useRouter()
+  const { data: session } = useSession()
   const [currentStep, setCurrentStep] = useState(1)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [formData, setFormData] = useState<FormData>({
     role: "teacher",
-    name: "",
+    username: "",
     institutionType: "",
     institutionName: "",
     studentCount: "",
@@ -41,6 +43,16 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
     paymentMethod: ""
   })
 
+  // Auto-fill username from session data when modal opens
+  useEffect(() => {
+    if (isOpen && session?.user?.name && !formData.username) {
+      setFormData(prev => ({
+        ...prev,
+        username: session.user.name || ""
+      }))
+    }
+  }, [isOpen, session?.user?.name, formData.username])
+
   if (!isOpen) return null
 
   const totalSteps = 5
@@ -49,8 +61,8 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
     const newErrors: Record<string, string> = {}
 
     if (currentStep === 1) {
-      if (!formData.name.trim()) {
-        newErrors.name = "Full name is required"
+      if (!formData.username.trim()) {
+        newErrors.username = "Username is required"
       }
       if (!formData.institutionType) {
         newErrors.institutionType = "Institution type is required"
@@ -159,16 +171,16 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
 
                 {/* Name */}
                 <div className="space-y-2 mb-4">
-                  <label className="text-sm font-medium text-gray-300">Full Name</label>
+                  <label className="text-sm font-medium text-gray-300">Username</label>
                   <Input
                     type="text"
-                    placeholder="Enter your full name"
-                    value={formData.name}
-                    onChange={(e) => updateFormData("name", e.target.value)}
-                    className={`bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500 ${errors.name ? "border-red-500" : ""}`}
+                    placeholder="Enter your username"
+                    value={formData.username}
+                    onChange={(e) => updateFormData("username", e.target.value)}
+                    className={`bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500 ${errors.username ? "border-red-500" : ""}`}
                   />
-                  {errors.name && (
-                    <p className="text-red-400 text-sm mt-1">{errors.name}</p>
+                  {errors.username && (
+                    <p className="text-red-400 text-sm mt-1">{errors.username}</p>
                   )}
                 </div>
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useSession } from "next-auth/react"
-import { redirect } from "next/navigation"
+import { redirect, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Footer } from "@/components/layout/footer"
@@ -24,8 +24,20 @@ import {
 } from "lucide-react"
 
 export default function DashboardPage() {
+  const router = useRouter()
   const { data: session, status } = useSession()
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false)
+
+  // Handle authentication check for auto-grading buttons
+  const handleStartAutoGrading = () => {
+    if (status === "unauthenticated") {
+      // Redirect to login if user is not authenticated
+      router.push("/login")
+    } else if (session) {
+      // Open onboarding modal if user is authenticated
+      setIsOnboardingOpen(true)
+    }
+  }
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -86,7 +98,7 @@ export default function DashboardPage() {
 
           {/* Start Your Plan Button */}
           <div className="flex items-center space-x-4">
-            <Button size="lg" className="px-8" onClick={() => setIsOnboardingOpen(true)}>
+            <Button size="lg" className="px-8" onClick={handleStartAutoGrading}>
               <PlayCircle className="mr-2 h-5 w-5" />
               Start Auto-Grading
             </Button>
@@ -243,7 +255,7 @@ export default function DashboardPage() {
               <ClipboardCheck className="h-6 w-6 mb-1" />
               Upload Assignment
             </Button>
-            <Button variant="outline" className="h-16 flex flex-col" onClick={() => setIsOnboardingOpen(true)}>
+            <Button variant="outline" className="h-16 flex flex-col" onClick={handleStartAutoGrading}>
               <Bot className="h-6 w-6 mb-1" />
               Start Auto-Grade
             </Button>
@@ -265,7 +277,7 @@ export default function DashboardPage() {
             <p className="text-gray-600 mb-4">
               Upload your first assignment and experience the power of AI-driven automatic grading and feedback generation.
             </p>
-            <Button size="lg" className="px-8" onClick={() => setIsOnboardingOpen(true)}>
+            <Button size="lg" className="px-8" onClick={handleStartAutoGrading}>
               <PlayCircle className="mr-2 h-5 w-5" />
               Start Auto-Grading Now
             </Button>
