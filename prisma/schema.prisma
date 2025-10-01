@@ -49,10 +49,24 @@ model User {
   password      String?
   emailVerified DateTime?
   image         String?
+  role          String    @default("client") // "client" or "student"
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   accounts      Account[]
   sessions      Session[]
+
+  // Teacher relations
+  assignments   Assignment[]
+  teacherClasses Class[] @relation("TeacherClasses")
+  studentsAsTeacher StudentTeacher[] @relation("TeacherStudents")
+
+  // Student relations
+  submissions   Submission[]
+  teachersAsStudent StudentTeacher[] @relation("StudentTeachers")
+  enrolledClasses ClassEnrollment[]
+
+  // User profile relation
+  profile       UserProfile?
 
   @@map("users")
 }
@@ -63,4 +77,124 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model Assignment {
+  id              String   @id @default(cuid())
+  title           String
+  subject         String
+  description     String?  @db.Text
+  textContent     String?  @db.Text
+  imageUrl        String?
+  totalMarks      Int
+  dueDate         DateTime
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Reference to the teacher who created the assignment
+  teacherId       String
+  teacher         User     @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  // Class assignment (optional - can be assigned to specific class)
+  classId         String?
+  class           Class?   @relation(fields: [classId], references: [id], onDelete: SetNull)
+
+  // Student submissions for this assignment
+  submissions     Submission[]
+
+  @@map("assignments")
+}
+
+model Submission {
+  id              String   @id @default(cuid())
+  content         String?  @db.Text
+  fileUrl         String?
+  submittedAt     DateTime @default(now())
+  marks           Int?
+  feedback        String?  @db.Text
+  status          String   @default("pending") // pending, graded
+
+  // References
+  assignmentId    String
+  assignment      Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+
+  studentId       String
+  student         User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([assignmentId, studentId])
+  @@map("submissions")
+}
+
+model UserProfile {
+  id                String   @id @default(cuid())
+  role              String
+  institutionType   String
+  institutionName   String
+  studentCount      String
+  subjects          String
+  experience        String
+  plan              String
+  paymentMethod     String?
+  isOnboardingComplete Boolean @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Reference to the user
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_profiles")
+}
+
+// Teacher-Student direct relationship model
+model StudentTeacher {
+  id        String   @id @default(cuid())
+  teacherId String
+  studentId String
+  joinedAt  DateTime @default(now())
+  status    String   @default("active") // active, inactive, pending
+
+  teacher   User     @relation("TeacherStudents", fields: [teacherId], references: [id], onDelete: Cascade)
+  student   User     @relation("StudentTeachers", fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([teacherId, studentId])
+  @@map("student_teachers")
+}
+
+// Class model for grouping students
+model Class {
+  id          String   @id @default(cuid())
+  name        String
+  description String?  @db.Text
+  classCode   String   @unique // Unique code for students to join
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Teacher who owns this class
+  teacherId   String
+  teacher     User     @relation("TeacherClasses", fields: [teacherId], references: [id], onDelete: Cascade)
+
+  // Students enrolled in this class
+  enrollments ClassEnrollment[]
+
+  // Assignments for this class
+  assignments Assignment[]
+
+  @@map("classes")
+}
+
+// Class enrollment model (many-to-many between User and Class)
+model ClassEnrollment {
+  id        String   @id @default(cuid())
+  classId   String
+  studentId String
+  enrolledAt DateTime @default(now())
+  status    String   @default("active") // active, inactive
+
+  class     Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  student   User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([classId, studentId])
+  @@map("class_enrollments")
 }

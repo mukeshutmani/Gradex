@@ -7,6 +7,7 @@ const registerSchema = z.object({
   username: z.string().min(2, "Username must be at least 2 characters"),
   email: z.string().email("Invalid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
+  role: z.enum(["client", "student"]).default("client"),
 })
 
 export async function POST(request: NextRequest) {
@@ -22,7 +23,7 @@ export async function POST(request: NextRequest) {
     }
 
     
-    const { username, email, password } = validation.data
+    const { username, email, password, role } = validation.data
     
     const existingUser = await prisma.user.findFirst({
       where: {
@@ -47,6 +48,7 @@ export async function POST(request: NextRequest) {
         username,
         email,
         password: hashedPassword,
+        role,
       },
       select: {
         id: true,

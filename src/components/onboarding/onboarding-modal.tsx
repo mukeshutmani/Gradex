@@ -31,6 +31,7 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
   const { data: session } = useSession()
   const [currentStep, setCurrentStep] = useState(1)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState<FormData>({
     role: "teacher",
     username: "",
@@ -131,6 +132,45 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
 
   const updateFormData = (field: keyof FormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }))
+  }
+
+  const saveOnboardingData = async () => {
+    setLoading(true)
+    try {
+      const response = await fetch("/api/user-profile", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          role: formData.role,
+          institutionType: formData.institutionType,
+          institutionName: formData.institutionName,
+          studentCount: formData.studentCount,
+          subjects: formData.subjects,
+          experience: formData.experience,
+          plan: formData.plan,
+          paymentMethod: formData.paymentMethod || undefined,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to save profile data")
+      }
+
+      const result = await response.json()
+      console.log("Profile saved successfully:", result)
+
+      // Close modal and redirect to admin dashboard
+      onClose()
+      router.push(`/admin/${session?.user?.email}`)
+    } catch (error) {
+      console.error("Error saving profile:", error)
+      alert("Failed to save your information. Please try again.")
+    } finally {
+      setLoading(false)
+    }
   }
 
 
@@ -512,23 +552,23 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
             <Button
               onClick={() => {
                 if (validateCurrentStep()) {
-                  if (formData.plan === "free") {
-                    // Handle free plan completion and redirect to admin dashboard
-                    console.log("Free plan setup complete:", formData)
-                    onClose()
-                    router.push(`/admin/${session?.user?.email}`)
-                  } else {
-                    // Handle payment processing and redirect to admin dashboard
-                    console.log("Processing payment:", formData)
-                    onClose()
-                    router.push(`/admin/${session?.user?.email}`)
-                  }
+                  saveOnboardingData()
                 }
               }}
-              className="flex items-center"
+              disabled={loading}
+              className="flex items-center min-w-[180px]"
             >
-              {formData.plan === "free" ? "Start Using Gradex" : "Complete Payment"}
-              <Check className="h-4 w-4 ml-1" />
+              {loading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  {formData.plan === "free" ? "Start Using Gradex" : "Complete Payment"}
+                  <Check className="h-4 w-4 ml-1" />
+                </>
+              )}
             </Button>
           )}
         </div>

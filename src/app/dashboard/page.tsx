@@ -43,8 +43,14 @@ export default function DashboardPage() {
   useEffect(() => {
     if (status === "unauthenticated") {
       redirect("/register")
+    } else if (status === "authenticated" && session?.user) {
+      // Redirect students to student dashboard
+      if (session.user.role === "student") {
+        redirect("/dashboard/student")
+      }
+      // Clients stay on this main dashboard page
     }
-  }, [status])
+  }, [status, session])
 
   if (status === "loading") {
     return (
@@ -78,7 +84,12 @@ export default function DashboardPage() {
                 <Settings className="h-5 w-5" />
               </Button>
               <div className="flex items-center space-x-3">
-                <span className="text-sm text-gray-700">Welcome, {session.user?.name || session.user?.email}</span>
+                <button
+                  onClick={() => router.push(`/admin/${session.user?.email}`)}
+                  className="text-sm text-gray-700 hover:text-blue-600 hover:underline cursor-pointer transition-colors"
+                >
+                  Welcome, {session.user?.name || session.user?.email}
+                </button>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -106,16 +117,18 @@ export default function DashboardPage() {
             We provide AI-powered solutions to streamline the evaluation process for colleges, schools, and universities.
           </p>
 
-          {/* Start Your Plan Button */}
-          <div className="flex items-center space-x-4">
-            <Button size="lg" className="px-8" onClick={handleStartAutoGrading}>
-              <PlayCircle className="mr-2 h-5 w-5" />
-              Start Auto-Grading
-            </Button>
-            <Button variant="outline" size="lg">
-              Explore Features
-            </Button>
-          </div>
+          {/* Start Your Plan Button - Only for clients */}
+          {session.user?.role === "client" && (
+            <div className="flex items-center space-x-4">
+              <Button size="lg" className="px-8" onClick={handleStartAutoGrading}>
+                <PlayCircle className="mr-2 h-5 w-5" />
+                Start Auto-Grading
+              </Button>
+              <Button variant="outline" size="lg">
+                Explore Features
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Platform Services */}
@@ -281,18 +294,21 @@ export default function DashboardPage() {
         </div>
 
         {/* Getting Started Section */}
-        <div className="mt-8 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6">
-          <div className="text-center">
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Ready to Start Auto-Grading?</h3>
-            <p className="text-gray-600 mb-4">
-              Upload your first assignment and experience the power of AI-driven automatic grading and feedback generation.
-            </p>
-            <Button size="lg" className="px-8" onClick={handleStartAutoGrading}>
-              <PlayCircle className="mr-2 h-5 w-5" />
-              Start Auto-Grading Now
-            </Button>
+        {/* Auto-Grading CTA - Only for clients */}
+        {session.user?.role === "client" && (
+          <div className="mt-8 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6">
+            <div className="text-center">
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Ready to Start Auto-Grading?</h3>
+              <p className="text-gray-600 mb-4">
+                Upload your first assignment and experience the power of AI-driven automatic grading and feedback generation.
+              </p>
+              <Button size="lg" className="px-8" onClick={handleStartAutoGrading}>
+                <PlayCircle className="mr-2 h-5 w-5" />
+                Start Auto-Grading Now
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
       </main>
 
       <Footer />

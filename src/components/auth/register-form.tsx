@@ -17,7 +17,8 @@ export function RegisterForm({ className }: RegisterFormProps) {
     username: "",
     email: "",
     password: "",
-    confirmPassword: ""
+    confirmPassword: "",
+    role: "client"
   })
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -74,6 +75,7 @@ export function RegisterForm({ className }: RegisterFormProps) {
           username: formData.username.trim(),
           email: formData.email.trim().toLowerCase(),
           password: formData.password,
+          role: formData.role,
         }),
       })
 
@@ -161,6 +163,27 @@ export function RegisterForm({ className }: RegisterFormProps) {
           {errors.email && (
             <p className="text-sm text-destructive">{errors.email}</p>
           )}
+        </div>
+
+        <div className="space-y-2">
+          <label htmlFor="role" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+            Account Type
+          </label>
+          <select
+            id="role"
+            value={formData.role}
+            onChange={(e) => handleInputChange("role", e.target.value)}
+            disabled={isLoading}
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <option value="client">Client / Service Provider</option>
+            <option value="student">Student</option>
+          </select>
+          <p className="text-xs text-muted-foreground">
+            {formData.role === "client"
+              ? "Full access to admin panel with AutoGradex features"
+              : "Student access - assignment submission and results only"}
+          </p>
         </div>
 
         <div className="space-y-2">

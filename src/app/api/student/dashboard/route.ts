@@ -1,0 +1,199 @@
+import { NextRequest, NextResponse } from "next/server"
+import { getServerSession } from "next-auth/next"
+import { authOptions } from "@/lib/auth"
+import { prisma } from "@/lib/prisma"
+
+// GET - Fetch student dashboard data
+export async function GET(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+
+    if (!session?.user?.email) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      )
+    }
+
+    // Find the user by email
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email }
+    })
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "User not found" },
+        { status: 404 }
+      )
+    }
+
+    // Fetch student's enrolled classes
+    const enrollments = await prisma.classEnrollment.findMany({
+      where: {
+        studentId: user.id,
+        status: "active"
+      },
+      include: {
+        class: {
+          include: {
+            teacher: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            },
+            assignments: {
+              include: {
+                submissions: {
+                  where: {
+                    studentId: user.id
+                  },
+                  select: {
+                    id: true,
+                    marks: true,
+                    status: true,
+                    submittedAt: true
+                  }
+                }
+              },
+              orderBy: {
+                dueDate: 'asc'
+              }
+            }
+          }
+        }
+      }
+    })
+
+    // Fetch all assignments from enrolled classes
+    const allAssignments = []
+    const classes = []
+
+    for (const enrollment of enrollments) {
+      const classInfo = {
+        id: enrollment.class.id,
+        name: enrollment.class.name,
+        description: enrollment.class.description,
+        classCode: enrollment.class.classCode,
+        teacher: enrollment.class.teacher,
+        assignments: enrollment.class.assignments.map(assignment => ({
+          id: assignment.id,
+          title: assignment.title,
+          subject: assignment.subject,
+          description: assignment.description,
+          totalMarks: assignment.totalMarks,
+          dueDate: assignment.dueDate.toISOString(),
+          createdAt: assignment.createdAt.toISOString(),
+          submission: assignment.submissions[0] || null
+        }))
+      }
+
+      classes.push(classInfo)
+
+      // Add assignments to the all assignments list
+      for (const assignment of enrollment.class.assignments) {
+        allAssignments.push({
+          id: assignment.id,
+          title: assignment.title,
+          subject: assignment.subject,
+          description: assignment.description,
+          totalMarks: assignment.totalMarks,
+          dueDate: assignment.dueDate.toISOString(),
+          createdAt: assignment.createdAt.toISOString(),
+          class: {
+            name: enrollment.class.name,
+            teacher: {
+              name: enrollment.class.teacher.name
+            }
+          },
+          submission: assignment.submissions[0] || null
+        })
+      }
+    }
+
+    // Also fetch assignments from direct teacher-student relationships
+    const teacherStudentRelations = await prisma.studentTeacher.findMany({
+      where: {
+        studentId: user.id,
+        status: "active"
+      },
+      include: {
+        teacher: {
+          include: {
+            assignments: {
+              where: {
+                classId: null // Only assignments not assigned to specific classes
+              },
+              include: {
+                submissions: {
+                  where: {
+                    studentId: user.id
+                  },
+                  select: {
+                    id: true,
+                    marks: true,
+                    status: true,
+                    submittedAt: true
+                  }
+                }
+              },
+              orderBy: {
+                dueDate: 'asc'
+              }
+            }
+          }
+        }
+      }
+    })
+
+    // Add direct teacher assignments
+    for (const relation of teacherStudentRelations) {
+      for (const assignment of relation.teacher.assignments) {
+        allAssignments.push({
+          id: assignment.id,
+          title: assignment.title,
+          subject: assignment.subject,
+          description: assignment.description,
+          totalMarks: assignment.totalMarks,
+          dueDate: assignment.dueDate.toISOString(),
+          createdAt: assignment.createdAt.toISOString(),
+          class: {
+            name: "Direct Assignment",
+            teacher: {
+              name: relation.teacher.name
+            }
+          },
+          submission: assignment.submissions[0] || null
+        })
+      }
+    }
+
+    // Sort assignments by due date
+    allAssignments.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
+
+    return NextResponse.json({
+      classes,
+      assignments: allAssignments,
+      stats: {
+        totalClasses: classes.length,
+        totalAssignments: allAssignments.length,
+        submittedAssignments: allAssignments.filter(a =>
+          a.submission && (a.submission.status === "graded" || a.submission.status === "submitted")
+        ).length,
+        pendingAssignments: allAssignments.filter(a =>
+          !a.submission || a.submission.status === "pending"
+        ).length,
+        overdueAssignments: allAssignments.filter(a =>
+          new Date(a.dueDate) < new Date() && (!a.submission || a.submission.status === "pending")
+        ).length
+      }
+    })
+  } catch (error) {
+    console.error("Error fetching student dashboard:", error)
+    return NextResponse.json(
+      { error: "Failed to fetch dashboard data" },
+      { status: 500 }
+    )
+  }
+}
