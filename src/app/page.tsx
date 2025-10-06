@@ -103,24 +103,27 @@ export default function HomePage() {
       <main className="w-full px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Section */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {session ? `Welcome back to Gradex, ${session.user?.name || 'User'}! 📝` : 'Welcome to Gradex! 📝'}
+          <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-2">
+            {session ? `Welcome back to Gradex, ${session.user?.name || 'User'}!` : 'Welcome to Gradex!'}
+            <ClipboardCheck className="h-8 w-8 text-primary" />
           </h1>
           <p className="text-lg text-gray-600 mb-6">
             Gradex is an innovative platform that helps teachers with automatic assignment checking and grading.
             We provide AI-powered solutions to streamline the evaluation process for colleges, schools, and universities.
           </p>
 
-          {/* Start Your Plan Button */}
-          <div className="flex items-center space-x-4">
-            <Button size="lg" className="px-8" onClick={handleStartAutoGrading}>
-              <PlayCircle className="mr-2 h-5 w-5" />
-              Start Auto-Grading
-            </Button>
-            <Button variant="outline" size="lg">
-              Explore Features
-            </Button>
-          </div>
+          {/* Start Your Plan Button - Only for clients (teachers) */}
+          {session?.user?.role === "client" && (
+            <div className="flex items-center space-x-4">
+              <Button size="lg" className="px-8" onClick={handleStartAutoGrading}>
+                <PlayCircle className="mr-2 h-5 w-5" />
+                Start Auto-Grading
+              </Button>
+              <Button variant="outline" size="lg">
+                Explore Features
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Platform Services */}
@@ -262,42 +265,46 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Button variant="outline" className="h-16 flex flex-col">
-              <ClipboardCheck className="h-6 w-6 mb-1" />
-              Upload Assignment
-            </Button>
-            <Button variant="outline" className="h-16 flex flex-col" onClick={handleStartAutoGrading}>
-              <Bot className="h-6 w-6 mb-1" />
-              Start Auto-Grade
-            </Button>
-            <Button variant="outline" className="h-16 flex flex-col">
-              <FileCheck className="h-6 w-6 mb-1" />
-              Review Submissions
-            </Button>
-            <Button variant="outline" className="h-16 flex flex-col">
-              <TrendingUp className="h-6 w-6 mb-1" />
-              View Reports
-            </Button>
+        {/* Quick Actions - Only for clients (teachers) */}
+        {session?.user?.role === "client" && (
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Button variant="outline" className="h-16 flex flex-col">
+                <ClipboardCheck className="h-6 w-6 mb-1" />
+                Upload Assignment
+              </Button>
+              <Button variant="outline" className="h-16 flex flex-col" onClick={handleStartAutoGrading}>
+                <Bot className="h-6 w-6 mb-1" />
+                Start Auto-Grade
+              </Button>
+              <Button variant="outline" className="h-16 flex flex-col">
+                <FileCheck className="h-6 w-6 mb-1" />
+                Review Submissions
+              </Button>
+              <Button variant="outline" className="h-16 flex flex-col">
+                <TrendingUp className="h-6 w-6 mb-1" />
+                View Reports
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Getting Started Section */}
-        <div className="mt-8 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6">
-          <div className="text-center">
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Ready to Start Auto-Grading?</h3>
-            <p className="text-gray-600 mb-4">
-              Upload your first assignment and experience the power of AI-driven automatic grading and feedback generation.
-            </p>
-            <Button size="lg" className="px-8" onClick={handleStartAutoGrading}>
-              <PlayCircle className="mr-2 h-5 w-5" />
-              Start Auto-Grading Now
-            </Button>
+        {/* Getting Started Section - Only for clients (teachers) */}
+        {session?.user?.role === "client" && (
+          <div className="mt-8 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6">
+            <div className="text-center">
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Ready to Start Auto-Grading?</h3>
+              <p className="text-gray-600 mb-4">
+                Upload your first assignment and experience the power of AI-driven automatic grading and feedback generation.
+              </p>
+              <Button size="lg" className="px-8" onClick={handleStartAutoGrading}>
+                <PlayCircle className="mr-2 h-5 w-5" />
+                Start Auto-Grading Now
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
       </main>
 
       <Footer />

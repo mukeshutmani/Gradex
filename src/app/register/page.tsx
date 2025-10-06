@@ -1,6 +1,7 @@
 import { Metadata } from "next"
 import Link from "next/link"
 import { RegisterForm } from "@/components/auth/register-form"
+import { ClipboardCheck } from "lucide-react"
 
 export const metadata: Metadata = {
   title: "Register",
@@ -12,12 +13,12 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
-          <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-primary">
-            <div className="text-primary-foreground font-bold text-xl">📝</div>
+          <div className="flex items-center justify-center gap-3">
+            <ClipboardCheck className="h-10 w-10 text-black" />
+            <h2 className="text-3xl font-extrabold text-gray-900">
+              Join Gradex
+            </h2>
           </div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Join Gradex
-          </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             Start automating your assignment grading today
           </p>
@@ -25,7 +26,7 @@ export default function RegisterPage() {
             Already have an account?{" "}
             <Link
               href="/login"
-              className="font-medium text-primary hover:text-primary/80"
+              className="font-medium text-black hover:text-gray-700 underline"
             >
               Sign in here
             </Link>
@@ -39,11 +40,11 @@ export default function RegisterPage() {
         <div className="text-center">
           <p className="text-xs text-gray-500">
             By creating an account, you agree to our{" "}
-            <Link href="/terms" className="text-primary hover:text-primary/80">
+            <Link href="/terms" className="text-black hover:text-gray-700 underline">
               Terms of Service
             </Link>{" "}
             and{" "}
-            <Link href="/privacy" className="text-primary hover:text-primary/80">
+            <Link href="/privacy" className="text-black hover:text-gray-700 underline">
               Privacy Policy
             </Link>
           </p>

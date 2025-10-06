@@ -45,6 +45,7 @@ interface Assignment {
     marks?: number
     status: string
     submittedAt: string
+    feedback?: string
   }
 }
 
@@ -196,7 +197,7 @@ export default function StudentDashboard() {
               { id: "dashboard", label: "Dashboard", icon: TrendingUp },
               { id: "assignments", label: "Assignments", icon: BookOpen },
               { id: "classes", label: "My Classes", icon: Users },
-              { id: "join", label: "Join Class", icon: Plus }
+              { id: "join", label: "Class Assignment", icon: Plus }
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -368,7 +369,7 @@ export default function StudentDashboard() {
                   <span>Enter Class Code</span>
                 </CardTitle>
                 <CardDescription>
-                  Ask your teacher for the class code to join their class
+                  Ask your teacher for the class code to submit your assignment
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -518,12 +519,94 @@ export default function StudentDashboard() {
 
         {activeTab === "classes" && (
           <div className="space-y-6">
-            <h1 className="text-2xl font-bold text-gray-900">My Classes</h1>
-            <Card className="bg-white border-gray-200 shadow-sm">
-              <CardContent className="pt-6">
-                <p className="text-gray-600">Class details view coming soon...</p>
-              </CardContent>
-            </Card>
+            <h1 className="text-2xl font-bold text-gray-900">Class Assignments</h1>
+
+            {classes.length === 0 ? (
+              <Card className="bg-white border-gray-200 shadow-sm">
+                <CardContent className="pt-6">
+                  <div className="text-center py-8">
+                    <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No classes joined yet</h3>
+                    <p className="text-gray-500">Join a class to see assignments organized by class.</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-6">
+                {classes.map((classItem) => (
+                  <Card key={classItem.id} className="bg-white border-gray-200 shadow-sm">
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <CardTitle className="flex items-center space-x-2">
+                            <Users className="h-5 w-5 text-blue-500" />
+                            <span>{classItem.name}</span>
+                          </CardTitle>
+                          <CardDescription className="mt-1">
+                            Teacher: {classItem.teacher.name} • {classItem.assignments.length} assignment{classItem.assignments.length !== 1 ? 's' : ''}
+                          </CardDescription>
+                        </div>
+                        <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                          {classItem.classCode}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      {classItem.assignments.length === 0 ? (
+                        <p className="text-gray-500 text-sm">No assignments yet in this class.</p>
+                      ) : (
+                        <div className="space-y-3">
+                          {classItem.assignments.map((assignment) => {
+                            const isOverdue = new Date(assignment.dueDate) < new Date()
+                            const hasSubmission = assignment.submission
+                            const isGraded = hasSubmission?.status === "graded"
+
+                            return (
+                              <div key={assignment.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <div className="flex-1">
+                                  <div className="flex items-center space-x-2 mb-1">
+                                    <h4 className="font-medium text-gray-900">{assignment.title}</h4>
+                                    <Badge variant="outline" className="text-xs">
+                                      {assignment.subject}
+                                    </Badge>
+                                  </div>
+                                  <div className="flex items-center space-x-4 text-xs text-gray-500">
+                                    <span>Total: {assignment.totalMarks} marks</span>
+                                    <span className={isOverdue && !hasSubmission ? 'text-red-600' : ''}>
+                                      Due: {new Date(assignment.dueDate).toLocaleDateString()}
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  {isGraded ? (
+                                    <div className="space-y-1">
+                                      <Badge className="bg-green-100 text-green-800 border-green-300">
+                                        Graded
+                                      </Badge>
+                                      <div className="text-sm font-bold text-green-600">
+                                        {assignment.submission?.marks}/{assignment.totalMarks}
+                                      </div>
+                                    </div>
+                                  ) : hasSubmission ? (
+                                    <Badge className="bg-blue-100 text-blue-800 border-blue-300">
+                                      Submitted
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant={isOverdue ? "destructive" : "secondary"}>
+                                      {isOverdue ? "Overdue" : "Pending"}
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </main>
