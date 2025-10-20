@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -29,12 +29,21 @@ interface CreateAssignmentModalProps {
   onSuccess?: () => void
 }
 
+interface ClassInfo {
+  id: string
+  name: string
+  classCode: string
+  studentCount?: number
+}
+
 export function CreateAssignmentModal({ isOpen, onClose, onSuccess }: CreateAssignmentModalProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState(false)
   const [activeTab, setActiveTab] = useState<"text" | "image">("text")
+  const [classes, setClasses] = useState<ClassInfo[]>([])
+  const [loadingClasses, setLoadingClasses] = useState(true)
 
   // Form data
   const [formData, setFormData] = useState({
@@ -45,7 +54,8 @@ export function CreateAssignmentModal({ isOpen, onClose, onSuccess }: CreateAssi
     imageUrl: "",
     totalMarks: "",
     dueDate: "",
-    dueTime: "23:59"
+    dueTime: "23:59",
+    classId: ""
   })
 
   const commonSubjects = [
@@ -53,6 +63,31 @@ export function CreateAssignmentModal({ isOpen, onClose, onSuccess }: CreateAssi
     "Physics", "Chemistry", "Biology", "Computer Science", "Art",
     "Physical Education", "Music", "Economics", "Psychology", "Sociology"
   ]
+
+  // Fetch teacher's classes when modal opens
+  const fetchClasses = async () => {
+    setLoadingClasses(true)
+    try {
+      const response = await fetch('/api/classes')
+      if (response.ok) {
+        const data = await response.json()
+        setClasses(data.classes || [])
+      } else {
+        console.error('Failed to fetch classes')
+      }
+    } catch (error) {
+      console.error('Error fetching classes:', error)
+    } finally {
+      setLoadingClasses(false)
+    }
+  }
+
+  // Fetch classes when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      fetchClasses()
+    }
+  }, [isOpen])
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
@@ -69,6 +104,10 @@ export function CreateAssignmentModal({ isOpen, onClose, onSuccess }: CreateAssi
     }
     if (!formData.subject.trim()) {
       setError("Subject is required")
+      return false
+    }
+    if (!formData.classId) {
+      setError("Please select a class for this assignment")
       return false
     }
     if (!formData.totalMarks || parseInt(formData.totalMarks) < 1) {
@@ -120,6 +159,7 @@ export function CreateAssignmentModal({ isOpen, onClose, onSuccess }: CreateAssi
           imageUrl: formData.imageUrl.trim() || undefined,
           totalMarks: parseInt(formData.totalMarks),
           dueDate: dueDateTime.toISOString(),
+          classId: formData.classId,
         }),
       })
 
@@ -141,7 +181,8 @@ export function CreateAssignmentModal({ isOpen, onClose, onSuccess }: CreateAssi
         imageUrl: "",
         totalMarks: "",
         dueDate: "",
-        dueTime: "23:59"
+        dueTime: "23:59",
+        classId: ""
       })
 
       // Close modal after a short delay
@@ -169,7 +210,8 @@ export function CreateAssignmentModal({ isOpen, onClose, onSuccess }: CreateAssi
         imageUrl: "",
         totalMarks: "",
         dueDate: "",
-        dueTime: "23:59"
+        dueTime: "23:59",
+        classId: ""
       })
       setError("")
       setSuccess(false)
@@ -243,6 +285,39 @@ export function CreateAssignmentModal({ isOpen, onClose, onSuccess }: CreateAssi
                     disabled={loading}
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="classId">Select Class *</Label>
+                {loadingClasses ? (
+                  <div className="flex items-center justify-center h-10 border rounded-md bg-gray-50">
+                    <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : classes.length === 0 ? (
+                  <div className="p-3 border rounded-md bg-yellow-50 border-yellow-200">
+                    <p className="text-sm text-yellow-700">
+                      No classes available. Please create a class first before creating assignments.
+                    </p>
+                  </div>
+                ) : (
+                  <Select value={formData.classId} onValueChange={(value) => handleInputChange("classId", value)} disabled={loading}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a class" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {classes.map((classItem) => (
+                        <SelectItem key={classItem.id} value={classItem.id}>
+                          <div className="flex items-center justify-between w-full">
+                            <span>{classItem.name}</span>
+                            <Badge variant="outline" className="ml-2 text-xs">
+                              {classItem.classCode}
+                            </Badge>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
 
               <div className="space-y-2">

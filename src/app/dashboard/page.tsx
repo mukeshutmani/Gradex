@@ -24,7 +24,11 @@ import {
   CheckCircle2,
   Bot,
   LogOut,
-  User
+  User,
+  LayoutDashboard,
+  Sparkles,
+  DollarSign,
+  HelpCircle
 } from "lucide-react"
 
 export default function DashboardPage() {
@@ -139,33 +143,37 @@ export default function DashboardPage() {
                 onClick={() => {
                   window.scrollTo({ top: 0, behavior: 'smooth' })
                 }}
-                className="text-sm font-medium text-gray-700 hover:text-black transition-colors cursor-pointer"
+                className="flex items-center space-x-2 text-sm font-medium text-gray-700 hover:text-black transition-colors cursor-pointer"
               >
-                Dashboard
+                <LayoutDashboard className="h-4 w-4 text-blue-500" />
+                <span>Dashboard</span>
               </button>
               <button
                 onClick={() => {
                   document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })
                 }}
-                className="text-sm font-medium text-gray-700 hover:text-black transition-colors cursor-pointer"
+                className="flex items-center space-x-2 text-sm font-medium text-gray-700 hover:text-black transition-colors cursor-pointer"
               >
-                Features
+                <Sparkles className="h-4 w-4 text-purple-500" />
+                <span>Features</span>
               </button>
               <button
                 onClick={() => {
                   document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })
                 }}
-                className="text-sm font-medium text-gray-700 hover:text-black transition-colors cursor-pointer"
+                className="flex items-center space-x-2 text-sm font-medium text-gray-700 hover:text-black transition-colors cursor-pointer"
               >
-                Pricing
+                <DollarSign className="h-4 w-4 text-green-500" />
+                <span>Pricing</span>
               </button>
               <button
                 onClick={() => {
                   document.getElementById('support')?.scrollIntoView({ behavior: 'smooth' })
                 }}
-                className="text-sm font-medium text-gray-700 hover:text-black transition-colors cursor-pointer"
+                className="flex items-center space-x-2 text-sm font-medium text-gray-700 hover:text-black transition-colors cursor-pointer"
               >
-                Support
+                <HelpCircle className="h-4 w-4 text-orange-500" />
+                <span>Support</span>
               </button>
             </nav>
 
@@ -182,7 +190,7 @@ export default function DashboardPage() {
                     <User className="h-5 w-5 text-black" />
                   </div>
                   <button
-                    onClick={() => router.push(`/admin/${session.user?.email}`)}
+                    onClick={() => router.push(`/admin/${session.user?.username}`)}
                     className="text-sm hover:underline cursor-pointer transition-colors"
                   >
                     <span className="text-black font-semibold">Welcome,</span>{" "}

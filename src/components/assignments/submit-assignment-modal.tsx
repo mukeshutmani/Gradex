@@ -24,6 +24,7 @@ import {
   AlertCircle,
   Loader2
 } from "lucide-react"
+import { AIGradingModal } from "./ai-grading-modal"
 
 interface Assignment {
   id: string
@@ -59,6 +60,8 @@ export function SubmitAssignmentModal({
   })
   const [submitting, setSubmitting] = useState(false)
   const [dragOver, setDragOver] = useState(false)
+  const [isGradingModalOpen, setIsGradingModalOpen] = useState(false)
+  const [submissionId, setSubmissionId] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -87,10 +90,13 @@ export function SubmitAssignmentModal({
       const data = await response.json()
 
       if (response.ok) {
-        alert("Assignment submitted successfully!")
+        // Store submission ID for grading update
+        setSubmissionId(data.submission?.id || null)
+
+        // Close submission modal and show grading modal
         setSubmissionData({ content: "", file: null })
         onClose()
-        onSuccess?.()
+        setIsGradingModalOpen(true)
       } else {
         alert(`Failed to submit assignment: ${data.error}`)
       }
@@ -100,6 +106,39 @@ export function SubmitAssignmentModal({
     } finally {
       setSubmitting(false)
     }
+  }
+
+  const handleGradingComplete = async (marks: number, feedback: string) => {
+    // Update submission with marks and feedback in database
+    if (submissionId) {
+      try {
+        const response = await fetch("/api/submissions/grade", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            submissionId,
+            marks,
+            feedback,
+            status: "graded"
+          }),
+        })
+
+        if (response.ok) {
+          console.log("Grading saved successfully")
+        }
+      } catch (error) {
+        console.error("Error saving grading:", error)
+      }
+    }
+  }
+
+  const handleGradingModalClose = () => {
+    setIsGradingModalOpen(false)
+    setSubmissionId(null)
+    // Trigger data refresh callback
+    onSuccess?.()
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -154,6 +193,7 @@ export function SubmitAssignmentModal({
   const daysLeft = Math.ceil(timeLeft / (1000 * 60 * 60 * 24))
 
   return (
+    <>
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -312,5 +352,15 @@ export function SubmitAssignmentModal({
         </form>
       </DialogContent>
     </Dialog>
+
+    {/* AI Grading Modal */}
+    <AIGradingModal
+      isOpen={isGradingModalOpen}
+      onClose={handleGradingModalClose}
+      assignmentTitle={assignment?.title || ""}
+      totalMarks={assignment?.totalMarks || 100}
+      onGradingComplete={handleGradingComplete}
+    />
+  </>
   )
 }

@@ -49,6 +49,7 @@ export default function StudentResults() {
   const { data: session, status } = useSession()
   const [submissions, setSubmissions] = useState<Submission[]>([])
   const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState("overview")
 
   // Fetch student's submissions
   const fetchSubmissions = async () => {
@@ -133,7 +134,7 @@ export default function StudentResults() {
             <div className="flex items-center space-x-4">
               <Button
                 variant="ghost"
-                onClick={() => router.push('/dashboard/student')}
+                onClick={() => router.push(`/dashboard/student/${session.user.id}`)}
                 className="p-2"
               >
                 <ArrowLeft className="h-4 w-4" />
@@ -156,6 +157,32 @@ export default function StudentResults() {
         </div>
       </header>
 
+      {/* Navigation Tabs */}
+      <div className="bg-white border-b">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
+          <div className="flex space-x-8">
+            {[
+              { id: "overview", label: "Overview", icon: BarChart3 },
+              { id: "submissions", label: "All Submissions", icon: FileText },
+              { id: "subjects", label: "By Subject", icon: BookOpen }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center space-x-2 py-4 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === tab.id
+                    ? "border-primary text-primary"
+                    : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                <tab.icon className="h-4 w-4" />
+                <span>{tab.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* Main Content */}
       <main className="w-full px-4 sm:px-6 lg:px-8 py-8">
         {submissions.length === 0 ? (
@@ -166,7 +193,7 @@ export default function StudentResults() {
                 <h3 className="text-lg font-medium text-gray-900 mb-2">No submissions yet</h3>
                 <p className="text-gray-500">Submit some assignments to see your results here.</p>
                 <Button
-                  onClick={() => router.push('/dashboard/student')}
+                  onClick={() => router.push(`/dashboard/student/${session.user.id}`)}
                   className="mt-4"
                 >
                   Go to Dashboard
@@ -175,7 +202,10 @@ export default function StudentResults() {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-6">
+          <>
+            {/* Overview Tab */}
+            {activeTab === "overview" && (
+              <div className="space-y-6">
             {/* Statistics Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <Card className="bg-white border-gray-200 shadow-sm">
@@ -274,8 +304,12 @@ export default function StudentResults() {
                 </div>
               </CardContent>
             </Card>
+              </div>
+            )}
 
-            {/* Recent Submissions */}
+            {/* All Submissions Tab */}
+            {activeTab === "submissions" && (
+              <div className="space-y-6">
             <Card className="bg-white border-gray-200 shadow-sm">
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
@@ -359,7 +393,96 @@ export default function StudentResults() {
                 </div>
               </CardContent>
             </Card>
-          </div>
+              </div>
+            )}
+
+            {/* By Subject Tab */}
+            {activeTab === "subjects" && (
+              <div className="space-y-6">
+                {(() => {
+                  // Group submissions by subject
+                  const subjectGroups = submissions.reduce((acc, submission) => {
+                    const subject = submission.assignment.subject
+                    if (!acc[subject]) {
+                      acc[subject] = []
+                    }
+                    acc[subject].push(submission)
+                    return acc
+                  }, {} as Record<string, Submission[]>)
+
+                  return Object.entries(subjectGroups).map(([subject, subjectSubmissions]) => {
+                    const gradedInSubject = subjectSubmissions.filter(s => s.status === "graded" && s.marks !== null)
+                    const subjectTotal = gradedInSubject.reduce((sum, s) => sum + (s.marks || 0), 0)
+                    const subjectPossible = gradedInSubject.reduce((sum, s) => sum + s.assignment.totalMarks, 0)
+                    const subjectAverage = subjectPossible > 0 ? (subjectTotal / subjectPossible) * 100 : 0
+
+                    return (
+                      <Card key={subject} className="bg-white border-gray-200 shadow-sm">
+                        <CardHeader>
+                          <div className="flex items-center justify-between">
+                            <CardTitle className="flex items-center space-x-2">
+                              <BookOpen className="h-5 w-5 text-blue-500" />
+                              <span>{subject}</span>
+                            </CardTitle>
+                            <div className="text-right">
+                              <div className="text-2xl font-bold text-primary">
+                                {subjectAverage.toFixed(1)}%
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                Grade: {getGradeLetter(subjectAverage)}
+                              </div>
+                            </div>
+                          </div>
+                          <CardDescription>
+                            {gradedInSubject.length} graded out of {subjectSubmissions.length} submissions
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            {subjectSubmissions.map((submission) => {
+                              const percentage = submission.marks
+                                ? (submission.marks / submission.assignment.totalMarks) * 100
+                                : 0
+                              const isGraded = submission.status === "graded"
+
+                              return (
+                                <div key={submission.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                  <div className="flex-1">
+                                    <h4 className="font-medium text-gray-900 mb-1">{submission.assignment.title}</h4>
+                                    <div className="flex items-center space-x-4 text-xs text-gray-500">
+                                      <span>Teacher: {submission.assignment.teacher.name}</span>
+                                      <span>Submitted: {new Date(submission.submittedAt).toLocaleDateString()}</span>
+                                    </div>
+                                  </div>
+                                  <div className="text-right ml-4">
+                                    {isGraded ? (
+                                      <div className="space-y-1">
+                                        <div className={`px-3 py-1 rounded-lg border font-bold ${getGradeColor(percentage)}`}>
+                                          {submission.marks}/{submission.assignment.totalMarks}
+                                        </div>
+                                        <div className="text-xs text-gray-500">
+                                          {percentage.toFixed(1)}% ({getGradeLetter(percentage)})
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <Badge className="bg-blue-100 text-blue-800">
+                                        <Clock className="h-3 w-3 mr-1" />
+                                        Pending
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )
+                  })
+                })()}
+              </div>
+            )}
+          </>
         )}
       </main>
     </div>

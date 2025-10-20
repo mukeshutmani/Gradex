@@ -190,3 +190,72 @@ export async function GET(request: NextRequest) {
     )
   }
 }
+
+// DELETE - Delete a class
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+
+    if (!session?.user?.email) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      )
+    }
+
+    // Find the user by email
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email }
+    })
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "User not found" },
+        { status: 404 }
+      )
+    }
+
+    const { searchParams } = new URL(request.url)
+    const classId = searchParams.get('id')
+
+    if (!classId) {
+      return NextResponse.json(
+        { error: "Class ID is required" },
+        { status: 400 }
+      )
+    }
+
+    // Check if class exists and belongs to the teacher
+    const existingClass = await prisma.class.findFirst({
+      where: {
+        id: classId,
+        teacherId: user.id
+      }
+    })
+
+    if (!existingClass) {
+      return NextResponse.json(
+        { error: "Class not found or you don't have permission to delete it" },
+        { status: 404 }
+      )
+    }
+
+    // Delete the class (this will also delete related enrollments and assignments due to cascade)
+    await prisma.class.delete({
+      where: { id: classId }
+    })
+
+    return NextResponse.json(
+      {
+        message: "Class deleted successfully"
+      },
+      { status: 200 }
+    )
+  } catch (error) {
+    console.error("Error deleting class:", error)
+    return NextResponse.json(
+      { error: "Failed to delete class" },
+      { status: 500 }
+    )
+  }
+}

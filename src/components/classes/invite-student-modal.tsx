@@ -125,12 +125,7 @@ export function InviteStudentModal({ isOpen, onClose }: InviteStudentModalProps)
                 <SelectContent>
                   {classes.map((classItem) => (
                     <SelectItem key={classItem.id} value={classItem.id}>
-                      <div className="flex items-center justify-between w-full">
-                        <span>{classItem.name}</span>
-                        <Badge variant="outline" className="ml-2">
-                          {classItem.studentCount} students
-                        </Badge>
-                      </div>
+                      {classItem.name} ({classItem.studentCount} students)
                     </SelectItem>
                   ))}
                 </SelectContent>

@@ -110,9 +110,10 @@ model Submission {
   content         String?  @db.Text
   fileUrl         String?
   submittedAt     DateTime @default(now())
+  gradedAt        DateTime?
   marks           Int?
   feedback        String?  @db.Text
-  status          String   @default("pending") // pending, graded
+  status          String   @default("pending") // pending, submitted, graded
 
   // References
   assignmentId    String

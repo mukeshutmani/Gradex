@@ -187,11 +187,8 @@ export async function POST(request: NextRequest) {
       fileUrl = `/uploads/${Date.now()}-${file.name}`
     }
 
-    // Auto-grade the submission using our simple AI
-    let aiGrading = null
-    if (content?.trim()) {
-      aiGrading = await gradeSubmission(assignment, content)
-    }
+    // Don't auto-grade immediately - let the AI grading modal handle it
+    // This allows for the step-by-step grading UI experience
 
     // Create the submission
     const submission = await prisma.submission.create({
@@ -200,9 +197,9 @@ export async function POST(request: NextRequest) {
         studentId: user.id,
         content: content || null,
         fileUrl: fileUrl,
-        marks: aiGrading?.marks || null,
-        feedback: aiGrading?.feedback || null,
-        status: aiGrading ? "graded" : "submitted", // Auto-grade if we have content
+        marks: null,
+        feedback: null,
+        status: "submitted",
       },
       include: {
         assignment: {
@@ -225,13 +222,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         message: isOverdue
-          ? "Late submission accepted. Marks may be reduced."
-          : aiGrading
-            ? "Assignment submitted and automatically graded!"
-            : "Assignment submitted successfully!",
+          ? "Late submission accepted. AI grading will begin now."
+          : "Assignment submitted successfully! AI grading in progress...",
         submission,
-        isLate: isOverdue,
-        autoGraded: !!aiGrading
+        isLate: isOverdue
       },
       { status: 201 }
     )

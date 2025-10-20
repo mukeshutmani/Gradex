@@ -13,6 +13,19 @@ const createAssignmentSchema = z.object({
   imageUrl: z.string().url().optional().or(z.literal("")),
   totalMarks: z.number().min(1, "Total marks must be at least 1"),
   dueDate: z.string().datetime("Invalid due date format"),
+  classId: z.string().min(1, "Class is required"),
+})
+
+// Validation schema for assignment updates (classId is optional for updates)
+const updateAssignmentSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  subject: z.string().min(1, "Subject is required"),
+  description: z.string().optional(),
+  textContent: z.string().optional(),
+  imageUrl: z.string().url().optional().or(z.literal("")),
+  totalMarks: z.number().min(1, "Total marks must be at least 1"),
+  dueDate: z.string().datetime("Invalid due date format"),
+  classId: z.string().min(1, "Class is required").optional(), // Optional for updates
 })
 
 // GET - Fetch assignments for the authenticated teacher
@@ -113,7 +126,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: "Validation failed",
-          details: validationResult.error.errors
+          details: validationResult.error.issues
         },
         { status: 400 }
       )
@@ -127,7 +140,23 @@ export async function POST(request: NextRequest) {
       imageUrl,
       totalMarks,
       dueDate,
+      classId,
     } = validationResult.data
+
+    // Verify that the class exists and belongs to the teacher
+    const classExists = await prisma.class.findFirst({
+      where: {
+        id: classId,
+        teacherId: user.id
+      }
+    })
+
+    if (!classExists) {
+      return NextResponse.json(
+        { error: "Class not found or you don't have permission to assign to this class" },
+        { status: 404 }
+      )
+    }
 
     // Create the assignment
     const assignment = await prisma.assignment.create({
@@ -140,6 +169,7 @@ export async function POST(request: NextRequest) {
         totalMarks,
         dueDate: new Date(dueDate),
         teacherId: user.id,
+        classId: classId,
       },
       include: {
         teacher: {
@@ -202,14 +232,14 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    // Validate the request data
-    const validationResult = createAssignmentSchema.safeParse(updateData)
+    // Validate the request data using update schema
+    const validationResult = updateAssignmentSchema.safeParse(updateData)
 
     if (!validationResult.success) {
       return NextResponse.json(
         {
           error: "Validation failed",
-          details: validationResult.error.errors
+          details: validationResult.error.issues
         },
         { status: 400 }
       )
@@ -223,6 +253,7 @@ export async function PUT(request: NextRequest) {
       imageUrl,
       totalMarks,
       dueDate,
+      classId,
     } = validationResult.data
 
     // Check if assignment exists and belongs to the teacher
@@ -240,6 +271,23 @@ export async function PUT(request: NextRequest) {
       )
     }
 
+    // If classId is provided, verify it belongs to the teacher
+    if (classId && classId !== existingAssignment.classId) {
+      const classExists = await prisma.class.findFirst({
+        where: {
+          id: classId,
+          teacherId: user.id
+        }
+      })
+
+      if (!classExists) {
+        return NextResponse.json(
+          { error: "Class not found or you don't have permission to assign to this class" },
+          { status: 404 }
+        )
+      }
+    }
+
     // Update the assignment
     const updatedAssignment = await prisma.assignment.update({
       where: { id: assignmentId },
@@ -251,6 +299,7 @@ export async function PUT(request: NextRequest) {
         imageUrl: imageUrl || null,
         totalMarks,
         dueDate: new Date(dueDate),
+        ...(classId && { classId }), // Only update classId if provided
       },
       include: {
         teacher: {

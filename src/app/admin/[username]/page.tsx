@@ -43,160 +43,7 @@ import {
   X
 } from "lucide-react"
 
-// Mock data for demonstration
-const mockAssignments = [
-  {
-    id: 1,
-    name: "Mathematics Quiz - Chapter 5",
-    subject: "Mathematics",
-    totalMarks: 100,
-    submissions: 25,
-    totalStudents: 30,
-    dueDate: "2024-01-25",
-    status: "active",
-    averageScore: 78
-  },
-  {
-    id: 2,
-    name: "Science Lab Report",
-    subject: "Science",
-    totalMarks: 50,
-    submissions: 28,
-    totalStudents: 30,
-    dueDate: "2024-01-20",
-    status: "completed",
-    averageScore: 85
-  },
-  {
-    id: 3,
-    name: "English Essay Writing",
-    subject: "English",
-    totalMarks: 75,
-    submissions: 15,
-    totalStudents: 30,
-    dueDate: "2024-01-28",
-    status: "pending",
-    averageScore: 0
-  }
-]
-
-const mockStudentSubmissions = [
-  {
-    id: 1,
-    studentName: "Ahmed Ali",
-    assignment: "Mathematics Quiz - Chapter 5",
-    submittedDate: "2024-01-24",
-    marks: 85,
-    totalMarks: 100,
-    status: "graded",
-    feedback: "Excellent work! Good understanding of concepts."
-  },
-  {
-    id: 2,
-    studentName: "Fatima Khan",
-    assignment: "Science Lab Report",
-    submittedDate: "2024-01-19",
-    marks: 45,
-    totalMarks: 50,
-    status: "graded",
-    feedback: "Well structured report with clear observations."
-  },
-  {
-    id: 3,
-    studentName: "Hassan Shah",
-    assignment: "Mathematics Quiz - Chapter 5",
-    submittedDate: "2024-01-24",
-    marks: 0,
-    totalMarks: 100,
-    status: "pending",
-    feedback: ""
-  },
-  {
-    id: 4,
-    studentName: "Zara Ahmed",
-    assignment: "English Essay Writing",
-    submittedDate: "2024-01-25",
-    marks: 0,
-    totalMarks: 75,
-    status: "pending",
-    feedback: ""
-  }
-]
-
-// Mock class data
-const mockClassData = [
-  {
-    id: 1,
-    name: "Mathematics Grade 10",
-    description: "Advanced mathematics for grade 10 students",
-    classCode: "MATH10A",
-    studentCount: 25,
-    isActive: true,
-    createdAt: "2024-01-15"
-  },
-  {
-    id: 2,
-    name: "Physics Grade 11",
-    description: "Introduction to physics concepts",
-    classCode: "PHY11B",
-    studentCount: 20,
-    isActive: true,
-    createdAt: "2024-01-20"
-  },
-  {
-    id: 3,
-    name: "Chemistry Grade 9",
-    description: "Basic chemistry fundamentals",
-    classCode: "CHEM9C",
-    studentCount: 18,
-    isActive: false,
-    createdAt: "2024-01-10"
-  }
-]
-
-// Mock student data
-const mockStudentData = [
-  {
-    id: 1,
-    name: "Ahmed Ali",
-    email: "ahmed.ali@student.com",
-    className: "Mathematics Grade 10",
-    joinedDate: "2024-01-16",
-    status: "active"
-  },
-  {
-    id: 2,
-    name: "Fatima Khan",
-    email: "fatima.khan@student.com",
-    className: "Physics Grade 11",
-    joinedDate: "2024-01-21",
-    status: "active"
-  },
-  {
-    id: 3,
-    name: "Hassan Shah",
-    email: "hassan.shah@student.com",
-    className: "Mathematics Grade 10",
-    joinedDate: "2024-01-18",
-    status: "active"
-  },
-  {
-    id: 4,
-    name: "Zara Ahmed",
-    email: "zara.ahmed@student.com",
-    className: "Chemistry Grade 9",
-    joinedDate: "2024-01-12",
-    status: "inactive"
-  },
-  {
-    id: 5,
-    name: "Ali Rahman",
-    email: "ali.rahman@student.com",
-    className: "Physics Grade 11",
-    joinedDate: "2024-01-22",
-    status: "active"
-  }
-]
+// Remove mock data - will use real data from database
 
 interface Assignment {
   id: string
@@ -231,7 +78,7 @@ interface Submission {
   }
 }
 
-export default function AdminDashboard({ params }: { params: Promise<{ userId: string }> }) {
+export default function AdminDashboard({ params }: { params: Promise<{ username: string }> }) {
   const router = useRouter()
   const { data: session, status } = useSession()
   const [activeTab, setActiveTab] = useState("overview")
@@ -251,7 +98,15 @@ export default function AdminDashboard({ params }: { params: Promise<{ userId: s
   const [studentManagementTab, setStudentManagementTab] = useState("classes")
   const [isCreateClassModalOpen, setIsCreateClassModalOpen] = useState(false)
   const [isInviteStudentModalOpen, setIsInviteStudentModalOpen] = useState(false)
-  const { userId } = use(params)
+  const [classes, setClasses] = useState<any[]>([])
+  const [classesLoading, setClassesLoading] = useState(false)
+  const [selectedClass, setSelectedClass] = useState<any | null>(null)
+  const [isDeleteClassDialogOpen, setIsDeleteClassDialogOpen] = useState(false)
+  const [deleteClassLoading, setDeleteClassLoading] = useState(false)
+  const [settingsTab, setSettingsTab] = useState("account")
+  const [allSubmissions, setAllSubmissions] = useState<any[]>([])
+  const [allStudents, setAllStudents] = useState<any[]>([])
+  const { username } = use(params)
 
   // Fetch assignments from database
   const fetchAssignments = async () => {
@@ -263,6 +118,21 @@ export default function AdminDashboard({ params }: { params: Promise<{ userId: s
       if (response.ok) {
         const data = await response.json()
         setAssignments(data.assignments || [])
+
+        // Extract all submissions from assignments
+        const submissions: any[] = []
+        data.assignments.forEach((assignment: Assignment) => {
+          if (assignment.submissions) {
+            assignment.submissions.forEach((submission) => {
+              submissions.push({
+                ...submission,
+                assignmentTitle: assignment.title,
+                assignmentTotalMarks: assignment.totalMarks
+              })
+            })
+          }
+        })
+        setAllSubmissions(submissions)
       } else {
         console.error('Failed to fetch assignments')
       }
@@ -337,6 +207,80 @@ export default function AdminDashboard({ params }: { params: Promise<{ userId: s
     }
   }
 
+  // Fetch classes from database
+  const fetchClasses = async () => {
+    if (!session?.user?.email) return
+
+    setClassesLoading(true)
+    try {
+      const response = await fetch('/api/classes')
+      if (response.ok) {
+        const data = await response.json()
+        setClasses(data.classes || [])
+
+        // Extract all students from enrollments
+        const students: any[] = []
+        const studentMap = new Map() // To avoid duplicates
+
+        data.classes.forEach((classItem: any) => {
+          if (classItem.enrollments) {
+            classItem.enrollments.forEach((enrollment: any) => {
+              if (!studentMap.has(enrollment.student.id)) {
+                studentMap.set(enrollment.student.id, {
+                  ...enrollment.student,
+                  className: classItem.name,
+                  classCode: classItem.classCode,
+                  enrolledAt: enrollment.enrolledAt,
+                  status: 'active' // You can add logic to determine status
+                })
+              }
+            })
+          }
+        })
+
+        setAllStudents(Array.from(studentMap.values()))
+      } else {
+        console.error('Failed to fetch classes')
+      }
+    } catch (error) {
+      console.error('Error fetching classes:', error)
+    } finally {
+      setClassesLoading(false)
+    }
+  }
+
+  // Handle delete class
+  const handleDeleteClass = (classItem: any) => {
+    setSelectedClass(classItem)
+    setIsDeleteClassDialogOpen(true)
+  }
+
+  // Confirm delete class
+  const confirmDeleteClass = async () => {
+    if (!selectedClass) return
+
+    setDeleteClassLoading(true)
+    try {
+      const response = await fetch(`/api/classes?id=${selectedClass.id}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        // Refresh classes after successful deletion
+        await fetchClasses()
+        setIsDeleteClassDialogOpen(false)
+        setSelectedClass(null)
+      } else {
+        const errorData = await response.json()
+        console.error('Failed to delete class:', errorData.error)
+      }
+    } catch (error) {
+      console.error('Error deleting class:', error)
+    } finally {
+      setDeleteClassLoading(false)
+    }
+  }
+
   // Handle view assignment
   const handleViewAssignment = (assignment: Assignment) => {
     setSelectedAssignment(assignment)
@@ -388,7 +332,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ userId: s
     } else if (status === "authenticated" && session?.user) {
       // Redirect students to student dashboard
       if (session.user.role === "student") {
-        redirect("/dashboard/student")
+        redirect(`/dashboard/student/${session.user.username}`)
       }
       // Clients stay on admin panel
     }
@@ -398,6 +342,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ userId: s
     if (session?.user?.email) {
       fetchAssignments()
       fetchUserProfile()
+      fetchClasses()
     }
   }, [session])
 
@@ -413,17 +358,23 @@ export default function AdminDashboard({ params }: { params: Promise<{ userId: s
     return null
   }
 
-  // Calculate stats from real assignments
+  // Calculate stats from real data
   const totalAssignments = assignments.length
   const totalSubmissions = assignments.reduce((acc, assignment) => acc + (assignment.submissions?.length || 0), 0)
-  const pendingSubmissions = assignments.reduce((acc, assignment) =>
-    acc + (assignment.submissions?.filter(s => s.status === "pending").length || 0), 0)
-  const gradedSubmissions = assignments.reduce((acc, assignment) =>
-    acc + (assignment.submissions?.filter(s => s.status === "graded").length || 0), 0)
+  const pendingSubmissions = allSubmissions.filter(s => s.status === "submitted" || s.status === "pending").length
+  const gradedSubmissions = allSubmissions.filter(s => s.status === "graded").length
+
+  // Calculate average grade from all graded submissions
   const averageGrade = gradedSubmissions > 0 ?
-    assignments.reduce((acc, assignment) =>
-      acc + (assignment.submissions?.filter(s => s.status === "graded")
-        .reduce((sum, s) => sum + ((s.marks || 0) / assignment.totalMarks * 100), 0) || 0), 0) / gradedSubmissions : 0
+    allSubmissions
+      .filter(s => s.status === "graded" && s.marks !== null)
+      .reduce((sum, s) => sum + ((s.marks || 0) / s.assignmentTotalMarks * 100), 0) / gradedSubmissions : 0
+
+  // Calculate total students from classes
+  const totalStudents = allStudents.length
+
+  // Calculate total enrolled students across all classes
+  const totalEnrollments = classes.reduce((acc, classItem) => acc + (classItem.studentCount || 0), 0)
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -544,7 +495,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ userId: s
                   <Users className="h-4 w-4 text-blue-500" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">30</div>
+                  <div className="text-2xl font-bold">{totalStudents}</div>
                   <p className="text-xs text-muted-foreground">
                     Active students
                   </p>
@@ -603,22 +554,28 @@ export default function AdminDashboard({ params }: { params: Promise<{ userId: s
                   <CardDescription>Assignments waiting for your review</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {mockStudentSubmissions.filter(s => s.status === "pending").map((submission) => (
-                    <div key={submission.id} className="flex items-center justify-between">
-                      <div className="space-y-1">
-                        <p className="text-sm font-medium">{submission.studentName}</p>
-                        <p className="text-xs text-muted-foreground">{submission.assignment}</p>
+                  {allSubmissions.filter(s => s.status === "submitted" || s.status === "pending").slice(0, 3).length > 0 ? (
+                    allSubmissions.filter(s => s.status === "submitted" || s.status === "pending").slice(0, 3).map((submission) => (
+                      <div key={submission.id} className="flex items-center justify-between">
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium">{submission.student?.name || "Unknown Student"}</p>
+                          <p className="text-xs text-muted-foreground">{submission.assignmentTitle}</p>
+                        </div>
+                        <div className="text-right">
+                          <Badge variant="outline" className="text-orange-600 border-orange-600">
+                            Pending
+                          </Badge>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Submitted {new Date(submission.submittedAt).toLocaleDateString()}
+                          </p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <Badge variant="outline" className="text-orange-600 border-orange-600">
-                          Pending
-                        </Badge>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Submitted {submission.submittedDate}
-                        </p>
-                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-4">
+                      <p className="text-sm text-gray-500">No pending submissions</p>
                     </div>
-                  ))}
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -743,60 +700,84 @@ export default function AdminDashboard({ params }: { params: Promise<{ userId: s
                   {pendingSubmissions} Pending Review
                 </Badge>
                 <Badge variant="default">
-                  {mockStudentSubmissions.filter(s => s.status === "graded").length} Graded
+                  {gradedSubmissions} Graded
                 </Badge>
               </div>
             </div>
 
             <div className="grid gap-4">
-              {mockStudentSubmissions.map((submission) => (
-                <Card key={submission.id}>
+              {loading ? (
+                <Card>
                   <CardContent className="pt-6">
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-2">
-                        <div className="flex items-center space-x-2">
-                          <User className="h-4 w-4 text-gray-400" />
-                          <span className="font-medium">{submission.studentName}</span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <BookOpen className="h-4 w-4 text-gray-400" />
-                          <span className="text-sm text-gray-600">{submission.assignment}</span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Calendar className="h-4 w-4 text-gray-400" />
-                          <span className="text-sm text-gray-600">Submitted: {submission.submittedDate}</span>
-                        </div>
-                      </div>
-
-                      <div className="text-right space-y-2">
-                        <Badge variant={submission.status === "graded" ? "default" : "outline"}
-                               className={submission.status === "pending" ? "text-orange-600 border-orange-600" : ""}>
-                          {submission.status}
-                        </Badge>
-                        {submission.status === "graded" ? (
-                          <div className="text-lg font-bold">
-                            {submission.marks}/{submission.totalMarks}
-                            <span className="text-sm text-gray-500 ml-1">
-                              ({((submission.marks / submission.totalMarks) * 100).toFixed(1)}%)
-                            </span>
-                          </div>
-                        ) : (
-                          <Button size="sm">
-                            <CheckCircle2 className="h-4 w-4 mr-2" />
-                            Grade Now
-                          </Button>
-                        )}
-                      </div>
+                    <div className="text-center py-8">
+                      <div className="text-lg text-gray-500">Loading submissions...</div>
                     </div>
-
-                    {submission.feedback && (
-                      <div className="mt-4 p-3 bg-gray-50 rounded-md">
-                        <p className="text-sm text-gray-600">{submission.feedback}</p>
-                      </div>
-                    )}
                   </CardContent>
                 </Card>
-              ))}
+              ) : allSubmissions.length > 0 ? (
+                allSubmissions.map((submission) => (
+                  <Card key={submission.id}>
+                    <CardContent className="pt-6">
+                      <div className="flex justify-between items-start">
+                        <div className="space-y-2">
+                          <div className="flex items-center space-x-2">
+                            <User className="h-4 w-4 text-gray-400" />
+                            <span className="font-medium">{submission.student?.name || "Unknown Student"}</span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <BookOpen className="h-4 w-4 text-gray-400" />
+                            <span className="text-sm text-gray-600">{submission.assignmentTitle}</span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Calendar className="h-4 w-4 text-gray-400" />
+                            <span className="text-sm text-gray-600">
+                              Submitted: {new Date(submission.submittedAt).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="text-right space-y-2">
+                          <Badge
+                            variant={submission.status === "graded" ? "default" : "outline"}
+                            className={submission.status === "submitted" || submission.status === "pending" ? "text-orange-600 border-orange-600" : ""}
+                          >
+                            {submission.status}
+                          </Badge>
+                          {submission.status === "graded" ? (
+                            <div className="text-lg font-bold">
+                              {submission.marks}/{submission.assignmentTotalMarks}
+                              <span className="text-sm text-gray-500 ml-1">
+                                ({((submission.marks / submission.assignmentTotalMarks) * 100).toFixed(1)}%)
+                              </span>
+                            </div>
+                          ) : (
+                            <Button size="sm">
+                              <CheckCircle2 className="h-4 w-4 mr-2" />
+                              Grade Now
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+
+                      {submission.feedback && (
+                        <div className="mt-4 p-3 bg-gray-50 rounded-md">
+                          <p className="text-sm text-gray-600">{submission.feedback}</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))
+              ) : (
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="text-center py-12">
+                      <FileCheck className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">No submissions yet</h3>
+                      <p className="text-gray-500">Student submissions will appear here once they start submitting assignments.</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </div>
         )}
@@ -834,7 +815,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ userId: s
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-gray-900">{mockStudentData.length}</div>
+                  <div className="text-3xl font-bold text-gray-900">{totalStudents}</div>
                   <p className="text-sm text-gray-500">Active students</p>
                 </CardContent>
               </Card>
@@ -847,7 +828,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ userId: s
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-gray-900">{mockClassData.length}</div>
+                  <div className="text-3xl font-bold text-gray-900">{classes.length}</div>
                   <p className="text-sm text-gray-500">Classes created</p>
                 </CardContent>
               </Card>
@@ -860,7 +841,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ userId: s
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-gray-900">78%</div>
+                  <div className="text-3xl font-bold text-gray-900">{averageGrade.toFixed(1)}%</div>
                   <p className="text-sm text-gray-500">Class average</p>
                 </CardContent>
               </Card>
@@ -893,8 +874,13 @@ export default function AdminDashboard({ params }: { params: Promise<{ userId: s
             {studentManagementTab === "classes" && (
               <div className="space-y-4">
                 <h2 className="text-lg font-semibold text-gray-900">Your Classes</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {mockClassData.map((classItem) => (
+                {classesLoading ? (
+                  <div className="text-center py-8">
+                    <div className="text-lg text-gray-500">Loading classes...</div>
+                  </div>
+                ) : classes.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {classes.map((classItem) => (
                     <Card key={classItem.id} className="bg-white border-gray-200 shadow-sm hover:shadow-md transition-shadow">
                       <CardHeader>
                         <CardTitle className="flex items-center justify-between">
@@ -938,6 +924,17 @@ export default function AdminDashboard({ params }: { params: Promise<{ userId: s
                     </Card>
                   ))}
                 </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <GraduationCap className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No classes yet</h3>
+                    <p className="text-gray-500 mb-4">Create your first class to start organizing students.</p>
+                    <Button onClick={() => setIsCreateClassModalOpen(true)} className="bg-green-600 hover:bg-green-700">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Your First Class
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
 
@@ -947,49 +944,61 @@ export default function AdminDashboard({ params }: { params: Promise<{ userId: s
                 <h2 className="text-lg font-semibold text-gray-900">All Students</h2>
                 <Card className="bg-white border-gray-200 shadow-sm">
                   <CardContent>
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Student Name</TableHead>
-                          <TableHead>Email</TableHead>
-                          <TableHead>Class</TableHead>
-                          <TableHead>Joined Date</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {mockStudentData.map((student) => (
-                          <TableRow key={student.id}>
-                            <TableCell className="font-medium">{student.name}</TableCell>
-                            <TableCell>{student.email}</TableCell>
-                            <TableCell>
-                              <Badge variant="outline" className="bg-blue-50 text-blue-700">
-                                {student.className}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>{student.joinedDate}</TableCell>
-                            <TableCell>
-                              <Badge variant={student.status === 'active' ? 'default' : 'outline'}>
-                                {student.status}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex items-center justify-end space-x-2">
-                                <Button variant="outline" size="sm">
-                                  <Eye className="h-3 w-3 mr-1" />
-                                  View
-                                </Button>
-                                <Button variant="outline" size="sm">
-                                  <Edit className="h-3 w-3 mr-1" />
-                                  Edit
-                                </Button>
-                              </div>
-                            </TableCell>
+                    {classesLoading ? (
+                      <div className="text-center py-8">
+                        <div className="text-lg text-gray-500">Loading students...</div>
+                      </div>
+                    ) : allStudents.length > 0 ? (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Student Name</TableHead>
+                            <TableHead>Email</TableHead>
+                            <TableHead>Class</TableHead>
+                            <TableHead>Joined Date</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                        </TableHeader>
+                        <TableBody>
+                          {allStudents.map((student) => (
+                            <TableRow key={student.id}>
+                              <TableCell className="font-medium">{student.name || "Unknown"}</TableCell>
+                              <TableCell>{student.email}</TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                                  {student.className}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>{new Date(student.enrolledAt).toLocaleDateString()}</TableCell>
+                              <TableCell>
+                                <Badge variant={student.status === 'active' ? 'default' : 'outline'}>
+                                  {student.status}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex items-center justify-end space-x-2">
+                                  <Button variant="outline" size="sm">
+                                    <Eye className="h-3 w-3 mr-1" />
+                                    View
+                                  </Button>
+                                  <Button variant="outline" size="sm">
+                                    <Edit className="h-3 w-3 mr-1" />
+                                    Edit
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    ) : (
+                      <div className="text-center py-12">
+                        <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">No students yet</h3>
+                        <p className="text-gray-500 mb-4">Students will appear here once they join your classes.</p>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </div>
@@ -1011,44 +1020,72 @@ export default function AdminDashboard({ params }: { params: Promise<{ userId: s
         {/* Settings Tab */}
         {activeTab === "settings" && (
           <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h1 className="text-2xl font-bold text-gray-900">Account Settings</h1>
-              {!isEditingProfile ? (
-                <Button onClick={handleEditProfile} className="bg-blue-600 hover:bg-blue-700">
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit Profile
-                </Button>
-              ) : (
-                <div className="flex space-x-2">
-                  <Button
-                    onClick={handleSaveProfile}
-                    disabled={saveLoading}
-                    className="bg-green-600 hover:bg-green-700"
+            <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
+
+            {/* Settings Sub-Tabs */}
+            <div className="bg-white border-b rounded-t-lg">
+              <div className="flex space-x-8 px-6">
+                {[
+                  { id: "account", label: "Account Settings", icon: User },
+                  { id: "classes", label: "Class Management", icon: GraduationCap }
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setSettingsTab(tab.id)}
+                    className={`flex items-center space-x-2 py-4 border-b-2 font-medium text-sm transition-colors ${
+                      settingsTab === tab.id
+                        ? "border-primary text-primary"
+                        : "border-transparent text-gray-500 hover:text-gray-700"
+                    }`}
                   >
-                    <Save className="h-4 w-4 mr-2" />
-                    {saveLoading ? 'Saving...' : 'Save'}
-                  </Button>
-                  <Button
-                    onClick={handleCancelEdit}
-                    variant="outline"
-                    className="border-red-300 text-red-600 hover:bg-red-50"
-                  >
-                    <X className="h-4 w-4 mr-2" />
-                    Cancel
-                  </Button>
-                </div>
-              )}
+                    <tab.icon className="h-4 w-4" />
+                    <span>{tab.label}</span>
+                  </button>
+                ))}
+              </div>
             </div>
 
-            {profileLoading ? (
-              <Card className="bg-white border-gray-200 shadow-sm">
-                <CardContent className="pt-6">
-                  <div className="text-center py-8">
-                    <div className="text-lg text-gray-500">Loading profile...</div>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : userProfile?.profile ? (
+            {/* Account Settings Tab */}
+            {settingsTab === "account" && (
+              <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-xl font-semibold text-gray-900">Account Information</h2>
+                  {!isEditingProfile ? (
+                    <Button onClick={handleEditProfile} className="bg-blue-600 hover:bg-blue-700">
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit Profile
+                    </Button>
+                  ) : (
+                    <div className="flex space-x-2">
+                      <Button
+                        onClick={handleSaveProfile}
+                        disabled={saveLoading}
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        <Save className="h-4 w-4 mr-2" />
+                        {saveLoading ? 'Saving...' : 'Save'}
+                      </Button>
+                      <Button
+                        onClick={handleCancelEdit}
+                        variant="outline"
+                        className="border-red-300 text-red-600 hover:bg-red-50"
+                      >
+                        <X className="h-4 w-4 mr-2" />
+                        Cancel
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                {profileLoading ? (
+                  <Card className="bg-white border-gray-200 shadow-sm">
+                    <CardContent className="pt-6">
+                      <div className="text-center py-8">
+                        <div className="text-lg text-gray-500">Loading profile...</div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : userProfile?.profile ? (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* User Information */}
                 <Card className="bg-white border-gray-200 shadow-sm">
@@ -1263,17 +1300,119 @@ export default function AdminDashboard({ params }: { params: Promise<{ userId: s
                     </div>
                   </CardContent>
                 </Card>
-              </div>
-            ) : (
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="text-center py-8">
-                    <Settings className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No profile data found</h3>
-                    <p className="text-gray-500">Complete your profile setup to view settings.</p>
                   </div>
+                ) : (
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="text-center py-8">
+                        <Settings className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">No profile data found</h3>
+                        <p className="text-gray-500">Complete your profile setup to view settings.</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            )}
+
+            {/* Class Management Tab */}
+            {settingsTab === "classes" && (
+              <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold text-gray-900">Class Management</h2>
+                <Button onClick={() => setIsCreateClassModalOpen(true)} className="bg-green-600 hover:bg-green-700">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create New Class
+                </Button>
+              </div>
+
+              <Card className="bg-white border-gray-200 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2 text-gray-800">
+                    <GraduationCap className="h-5 w-5 text-green-500" />
+                    <span>Your Classes</span>
+                  </CardTitle>
+                  <CardDescription>Manage and delete your classes</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {classesLoading ? (
+                    <div className="text-center py-8">
+                      <div className="text-lg text-gray-500">Loading classes...</div>
+                    </div>
+                  ) : classes.length > 0 ? (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Class Name</TableHead>
+                          <TableHead>Class Code</TableHead>
+                          <TableHead>Students</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Created Date</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {classes.map((classItem) => (
+                          <TableRow key={classItem.id}>
+                            <TableCell className="font-medium">
+                              <div className="font-semibold text-gray-900">{classItem.name}</div>
+                              {classItem.description && (
+                                <div className="text-xs text-gray-500">{classItem.description}</div>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 font-mono">
+                                {classItem.classCode}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center space-x-1">
+                                <Users className="h-4 w-4 text-gray-400" />
+                                <span className="font-semibold">{classItem.studentCount || 0}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={classItem.isActive ? "default" : "outline"}
+                                     className={classItem.isActive ? "bg-green-100 text-green-800 border-green-300" : ""}>
+                                {classItem.isActive ? "Active" : "Inactive"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="text-sm text-gray-600">
+                                {new Date(classItem.createdAt).toLocaleDateString()}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleDeleteClass(classItem)}
+                                  className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300 transition-all duration-200"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-1" />
+                                  Delete
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  ) : (
+                    <div className="text-center py-12">
+                      <GraduationCap className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">No classes yet</h3>
+                      <p className="text-gray-500 mb-4">Create your first class to start organizing students.</p>
+                      <Button onClick={() => setIsCreateClassModalOpen(true)} className="bg-green-600 hover:bg-green-700">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Create Your First Class
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
+              </div>
             )}
           </div>
         )}
@@ -1335,7 +1474,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ userId: s
         onClose={() => setIsCreateClassModalOpen(false)}
         onSuccess={() => {
           // Refresh classes after creating new one
-          // You could add a fetchClasses function here
+          fetchClasses()
         }}
       />
 
@@ -1343,6 +1482,22 @@ export default function AdminDashboard({ params }: { params: Promise<{ userId: s
       <InviteStudentModal
         isOpen={isInviteStudentModalOpen}
         onClose={() => setIsInviteStudentModalOpen(false)}
+      />
+
+      {/* Delete Class Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={isDeleteClassDialogOpen}
+        onClose={() => {
+          setIsDeleteClassDialogOpen(false)
+          setSelectedClass(null)
+        }}
+        onConfirm={confirmDeleteClass}
+        title="Delete Class"
+        description={`Are you sure you want to delete "${selectedClass?.name}"? This action cannot be undone and will remove all students from this class and delete all related assignments.`}
+        confirmText="Delete Class"
+        cancelText="Cancel"
+        variant="danger"
+        loading={deleteClassLoading}
       />
     </div>
   )

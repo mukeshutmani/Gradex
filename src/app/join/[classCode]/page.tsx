@@ -81,7 +81,7 @@ export default function JoinClassPage({ params }: { params: Promise<{ classCode:
 
       if (response.ok) {
         alert(data.message)
-        router.push('/dashboard/student')
+        router.push(`/dashboard/student/${session.user.id}`)
       } else {
         setError(data.error)
       }
@@ -134,7 +134,7 @@ export default function JoinClassPage({ params }: { params: Promise<{ classCode:
                   Try Again
                 </Button>
                 <Button
-                  onClick={() => router.push('/dashboard/student')}
+                  onClick={() => router.push(session?.user?.id ? `/dashboard/student/${session.user.id}` : '/login')}
                   className="w-full"
                 >
                   Go to Dashboard
@@ -201,7 +201,7 @@ export default function JoinClassPage({ params }: { params: Promise<{ classCode:
                       This class is no longer accepting new students.
                     </p>
                     <Button
-                      onClick={() => router.push('/dashboard/student')}
+                      onClick={() => router.push(session?.user?.id ? `/dashboard/student/${session.user.id}` : '/login')}
                       variant="outline"
                       className="w-full"
                     >
@@ -226,7 +226,7 @@ export default function JoinClassPage({ params }: { params: Promise<{ classCode:
                 )}
 
                 <Button
-                  onClick={() => router.push('/dashboard/student')}
+                  onClick={() => router.push(session?.user?.id ? `/dashboard/student/${session.user.id}` : '/login')}
                   variant="outline"
                   className="w-full"
                 >
