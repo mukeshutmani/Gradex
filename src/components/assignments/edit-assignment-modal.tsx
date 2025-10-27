@@ -109,10 +109,6 @@ export function EditAssignmentModal({ isOpen, onClose, onSuccess, assignment }: 
       setError("Assignment title is required")
       return false
     }
-    if (!formData.subject.trim()) {
-      setError("Subject is required")
-      return false
-    }
     if (!formData.totalMarks || parseInt(formData.totalMarks) < 1) {
       setError("Total marks must be at least 1")
       return false
@@ -150,7 +146,7 @@ export function EditAssignmentModal({ isOpen, onClose, onSuccess, assignment }: 
         body: JSON.stringify({
           assignmentId: assignment.id,
           title: formData.title.trim(),
-          subject: formData.subject.trim(),
+          subject: formData.subject.trim() || "General",
           description: formData.description.trim() || undefined,
           textContent: formData.textContent.trim() || undefined,
           imageUrl: formData.imageUrl.trim() || undefined,
@@ -230,19 +226,14 @@ export function EditAssignmentModal({ isOpen, onClose, onSuccess, assignment }: 
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="subject">Subject *</Label>
-                  <Select value={formData.subject} onValueChange={(value) => handleInputChange("subject", value)} disabled={loading}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select subject" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {commonSubjects.map((subject) => (
-                        <SelectItem key={subject} value={subject}>
-                          {subject}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="subject">Subject (Optional)</Label>
+                  <Input
+                    id="subject"
+                    value={formData.subject}
+                    onChange={(e) => handleInputChange("subject", e.target.value)}
+                    placeholder="e.g., Mathematics, Science, English"
+                    disabled={loading}
+                  />
                 </div>
 
                 <div className="space-y-2">

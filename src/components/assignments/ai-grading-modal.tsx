@@ -92,9 +92,9 @@ export function AIGradingModal({
 
     setIsComplete(true)
 
-    // Call the callback with results
+    // Call the callback with results and AWAIT it to ensure grading is saved before modal closes
     if (onGradingComplete) {
-      onGradingComplete(marks, feedback)
+      await onGradingComplete(marks, feedback)
     }
   }
 

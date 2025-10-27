@@ -127,9 +127,14 @@ export function SubmitAssignmentModal({
 
         if (response.ok) {
           console.log("Grading saved successfully")
+        } else {
+          const errorData = await response.json()
+          console.error("Failed to save grading:", errorData)
+          alert(`Failed to save grading: ${errorData.error || 'Unknown error'}`)
         }
       } catch (error) {
         console.error("Error saving grading:", error)
+        alert("Error saving grading. Please check the console for details.")
       }
     }
   }

@@ -28,18 +28,24 @@ import {
   ArrowLeft,
   ArrowUpDown,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  Eye
 } from "lucide-react"
 import { SubmitAssignmentModal } from "@/components/assignments/submit-assignment-modal"
+import { ViewAssignmentModal } from "@/components/assignments/view-assignment-modal"
 
 interface Assignment {
   id: string
   title: string
   subject: string
   description?: string
+  textContent?: string
+  imageUrl?: string
   totalMarks: number
   dueDate: string
   createdAt: string
+  updatedAt: string
+  teacherId: string
   class?: {
     name: string
     teacher: {
@@ -104,6 +110,8 @@ export default function StudentDashboard({ params }: { params: { username: strin
   const [searchQuery, setSearchQuery] = useState("")
   const [sortBy, setSortBy] = useState<"title" | "dueDate" | "subject" | "status">("dueDate")
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc")
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false)
+  const [selectedAssignmentForView, setSelectedAssignmentForView] = useState<Assignment | null>(null)
 
   // Fetch student's enrolled classes and assignments
   const fetchStudentData = async () => {
@@ -257,7 +265,17 @@ export default function StudentDashboard({ params }: { params: { username: strin
           comparison = a.subject.localeCompare(b.subject)
           break
         case "dueDate":
-          comparison = new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+          // First prioritize by submission date (recently submitted first)
+          if (a.submission?.submittedAt && b.submission?.submittedAt) {
+            comparison = new Date(b.submission.submittedAt).getTime() - new Date(a.submission.submittedAt).getTime()
+          } else if (a.submission?.submittedAt) {
+            comparison = -1 // a has submission, put it first
+          } else if (b.submission?.submittedAt) {
+            comparison = 1 // b has submission, put it first
+          } else {
+            // Neither has submission, sort by due date
+            comparison = new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+          }
           break
         case "status":
           const getStatusValue = (assignment: Assignment) => {
@@ -323,7 +341,6 @@ export default function StudentDashboard({ params }: { params: { username: strin
             {[
               { id: "dashboard", label: "Dashboard", icon: TrendingUp, color: "text-blue-500" },
               { id: "assignments", label: "Assignments", icon: BookOpen, color: "text-purple-500" },
-              { id: "classes", label: "My Classes", icon: Users, color: "text-green-500" },
               { id: "join", label: "Class Assignment", icon: Plus, color: "text-orange-500" },
               { id: "results", label: "View Results", icon: Award, color: "text-yellow-500" }
             ].map((tab) => (
@@ -351,53 +368,61 @@ export default function StudentDashboard({ params }: { params: { username: strin
           <div className="space-y-6">
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card className="bg-white border-gray-200 shadow-sm">
+              <Card className="bg-gradient-to-br from-blue-50 to-cyan-50 border-blue-200 shadow-md hover:shadow-lg transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Assignments</CardTitle>
-                  <BookOpen className="h-4 w-4 text-blue-500" />
+                  <CardTitle className="text-sm font-medium text-blue-900">Total Assignments</CardTitle>
+                  <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
+                    <BookOpen className="h-5 w-5 text-white" />
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{totalAssignments}</div>
-                  <p className="text-xs text-muted-foreground">
+                  <div className="text-3xl font-bold text-blue-700">{totalAssignments}</div>
+                  <p className="text-xs text-blue-600 mt-1">
                     Across all classes
                   </p>
                 </CardContent>
               </Card>
 
-              <Card className="bg-white border-gray-200 shadow-sm">
+              <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 shadow-md hover:shadow-lg transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Submitted</CardTitle>
-                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  <CardTitle className="text-sm font-medium text-green-900">Submitted</CardTitle>
+                  <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+                    <CheckCircle2 className="h-5 w-5 text-white" />
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{submittedAssignments}</div>
-                  <p className="text-xs text-muted-foreground">
+                  <div className="text-3xl font-bold text-green-700">{submittedAssignments}</div>
+                  <p className="text-xs text-green-600 mt-1">
                     Completed assignments
                   </p>
                 </CardContent>
               </Card>
 
-              <Card className="bg-white border-gray-200 shadow-sm">
+              <Card className="bg-gradient-to-br from-orange-50 to-amber-50 border-orange-200 shadow-md hover:shadow-lg transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Pending</CardTitle>
-                  <Clock className="h-4 w-4 text-orange-500" />
+                  <CardTitle className="text-sm font-medium text-orange-900">Pending</CardTitle>
+                  <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center">
+                    <Clock className="h-5 w-5 text-white" />
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{pendingAssignments}</div>
-                  <p className="text-xs text-muted-foreground">
+                  <div className="text-3xl font-bold text-orange-700">{pendingAssignments}</div>
+                  <p className="text-xs text-orange-600 mt-1">
                     Need to submit
                   </p>
                 </CardContent>
               </Card>
 
-              <Card className="bg-white border-gray-200 shadow-sm">
+              <Card className="bg-gradient-to-br from-red-50 to-pink-50 border-red-200 shadow-md hover:shadow-lg transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Overdue</CardTitle>
-                  <AlertCircle className="h-4 w-4 text-red-500" />
+                  <CardTitle className="text-sm font-medium text-red-900">Overdue</CardTitle>
+                  <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center">
+                    <AlertCircle className="h-5 w-5 text-white" />
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{overdueAssignments}</div>
-                  <p className="text-xs text-muted-foreground">
+                  <div className="text-3xl font-bold text-red-700">{overdueAssignments}</div>
+                  <p className="text-xs text-red-600 mt-1">
                     Past due date
                   </p>
                 </CardContent>
@@ -719,119 +744,28 @@ export default function StudentDashboard({ params }: { params: { username: strin
           </div>
         )}
 
-        {activeTab === "classes" && (
-          <div className="space-y-6">
-            <h1 className="text-2xl font-bold text-gray-900">Class Assignments</h1>
-
-            {classes.length === 0 ? (
-              <Card className="bg-white border-gray-200 shadow-sm">
-                <CardContent className="pt-6">
-                  <div className="text-center py-8">
-                    <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No classes joined yet</h3>
-                    <p className="text-gray-500">Join a class to see assignments organized by class.</p>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="space-y-6">
-                {classes.map((classItem) => (
-                  <Card key={classItem.id} className="bg-white border-gray-200 shadow-sm">
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <CardTitle className="flex items-center space-x-2">
-                            <Users className="h-5 w-5 text-blue-500" />
-                            <span>{classItem.name}</span>
-                          </CardTitle>
-                          <CardDescription className="mt-1">
-                            Teacher: {classItem.teacher.name} • {classItem.assignments.length} assignment{classItem.assignments.length !== 1 ? 's' : ''}
-                          </CardDescription>
-                        </div>
-                        <Badge variant="outline" className="bg-blue-50 text-blue-700">
-                          {classItem.classCode}
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      {classItem.assignments.length === 0 ? (
-                        <p className="text-gray-500 text-sm">No assignments yet in this class.</p>
-                      ) : (
-                        <div className="space-y-3">
-                          {classItem.assignments.map((assignment) => {
-                            const isOverdue = new Date(assignment.dueDate) < new Date()
-                            const hasSubmission = assignment.submission
-                            const isGraded = hasSubmission?.status === "graded"
-
-                            return (
-                              <div key={assignment.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                <div className="flex-1">
-                                  <div className="flex items-center space-x-2 mb-1">
-                                    <h4 className="font-medium text-gray-900">{assignment.title}</h4>
-                                    <Badge variant="outline" className="text-xs">
-                                      {assignment.subject}
-                                    </Badge>
-                                  </div>
-                                  <div className="flex items-center space-x-4 text-xs text-gray-500">
-                                    <span>Total: {assignment.totalMarks} marks</span>
-                                    <span className={isOverdue && !hasSubmission ? 'text-red-600' : ''}>
-                                      Due: {new Date(assignment.dueDate).toLocaleDateString()}
-                                    </span>
-                                  </div>
-                                </div>
-                                <div className="text-right">
-                                  {isGraded ? (
-                                    <div className="space-y-1">
-                                      <Badge className="bg-green-100 text-green-800 border-green-300">
-                                        Graded
-                                      </Badge>
-                                      <div className="text-sm font-bold text-green-600">
-                                        {assignment.submission?.marks}/{assignment.totalMarks}
-                                      </div>
-                                    </div>
-                                  ) : hasSubmission ? (
-                                    <Badge className="bg-blue-100 text-blue-800 border-blue-300">
-                                      Submitted
-                                    </Badge>
-                                  ) : (
-                                    <Badge variant={isOverdue ? "destructive" : "secondary"}>
-                                      {isOverdue ? "Overdue" : "Pending"}
-                                    </Badge>
-                                  )}
-                                </div>
-                              </div>
-                            )
-                          })}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
         {/* Results Tab */}
         {activeTab === "results" && (
           <div className="space-y-6">
             {/* Results Sub-Tabs */}
             <div className="flex space-x-4 border-b">
               {[
-                { id: "overview", label: "Overview", icon: BarChart3 },
-                { id: "submissions", label: "All Submissions", icon: FileText },
-                { id: "subjects", label: "By Subject", icon: BookOpen }
+                { id: "overview", label: "Overview", icon: BarChart3, color: "text-blue-500" },
+                { id: "submissions", label: "All Submissions", icon: FileText, color: "text-green-500" },
+                { id: "subjects", label: "By Subject", icon: BookOpen, color: "text-purple-500" }
               ].map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setResultsActiveTab(tab.id)}
-                  className={`flex items-center space-x-2 py-3 px-4 border-b-2 font-medium text-sm transition-colors ${
+                  className={`flex items-center space-x-2 py-3 px-4 border-b-2 font-medium text-sm transition-all duration-300 ${
                     resultsActiveTab === tab.id
                       ? "border-primary text-primary"
                       : "border-transparent text-gray-500 hover:text-gray-700"
                   }`}
                 >
-                  <tab.icon className="h-4 w-4" />
+                  <div className={`${resultsActiveTab === tab.id ? 'bg-primary/10 p-1.5 rounded-lg' : ''}`}>
+                    <tab.icon className={`h-4 w-4 ${tab.color} ${resultsActiveTab === tab.id ? 'animate-pulse' : ''}`} />
+                  </div>
                   <span>{tab.label}</span>
                 </button>
               ))}
@@ -852,98 +786,124 @@ export default function StudentDashboard({ params }: { params: { username: strin
                 {/* Overview Sub-Tab */}
                 {resultsActiveTab === "overview" && (
                   <div className="space-y-6">
-                    {/* Statistics Cards */}
+                    {/* Statistics Cards with Colorful Gradients */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                      <Card className="bg-white border-gray-200 shadow-sm">
+                      <Card className="bg-gradient-to-br from-blue-500 to-blue-600 border-0 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 hover:-translate-y-1 cursor-pointer group animate-fade-in">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                          <CardTitle className="text-sm font-medium">Overall Average</CardTitle>
-                          <TrendingUp className="h-4 w-4 text-blue-500" />
+                          <CardTitle className="text-sm font-medium text-white">Overall Average</CardTitle>
+                          <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center group-hover:bg-white/30 transition-all duration-300 group-hover:rotate-12">
+                            <TrendingUp className="h-5 w-5 text-white" />
+                          </div>
                         </CardHeader>
                         <CardContent>
-                          <div className="text-2xl font-bold">{averagePercentage.toFixed(1)}%</div>
-                          <p className="text-xs text-muted-foreground">
+                          <div className="text-3xl font-bold text-white group-hover:scale-110 transition-transform duration-300">{averagePercentage.toFixed(1)}%</div>
+                          <p className="text-xs text-blue-100 mt-1">
                             Grade: {getGradeLetter(averagePercentage)}
                           </p>
                         </CardContent>
                       </Card>
 
-                      <Card className="bg-white border-gray-200 shadow-sm">
+                      <Card className="bg-gradient-to-br from-yellow-400 to-orange-500 border-0 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 hover:-translate-y-1 cursor-pointer group animate-fade-in" style={{ animationDelay: '100ms' }}>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                          <CardTitle className="text-sm font-medium">Best Grade</CardTitle>
-                          <Star className="h-4 w-4 text-yellow-500" />
+                          <CardTitle className="text-sm font-medium text-white">Best Grade</CardTitle>
+                          <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center group-hover:bg-white/30 transition-all duration-300 group-hover:rotate-12">
+                            <Star className="h-5 w-5 text-white group-hover:animate-spin" />
+                          </div>
                         </CardHeader>
                         <CardContent>
-                          <div className="text-2xl font-bold">{bestGrade.toFixed(1)}%</div>
-                          <p className="text-xs text-muted-foreground">
+                          <div className="text-3xl font-bold text-white group-hover:scale-110 transition-transform duration-300">{bestGrade.toFixed(1)}%</div>
+                          <p className="text-xs text-yellow-100 mt-1">
                             Grade: {getGradeLetter(bestGrade)}
                           </p>
                         </CardContent>
                       </Card>
 
-                      <Card className="bg-white border-gray-200 shadow-sm">
+                      <Card className="bg-gradient-to-br from-green-500 to-emerald-600 border-0 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 hover:-translate-y-1 cursor-pointer group animate-fade-in" style={{ animationDelay: '200ms' }}>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                          <CardTitle className="text-sm font-medium">Total Submissions</CardTitle>
-                          <FileText className="h-4 w-4 text-green-500" />
+                          <CardTitle className="text-sm font-medium text-white">Total Submissions</CardTitle>
+                          <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center group-hover:bg-white/30 transition-all duration-300 group-hover:rotate-12">
+                            <FileText className="h-5 w-5 text-white" />
+                          </div>
                         </CardHeader>
                         <CardContent>
-                          <div className="text-2xl font-bold">{submissions.length}</div>
-                          <p className="text-xs text-muted-foreground">
+                          <div className="text-3xl font-bold text-white group-hover:scale-110 transition-transform duration-300">{submissions.length}</div>
+                          <p className="text-xs text-green-100 mt-1">
                             {gradedSubmissions.length} graded
                           </p>
                         </CardContent>
                       </Card>
 
-                      <Card className="bg-white border-gray-200 shadow-sm">
+                      <Card className="bg-gradient-to-br from-purple-500 to-pink-500 border-0 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 hover:-translate-y-1 cursor-pointer group animate-fade-in" style={{ animationDelay: '300ms' }}>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                          <CardTitle className="text-sm font-medium">Points Earned</CardTitle>
-                          <Award className="h-4 w-4 text-purple-500" />
+                          <CardTitle className="text-sm font-medium text-white">Points Earned</CardTitle>
+                          <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center group-hover:bg-white/30 transition-all duration-300 group-hover:rotate-12">
+                            <Award className="h-5 w-5 text-white" />
+                          </div>
                         </CardHeader>
                         <CardContent>
-                          <div className="text-2xl font-bold">{totalMarks}</div>
-                          <p className="text-xs text-muted-foreground">
+                          <div className="text-3xl font-bold text-white group-hover:scale-110 transition-transform duration-300">{totalMarks}</div>
+                          <p className="text-xs text-purple-100 mt-1">
                             out of {totalPossible} possible
                           </p>
                         </CardContent>
                       </Card>
                     </div>
 
-                    {/* Performance Overview */}
-                    <Card className="bg-white border-gray-200 shadow-sm">
+                    {/* Performance Overview with Enhanced Design */}
+                    <Card className="bg-gradient-to-br from-indigo-50 to-purple-50 border-2 border-indigo-200 shadow-lg">
                       <CardHeader>
                         <CardTitle className="flex items-center space-x-2">
-                          <BarChart3 className="h-5 w-5 text-blue-500" />
-                          <span>Performance Overview</span>
+                          <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center">
+                            <BarChart3 className="h-5 w-5 text-white" />
+                          </div>
+                          <span className="text-gray-900">Performance Overview</span>
                         </CardTitle>
                       </CardHeader>
-                      <CardContent>
-                        <div className="space-y-4">
-                          <div>
-                            <div className="flex justify-between text-sm mb-2">
-                              <span>Overall Progress</span>
-                              <span>{averagePercentage.toFixed(1)}%</span>
+                      <CardContent className="pt-6">
+                        <div className="space-y-6">
+                          <div className="bg-white p-4 rounded-lg shadow-sm border border-indigo-100">
+                            <div className="flex justify-between text-sm mb-3">
+                              <span className="font-semibold text-gray-700">Overall Progress</span>
+                              <span className="font-bold text-indigo-600">{averagePercentage.toFixed(1)}%</span>
                             </div>
-                            <Progress value={averagePercentage} className="h-2" />
+                            <div className="relative h-3 bg-gray-200 rounded-full overflow-hidden">
+                              <div
+                                className="absolute inset-y-0 left-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-full transition-all duration-1000 ease-out"
+                                style={{ width: `${averagePercentage}%` }}
+                              >
+                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30 animate-shimmer"></div>
+                              </div>
+                            </div>
                           </div>
 
                           {gradedSubmissions.length > 0 && (
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
-                              <div className="text-center">
-                                <div className="text-2xl font-bold text-green-600">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                              <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-6 rounded-xl border-2 border-green-200 text-center hover:shadow-md transition-shadow">
+                                <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                                  <CheckCircle2 className="h-6 w-6 text-white" />
+                                </div>
+                                <div className="text-3xl font-bold text-green-600 mb-1">
                                   {gradedSubmissions.filter(s => ((s.marks || 0) / s.assignment.totalMarks) >= 0.8).length}
                                 </div>
-                                <div className="text-sm text-gray-600">Assignments with 80%+</div>
+                                <div className="text-sm font-medium text-green-700">Assignments with 80%+</div>
                               </div>
-                              <div className="text-center">
-                                <div className="text-2xl font-bold text-blue-600">
+                              <div className="bg-gradient-to-br from-blue-50 to-cyan-50 p-6 rounded-xl border-2 border-blue-200 text-center hover:shadow-md transition-shadow">
+                                <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                                  <TrendingUp className="h-6 w-6 text-white" />
+                                </div>
+                                <div className="text-3xl font-bold text-blue-600 mb-1">
                                   {gradedSubmissions.filter(s => ((s.marks || 0) / s.assignment.totalMarks) >= 0.7).length}
                                 </div>
-                                <div className="text-sm text-gray-600">Assignments with 70%+</div>
+                                <div className="text-sm font-medium text-blue-700">Assignments with 70%+</div>
                               </div>
-                              <div className="text-center">
-                                <div className="text-2xl font-bold text-purple-600">
+                              <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-6 rounded-xl border-2 border-purple-200 text-center hover:shadow-md transition-shadow">
+                                <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                                  <Star className="h-6 w-6 text-white" />
+                                </div>
+                                <div className="text-3xl font-bold text-purple-600 mb-1">
                                   {gradedSubmissions.filter(s => ((s.marks || 0) / s.assignment.totalMarks) >= 0.6).length}
                                 </div>
-                                <div className="text-sm text-gray-600">Assignments with 60%+</div>
+                                <div className="text-sm font-medium text-purple-700">Assignments with 60%+</div>
                               </div>
                             </div>
                           )}
@@ -952,6 +912,34 @@ export default function StudentDashboard({ params }: { params: { username: strin
                     </Card>
                   </div>
                 )}
+
+                {/* Combined Styles for Overview Tab */}
+                <style jsx>{`
+                  @keyframes fade-in {
+                    from {
+                      opacity: 0;
+                      transform: translateY(20px);
+                    }
+                    to {
+                      opacity: 1;
+                      transform: translateY(0);
+                    }
+                  }
+                  @keyframes shimmer {
+                    0% {
+                      transform: translateX(-100%);
+                    }
+                    100% {
+                      transform: translateX(100%);
+                    }
+                  }
+                  .animate-fade-in {
+                    animation: fade-in 0.6s ease-out forwards;
+                  }
+                  .animate-shimmer {
+                    animation: shimmer 2s infinite;
+                  }
+                `}</style>
 
                 {/* All Submissions Sub-Tab */}
                 {resultsActiveTab === "submissions" && (
@@ -991,11 +979,14 @@ export default function StudentDashboard({ params }: { params: { username: strin
                                     </div>
                                     <div>
                                       <span className="font-medium">Submitted:</span>
-                                      <p>{new Date(submission.submittedAt).toLocaleDateString()}</p>
+                                      <p className="text-indigo-600 font-semibold">{new Date(submission.submittedAt).toLocaleDateString()}</p>
                                     </div>
                                     <div>
                                       <span className="font-medium">Status:</span>
-                                      <Badge variant={isGraded ? "default" : "secondary"} className="ml-1">
+                                      <Badge
+                                        variant={isGraded ? "default" : "secondary"}
+                                        className={`ml-1 ${isGraded ? 'bg-green-100 text-green-800 border-green-300' : 'bg-blue-100 text-blue-800 border-blue-300'}`}
+                                      >
                                         {isGraded ? "Graded" : "Submitted"}
                                       </Badge>
                                     </div>
@@ -1024,12 +1015,16 @@ export default function StudentDashboard({ params }: { params: { username: strin
                               </div>
 
                               {isGraded && submission.feedback && (
-                                <div className="mt-4 p-3 bg-gray-50 rounded-lg border">
-                                  <h4 className="font-medium text-gray-900 mb-2">
-                                    <Award className="h-4 w-4 inline mr-1" />
-                                    AI Feedback:
-                                  </h4>
-                                  <p className="text-gray-700 text-sm whitespace-pre-line">{submission.feedback}</p>
+                                <div className="mt-4 p-4 bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 rounded-xl border-2 border-purple-200 shadow-sm hover:shadow-md transition-shadow">
+                                  <div className="flex items-center space-x-2 mb-3">
+                                    <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                                      <Award className="h-5 w-5 text-white" />
+                                    </div>
+                                    <h4 className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 text-base">
+                                      AI Feedback
+                                    </h4>
+                                  </div>
+                                  <p className="text-gray-800 text-sm whitespace-pre-line leading-relaxed pl-10">{submission.feedback}</p>
                                 </div>
                               )}
                             </div>
@@ -1145,6 +1140,16 @@ export default function StudentDashboard({ params }: { params: { username: strin
           fetchStudentData()
           fetchSubmissions()
         }}
+      />
+
+      {/* View Assignment Modal */}
+      <ViewAssignmentModal
+        isOpen={isViewModalOpen}
+        onClose={() => {
+          setIsViewModalOpen(false)
+          setSelectedAssignmentForView(null)
+        }}
+        assignment={selectedAssignmentForView}
       />
     </div>
   )

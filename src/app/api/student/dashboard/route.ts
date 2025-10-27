@@ -40,6 +40,7 @@ export async function GET(request: NextRequest) {
               select: {
                 id: true,
                 name: true,
+                username: true,
                 email: true
               }
             },
@@ -76,15 +77,23 @@ export async function GET(request: NextRequest) {
         name: enrollment.class.name,
         description: enrollment.class.description,
         classCode: enrollment.class.classCode,
-        teacher: enrollment.class.teacher,
+        teacher: {
+          id: enrollment.class.teacher.id,
+          name: enrollment.class.teacher.username || enrollment.class.teacher.name || enrollment.class.teacher.email,
+          email: enrollment.class.teacher.email
+        },
         assignments: enrollment.class.assignments.map(assignment => ({
           id: assignment.id,
           title: assignment.title,
           subject: assignment.subject,
           description: assignment.description,
+          textContent: assignment.textContent,
+          imageUrl: assignment.imageUrl,
           totalMarks: assignment.totalMarks,
           dueDate: assignment.dueDate.toISOString(),
           createdAt: assignment.createdAt.toISOString(),
+          updatedAt: assignment.updatedAt.toISOString(),
+          teacherId: assignment.teacherId,
           submission: assignment.submissions[0] || null
         }))
       }
@@ -98,13 +107,17 @@ export async function GET(request: NextRequest) {
           title: assignment.title,
           subject: assignment.subject,
           description: assignment.description,
+          textContent: assignment.textContent,
+          imageUrl: assignment.imageUrl,
           totalMarks: assignment.totalMarks,
           dueDate: assignment.dueDate.toISOString(),
           createdAt: assignment.createdAt.toISOString(),
+          updatedAt: assignment.updatedAt.toISOString(),
+          teacherId: assignment.teacherId,
           class: {
             name: enrollment.class.name,
             teacher: {
-              name: enrollment.class.teacher.name
+              name: enrollment.class.teacher.username || enrollment.class.teacher.name || enrollment.class.teacher.email
             }
           },
           submission: assignment.submissions[0] || null
@@ -155,13 +168,17 @@ export async function GET(request: NextRequest) {
           title: assignment.title,
           subject: assignment.subject,
           description: assignment.description,
+          textContent: assignment.textContent,
+          imageUrl: assignment.imageUrl,
           totalMarks: assignment.totalMarks,
           dueDate: assignment.dueDate.toISOString(),
           createdAt: assignment.createdAt.toISOString(),
+          updatedAt: assignment.updatedAt.toISOString(),
+          teacherId: assignment.teacherId,
           class: {
             name: "Direct Assignment",
             teacher: {
-              name: relation.teacher.name
+              name: relation.teacher.username || relation.teacher.name || relation.teacher.email
             }
           },
           submission: assignment.submissions[0] || null

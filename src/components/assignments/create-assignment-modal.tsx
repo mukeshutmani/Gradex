@@ -102,10 +102,6 @@ export function CreateAssignmentModal({ isOpen, onClose, onSuccess }: CreateAssi
       setError("Assignment title is required")
       return false
     }
-    if (!formData.subject.trim()) {
-      setError("Subject is required")
-      return false
-    }
     if (!formData.classId) {
       setError("Please select a class for this assignment")
       return false
@@ -123,12 +119,6 @@ export function CreateAssignmentModal({ isOpen, onClose, onSuccess }: CreateAssi
     const dueDateTime = new Date(`${formData.dueDate}T${formData.dueTime}`)
     if (dueDateTime <= new Date()) {
       setError("Due date must be in the future")
-      return false
-    }
-
-    // Check if either text content or image is provided
-    if (!formData.textContent.trim() && !formData.imageUrl.trim()) {
-      setError("Please provide either text content or an image for the assignment")
       return false
     }
 
@@ -153,7 +143,7 @@ export function CreateAssignmentModal({ isOpen, onClose, onSuccess }: CreateAssi
         },
         body: JSON.stringify({
           title: formData.title.trim(),
-          subject: formData.subject.trim(),
+          subject: formData.subject.trim() || "General",
           description: formData.description.trim() || undefined,
           textContent: formData.textContent.trim() || undefined,
           imageUrl: formData.imageUrl.trim() || undefined,
@@ -258,19 +248,14 @@ export function CreateAssignmentModal({ isOpen, onClose, onSuccess }: CreateAssi
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="subject">Subject *</Label>
-                  <Select value={formData.subject} onValueChange={(value) => handleInputChange("subject", value)} disabled={loading}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select subject" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {commonSubjects.map((subject) => (
-                        <SelectItem key={subject} value={subject}>
-                          {subject}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="subject">Subject (Optional)</Label>
+                  <Input
+                    id="subject"
+                    value={formData.subject}
+                    onChange={(e) => handleInputChange("subject", e.target.value)}
+                    placeholder="e.g., Mathematics, Science, English"
+                    disabled={loading}
+                  />
                 </div>
 
                 <div className="space-y-2">
@@ -358,69 +343,6 @@ export function CreateAssignmentModal({ isOpen, onClose, onSuccess }: CreateAssi
               </div>
             </div>
 
-            {/* Assignment Content */}
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Assignment Content *</Label>
-                <div className="flex space-x-2">
-                  <Button
-                    type="button"
-                    variant={activeTab === "text" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setActiveTab("text")}
-                    disabled={loading}
-                  >
-                    <FileText className="h-4 w-4 mr-2" />
-                    Text Content
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={activeTab === "image" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setActiveTab("image")}
-                    disabled={loading}
-                  >
-                    <Image className="h-4 w-4 mr-2" />
-                    Image Upload
-                  </Button>
-                </div>
-              </div>
-
-              {activeTab === "text" && (
-                <div className="space-y-2">
-                  <Textarea
-                    value={formData.textContent}
-                    onChange={(e) => handleInputChange("textContent", e.target.value)}
-                    placeholder="Enter the assignment questions or instructions here..."
-                    rows={6}
-                    disabled={loading}
-                  />
-                  <p className="text-xs text-gray-500">
-                    Provide detailed questions or instructions for the assignment.
-                  </p>
-                </div>
-              )}
-
-              {activeTab === "image" && (
-                <div className="space-y-2">
-                  <Input
-                    value={formData.imageUrl}
-                    onChange={(e) => handleInputChange("imageUrl", e.target.value)}
-                    placeholder="Enter image URL or upload an image..."
-                    disabled={loading}
-                  />
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                    <Upload className="h-8 w-8 mx-auto text-gray-400 mb-2" />
-                    <p className="text-sm text-gray-600">
-                      Upload image functionality will be implemented soon
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      For now, paste the image URL above
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
 
             {/* Error Message */}
             {error && (
