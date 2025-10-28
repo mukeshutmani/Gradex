@@ -450,53 +450,53 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
           <div className="space-y-6">
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card>
+              <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Assignments</CardTitle>
-                  <BookOpen className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium text-blue-900">Total Assignments</CardTitle>
+                  <BookOpen className="h-4 w-4 text-blue-600" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{totalAssignments}</div>
-                  <p className="text-xs text-muted-foreground">
+                  <div className="text-2xl font-bold text-blue-900">{totalAssignments}</div>
+                  <p className="text-xs text-blue-700">
                     Total assignments created
                   </p>
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Pending Reviews</CardTitle>
-                  <Clock className="h-4 w-4 text-orange-500" />
+                  <CardTitle className="text-sm font-medium text-orange-900">Pending Reviews</CardTitle>
+                  <Clock className="h-4 w-4 text-orange-600" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{pendingSubmissions}</div>
-                  <p className="text-xs text-muted-foreground">
+                  <div className="text-2xl font-bold text-orange-900">{pendingSubmissions}</div>
+                  <p className="text-xs text-orange-700">
                     Requires your attention
                   </p>
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Average Grade</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-green-500" />
+                  <CardTitle className="text-sm font-medium text-green-900">Average Grade</CardTitle>
+                  <TrendingUp className="h-4 w-4 text-green-600" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{averageGrade.toFixed(1)}%</div>
-                  <p className="text-xs text-muted-foreground">
+                  <div className="text-2xl font-bold text-green-900">{averageGrade.toFixed(1)}%</div>
+                  <p className="text-xs text-green-700">
                     Class average grade
                   </p>
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Students</CardTitle>
-                  <Users className="h-4 w-4 text-blue-500" />
+                  <CardTitle className="text-sm font-medium text-purple-900">Total Students</CardTitle>
+                  <Users className="h-4 w-4 text-purple-600" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{totalStudents}</div>
-                  <p className="text-xs text-muted-foreground">
+                  <div className="text-2xl font-bold text-purple-900">{totalStudents}</div>
+                  <p className="text-xs text-purple-700">
                     Active students
                   </p>
                 </CardContent>
@@ -511,7 +511,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                   <CardDescription>Latest assignments and their progress</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {loading ? (
+                  {loading && assignments.length === 0 ? (
                     <div className="text-center py-4">
                       <div className="text-sm text-gray-500">Loading assignments...</div>
                     </div>
@@ -595,7 +595,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
 
             <Card>
               <CardContent>
-                {loading ? (
+                {loading && assignments.length === 0 ? (
                   <div className="text-center py-8">
                     <div className="text-lg text-gray-500">Loading assignments...</div>
                   </div>
@@ -706,7 +706,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
             </div>
 
             <div className="grid gap-4">
-              {loading ? (
+              {loading && allSubmissions.length === 0 ? (
                 <Card>
                   <CardContent className="pt-6">
                     <div className="text-center py-8">
@@ -716,42 +716,61 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                 </Card>
               ) : allSubmissions.length > 0 ? (
                 allSubmissions.map((submission) => (
-                  <Card key={submission.id}>
+                  <Card
+                    key={submission.id}
+                    className={
+                      submission.status === "graded"
+                        ? "bg-gradient-to-br from-green-50 to-emerald-50 border-green-200"
+                        : "bg-gradient-to-br from-amber-50 to-orange-50 border-orange-200"
+                    }
+                  >
                     <CardContent className="pt-6">
                       <div className="flex justify-between items-start">
                         <div className="space-y-2">
                           <div className="flex items-center space-x-2">
-                            <User className="h-4 w-4 text-gray-400" />
-                            <span className="font-medium">{submission.student?.name || "Unknown Student"}</span>
+                            <User className={
+                              submission.status === "graded"
+                                ? "h-4 w-4 text-green-600"
+                                : "h-4 w-4 text-orange-600"
+                            } />
+                            <span className="font-medium text-gray-900">{submission.student?.name || "Unknown Student"}</span>
                           </div>
                           <div className="flex items-center space-x-2">
-                            <BookOpen className="h-4 w-4 text-gray-400" />
-                            <span className="text-sm text-gray-600">{submission.assignmentTitle}</span>
+                            <BookOpen className={
+                              submission.status === "graded"
+                                ? "h-4 w-4 text-green-600"
+                                : "h-4 w-4 text-orange-600"
+                            } />
+                            <span className="text-sm text-gray-700">{submission.assignmentTitle}</span>
                           </div>
                           <div className="flex items-center space-x-2">
-                            <Calendar className="h-4 w-4 text-gray-400" />
-                            <span className="text-sm text-gray-600">
+                            <Calendar className={
+                              submission.status === "graded"
+                                ? "h-4 w-4 text-green-600"
+                                : "h-4 w-4 text-orange-600"
+                            } />
+                            <span className="text-sm text-gray-700">
                               Submitted: {new Date(submission.submittedAt).toLocaleDateString()}
                             </span>
                           </div>
                         </div>
 
-                        <div className="text-right space-y-2">
+                        <div className="text-right flex flex-col items-end gap-6">
                           <Badge
                             variant={submission.status === "graded" ? "default" : "outline"}
-                            className={submission.status === "submitted" || submission.status === "pending" ? "text-orange-600 border-orange-600" : ""}
+                            className={submission.status === "submitted" || submission.status === "pending" ? "text-orange-600 border-orange-600 bg-orange-100" : "bg-green-600"}
                           >
                             {submission.status}
                           </Badge>
                           {submission.status === "graded" ? (
-                            <div className="text-lg font-bold">
+                            <div className="text-lg font-bold text-green-900">
                               {submission.marks}/{submission.assignmentTotalMarks}
-                              <span className="text-sm text-gray-500 ml-1">
+                              <span className="text-sm text-green-700 ml-1">
                                 ({((submission.marks / submission.assignmentTotalMarks) * 100).toFixed(1)}%)
                               </span>
                             </div>
                           ) : (
-                            <Button size="sm">
+                            <Button size="sm" className="bg-orange-600 hover:bg-orange-700">
                               <CheckCircle2 className="h-4 w-4 mr-2" />
                               Grade Now
                             </Button>
@@ -760,8 +779,12 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                       </div>
 
                       {submission.feedback && (
-                        <div className="mt-4 p-3 bg-gray-50 rounded-md">
-                          <p className="text-sm text-gray-600">{submission.feedback}</p>
+                        <div className={
+                          submission.status === "graded"
+                            ? "mt-4 p-3 bg-green-100 border border-green-200 rounded-md"
+                            : "mt-4 p-3 bg-orange-100 border border-orange-200 rounded-md"
+                        }>
+                          <p className="text-sm text-gray-700">{submission.feedback}</p>
                         </div>
                       )}
                     </CardContent>
@@ -874,7 +897,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
             {studentManagementTab === "classes" && (
               <div className="space-y-4">
                 <h2 className="text-lg font-semibold text-gray-900">Your Classes</h2>
-                {classesLoading ? (
+                {classesLoading && classes.length === 0 ? (
                   <div className="text-center py-8">
                     <div className="text-lg text-gray-500">Loading classes...</div>
                   </div>
@@ -944,7 +967,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                 <h2 className="text-lg font-semibold text-gray-900">All Students</h2>
                 <Card className="bg-white border-gray-200 shadow-sm">
                   <CardContent>
-                    {classesLoading ? (
+                    {classesLoading && allStudents.length === 0 ? (
                       <div className="text-center py-8">
                         <div className="text-lg text-gray-500">Loading students...</div>
                       </div>
@@ -1077,7 +1100,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                   )}
                 </div>
 
-                {profileLoading ? (
+                {profileLoading && !userProfile ? (
                   <Card className="bg-white border-gray-200 shadow-sm">
                     <CardContent className="pt-6">
                       <div className="text-center py-8">
@@ -1335,7 +1358,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                   <CardDescription>Manage and delete your classes</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {classesLoading ? (
+                  {classesLoading && classes.length === 0 ? (
                     <div className="text-center py-8">
                       <div className="text-lg text-gray-500">Loading classes...</div>
                     </div>
