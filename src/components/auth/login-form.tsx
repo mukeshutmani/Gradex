@@ -45,7 +45,8 @@ export function LoginForm({ className }: LoginFormProps) {
       if (result?.error) {
         setErrors({ general: "Invalid email or password" })
       } else {
-        router.push("/dashboard")
+        // Redirect to dashboard after successful login
+        router.replace("/dashboard")
         router.refresh()
       }
     } catch {

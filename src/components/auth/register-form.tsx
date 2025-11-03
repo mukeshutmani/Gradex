@@ -107,7 +107,8 @@ export function RegisterForm({ className }: RegisterFormProps) {
       if (signInResult?.error) {
         setErrors({ general: "Registration successful, but login failed. Please try logging in manually." })
       } else {
-        router.push("/dashboard")
+        // Redirect to dashboard after successful registration
+        router.replace("/dashboard")
         router.refresh()
       }
     } catch {

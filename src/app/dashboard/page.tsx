@@ -44,6 +44,9 @@ export default function DashboardPage() {
     message: ''
   })
   const [isSending, setIsSending] = useState(false)
+  const [userProfile, setUserProfile] = useState<any>(null)
+  const [profileLoading, setProfileLoading] = useState(true)
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false)
 
   // Handle authentication check for auto-grading buttons
   const handleStartAutoGrading = () => {
@@ -51,8 +54,13 @@ export default function DashboardPage() {
       // Redirect to login if user is not authenticated
       router.push("/login")
     } else if (session) {
-      // Open onboarding modal if user is authenticated
-      setIsOnboardingOpen(true)
+      // Check if user already has a subscription/completed onboarding
+      if (userProfile?.profile?.isOnboardingComplete) {
+        setShowSubscriptionModal(true)
+      } else {
+        // Open onboarding modal if user hasn't completed onboarding
+        setIsOnboardingOpen(true)
+      }
     }
   }
 
@@ -105,12 +113,31 @@ export default function DashboardPage() {
     }
   }
 
+  // Fetch user profile to check onboarding status
   useEffect(() => {
-    if (status === "unauthenticated") {
-      redirect("/register")
+    const fetchUserProfile = async () => {
+      if (status === "authenticated" && session?.user?.email) {
+        try {
+          const response = await fetch('/api/user-profile')
+          if (response.ok) {
+            const data = await response.json()
+            setUserProfile(data.user)
+          }
+        } catch (error) {
+          console.error('Error fetching user profile:', error)
+        } finally {
+          setProfileLoading(false)
+        }
+      } else {
+        setProfileLoading(false)
+      }
     }
-    // Both clients and students can access this dashboard
-  }, [status])
+
+    fetchUserProfile()
+  }, [status, session])
+
+  // Dashboard is now accessible to everyone (logged in or public)
+  // No redirect needed
 
   if (status === "loading") {
     return (
@@ -120,9 +147,7 @@ export default function DashboardPage() {
     )
   }
 
-  if (!session) {
-    return null
-  }
+  // Dashboard is accessible to everyone - no session check needed
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -178,34 +203,47 @@ export default function DashboardPage() {
             </nav>
 
             <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="icon">
-                <Bell className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" size="icon">
-                <Settings className="h-5 w-5" />
-              </Button>
-              <div className="flex items-center space-x-3">
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
-                    <User className="h-5 w-5 text-black" />
+              {session ? (
+                <>
+                  <Button variant="ghost" size="icon">
+                    <Bell className="h-5 w-5" />
+                  </Button>
+                  <Button variant="ghost" size="icon">
+                    <Settings className="h-5 w-5" />
+                  </Button>
+                  <div className="flex items-center space-x-3">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                        <User className="h-5 w-5 text-black" />
+                      </div>
+                      <button
+                        onClick={() => router.push(`/admin/${session?.user?.username}`)}
+                        className="text-sm hover:underline cursor-pointer transition-colors"
+                      >
+                        <span className="text-black font-semibold">Welcome,</span>{" "}
+                        <span className="text-gray-700">{session?.user?.name || session?.user?.email}</span>
+                      </button>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => signOut({ callbackUrl: '/login' })}
+                      className="bg-black text-white hover:bg-black/90"
+                    >
+                      <LogOut className="h-4 w-4 mr-1" />
+                      Sign Out
+                    </Button>
                   </div>
-                  <button
-                    onClick={() => router.push(`/admin/${session.user?.username}`)}
-                    className="text-sm hover:underline cursor-pointer transition-colors"
-                  >
-                    <span className="text-black font-semibold">Welcome,</span>{" "}
-                    <span className="text-gray-700">{session.user?.name || session.user?.email}</span>
-                  </button>
-                </div>
-                <Button
-                  size="sm"
-                  onClick={() => signOut({ callbackUrl: '/login' })}
-                  className="bg-black text-white hover:bg-black/90"
-                >
-                  <LogOut className="h-4 w-4 mr-1" />
-                  Sign Out
-                </Button>
-              </div>
+                </>
+              ) : (
+                <>
+                  <Button variant="ghost" onClick={() => router.push("/login")}>
+                    Sign In
+                  </Button>
+                  <Button onClick={() => router.push("/register")}>
+                    Get Started
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -235,7 +273,7 @@ export default function DashboardPage() {
           </p>
 
           {/* Start Your Plan Button - Only for clients */}
-          {session.user?.role === "client" && (
+          {session?.user?.role === "client" && (
             <div className="flex items-center space-x-4">
               <Button size="lg" className="px-8" onClick={handleStartAutoGrading}>
                 <PlayCircle className="mr-2 h-5 w-5" />
@@ -306,7 +344,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Dashboard Features - Teacher */}
-        {session.user?.role === "client" && (
+        {session?.user?.role === "client" && (
           <div className="mb-8">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">Teacher Dashboard Features</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -390,7 +428,7 @@ export default function DashboardPage() {
         )}
 
         {/* Dashboard Features - Student */}
-        {session.user?.role === "student" && (
+        {session?.user?.role === "student" && (
           <div className="mb-8">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">Student Dashboard Features</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -474,7 +512,7 @@ export default function DashboardPage() {
         )}
 
         {/* Quick Actions - Only for clients (teachers) */}
-        {session.user?.role === "client" && (
+        {session?.user?.role === "client" && (
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -500,7 +538,7 @@ export default function DashboardPage() {
 
         {/* Getting Started Section */}
         {/* Auto-Grading CTA - Only for clients */}
-        {session.user?.role === "client" && (
+        {session?.user?.role === "client" && (
           <div className="mt-8 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg p-6 border border-gray-200">
             <div className="text-center">
               <h3 className="text-xl font-semibold text-gray-900 mb-2">Ready to Start Auto-Grading?</h3>
@@ -704,6 +742,43 @@ export default function DashboardPage() {
         isOpen={isOnboardingOpen}
         onClose={() => setIsOnboardingOpen(false)}
       />
+
+      {/* Already Have Subscription Modal */}
+      {showSubscriptionModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full border-2 border-green-500">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                <CheckCircle2 className="h-8 w-8 text-green-600" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">You're All Set!</h3>
+              <p className="text-gray-700 mb-6">
+                You already have an active subscription and your account is ready to use.
+              </p>
+              <div className="bg-green-50 p-4 rounded-lg w-full mb-6">
+                <p className="text-sm text-green-800 font-medium">
+                  Plan: <span className="capitalize">{userProfile?.profile?.plan || 'Active'}</span>
+                </p>
+              </div>
+              <div className="flex gap-3 w-full">
+                <Button
+                  onClick={() => setShowSubscriptionModal(false)}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  Close
+                </Button>
+                <Button
+                  onClick={() => router.push(`/admin/${session?.user?.username}`)}
+                  className="bg-green-600 text-white hover:bg-green-700 flex-1"
+                >
+                  Go to Dashboard
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Login as Teacher Modal */}
       {showLoginAsTeacherModal && (

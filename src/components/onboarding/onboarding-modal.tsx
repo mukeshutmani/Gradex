@@ -92,14 +92,15 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
       }
     }
 
-    if (currentStep === 3) {
-      if (!formData.subjects.trim()) {
-        newErrors.subjects = "Please enter at least one subject"
-      }
-      if (!formData.experience) {
-        newErrors.experience = "Teaching experience is required"
-      }
-    }
+    // Step 3 is now optional - no validation required
+    // if (currentStep === 3) {
+    //   if (!formData.subjects.trim()) {
+    //     newErrors.subjects = "Please enter at least one subject"
+    //   }
+    //   if (!formData.experience) {
+    //     newErrors.experience = "Teaching experience is required"
+    //   }
+    // }
 
     if (currentStep === 4) {
       if (!formData.plan) {
@@ -312,11 +313,11 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
           {currentStep === 3 && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-xl font-semibold mb-4">Additional Information</h3>
+                <h3 className="text-xl font-semibold mb-4">Additional Information <span className="text-sm font-normal text-gray-400">(Optional)</span></h3>
 
                 {/* Subjects */}
                 <div className="space-y-2 mb-4">
-                  <label className="text-sm font-medium text-gray-300">Subjects You Teach</label>
+                  <label className="text-sm font-medium text-gray-300">Subjects You Teach <span className="text-xs text-gray-400">(Optional)</span></label>
                   <Input
                     type="text"
                     placeholder="Enter subjects you teach (e.g., Mathematics, Science, English)"
@@ -334,7 +335,7 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
 
                 {/* Teaching Experience */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-300">Teaching Experience</label>
+                  <label className="text-sm font-medium text-gray-300">Teaching Experience <span className="text-xs text-gray-400">(Optional)</span></label>
                   <Select value={formData.experience} onValueChange={(value) => updateFormData("experience", value)}>
                     <SelectTrigger className={`w-full bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500 ${errors.experience ? "border-red-500" : ""}`}>
                       <SelectValue placeholder="Select your experience level" />
@@ -451,39 +452,51 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
                     <label className="text-sm font-medium text-gray-300">Select Payment Method</label>
 
                     <div className="space-y-2">
-                      <Card className={`cursor-pointer transition-all p-4 bg-gray-800 border-gray-600 text-white ${formData.paymentMethod === "card" ? "ring-2 ring-blue-500 bg-gray-700" : ""}`}
-                            onClick={() => updateFormData("paymentMethod", "card")}>
+                      <Card className={`cursor-pointer transition-all p-4 bg-gray-800 border-gray-600 text-white ${formData.paymentMethod === "easypaisa" ? "ring-2 ring-blue-500 bg-gray-700" : ""}`}
+                            onClick={() => updateFormData("paymentMethod", "easypaisa")}>
+                        <div className="flex items-center">
+                          <Smartphone className="h-5 w-5 mr-3" />
+                          <div>
+                            <div className="font-medium">Easypaisa</div>
+                            <div className="text-sm text-gray-400">Mobile wallet payment</div>
+                          </div>
+                          {formData.paymentMethod === "easypaisa" && <Check className="ml-auto h-5 w-5 text-blue-500" />}
+                        </div>
+                      </Card>
+
+                      <Card className={`cursor-pointer transition-all p-4 bg-gray-800 border-gray-600 text-white ${formData.paymentMethod === "jazzcash" ? "ring-2 ring-blue-500 bg-gray-700" : ""}`}
+                            onClick={() => updateFormData("paymentMethod", "jazzcash")}>
+                        <div className="flex items-center">
+                          <Smartphone className="h-5 w-5 mr-3" />
+                          <div>
+                            <div className="font-medium">JazzCash</div>
+                            <div className="text-sm text-gray-400">Mobile wallet payment</div>
+                          </div>
+                          {formData.paymentMethod === "jazzcash" && <Check className="ml-auto h-5 w-5 text-blue-500" />}
+                        </div>
+                      </Card>
+
+                      <Card className={`cursor-pointer transition-all p-4 bg-gray-800 border-gray-600 text-white ${formData.paymentMethod === "bank-transfer" ? "ring-2 ring-blue-500 bg-gray-700" : ""}`}
+                            onClick={() => updateFormData("paymentMethod", "bank-transfer")}>
+                        <div className="flex items-center">
+                          <CreditCard className="h-5 w-5 mr-3" />
+                          <div>
+                            <div className="font-medium">Bank Transfer</div>
+                            <div className="text-sm text-gray-400">Direct bank transfer</div>
+                          </div>
+                          {formData.paymentMethod === "bank-transfer" && <Check className="ml-auto h-5 w-5 text-blue-500" />}
+                        </div>
+                      </Card>
+
+                      <Card className={`cursor-pointer transition-all p-4 bg-gray-800 border-gray-600 text-white ${formData.paymentMethod === "credit-card" ? "ring-2 ring-blue-500 bg-gray-700" : ""}`}
+                            onClick={() => updateFormData("paymentMethod", "credit-card")}>
                         <div className="flex items-center">
                           <CreditCard className="h-5 w-5 mr-3" />
                           <div>
                             <div className="font-medium">Credit/Debit Card</div>
-                            <div className="text-sm text-gray-400">Visa, Mastercard, RuPay</div>
+                            <div className="text-sm text-gray-400">Visa, Mastercard</div>
                           </div>
-                          {formData.paymentMethod === "card" && <Check className="ml-auto h-5 w-5 text-blue-500" />}
-                        </div>
-                      </Card>
-
-                      <Card className={`cursor-pointer transition-all p-4 bg-gray-800 border-gray-600 text-white ${formData.paymentMethod === "upi" ? "ring-2 ring-blue-500 bg-gray-700" : ""}`}
-                            onClick={() => updateFormData("paymentMethod", "upi")}>
-                        <div className="flex items-center">
-                          <Smartphone className="h-5 w-5 mr-3" />
-                          <div>
-                            <div className="font-medium">UPI</div>
-                            <div className="text-sm text-gray-400">GPay, PhonePe, Paytm</div>
-                          </div>
-                          {formData.paymentMethod === "upi" && <Check className="ml-auto h-5 w-5 text-blue-500" />}
-                        </div>
-                      </Card>
-
-                      <Card className={`cursor-pointer transition-all p-4 ${formData.paymentMethod === "netbanking" ? "ring-2 ring-blue-500 bg-blue-50" : ""}`}
-                            onClick={() => updateFormData("paymentMethod", "netbanking")}>
-                        <div className="flex items-center">
-                          <CreditCard className="h-5 w-5 mr-3" />
-                          <div>
-                            <div className="font-medium">Net Banking</div>
-                            <div className="text-sm text-gray-600">All major banks</div>
-                          </div>
-                          {formData.paymentMethod === "netbanking" && <Check className="ml-auto h-5 w-5 text-blue-500" />}
+                          {formData.paymentMethod === "credit-card" && <Check className="ml-auto h-5 w-5 text-blue-500" />}
                         </div>
                       </Card>
                     </div>

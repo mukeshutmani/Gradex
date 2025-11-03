@@ -8,8 +8,8 @@ import { z } from "zod"
 const gradeSubmissionSchema = z.object({
   submissionId: z.string().min(1, "Submission ID is required"),
   marks: z.number().min(0, "Marks must be non-negative"),
-  feedback: z.string().min(1, "Feedback is required"),
-  status: z.enum(["submitted", "graded"]).optional(),
+  feedback: z.string().optional(),
+  status: z.enum(["submitted", "graded", "pending"]).optional(),
 })
 
 // POST - Update submission with grading results
@@ -77,8 +77,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify the submission belongs to the current user (students can only grade their own)
-    // or user is a teacher/admin (for future teacher grading feature)
-    if (submission.studentId !== user.id && user.role !== "TEACHER" && user.role !== "ADMIN") {
+    // or user is a teacher/admin (for teacher grading feature)
+    if (submission.studentId !== user.id && user.role !== "client" && user.role !== "TEACHER" && user.role !== "ADMIN") {
       return NextResponse.json(
         { error: "You don't have permission to grade this submission" },
         { status: 403 }

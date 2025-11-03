@@ -17,6 +17,7 @@ import { ViewAssignmentModal } from "@/components/assignments/view-assignment-mo
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
 import { CreateClassModal } from "@/components/classes/create-class-modal"
 import { InviteStudentModal } from "@/components/classes/invite-student-modal"
+import { PDFViewer } from "@/components/pdf-viewer"
 import {
   ClipboardCheck,
   Upload,
@@ -26,7 +27,6 @@ import {
   TrendingUp,
   Calendar,
   Settings,
-  Bell,
   Award,
   FileCheck,
   CheckCircle2,
@@ -106,6 +106,15 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
   const [settingsTab, setSettingsTab] = useState("account")
   const [allSubmissions, setAllSubmissions] = useState<any[]>([])
   const [allStudents, setAllStudents] = useState<any[]>([])
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [isViewClassModalOpen, setIsViewClassModalOpen] = useState(false)
+  const [isEditClassModalOpen, setIsEditClassModalOpen] = useState(false)
+  const [submissionSearchQuery, setSubmissionSearchQuery] = useState("")
+  const [selectedSubmission, setSelectedSubmission] = useState<any | null>(null)
+  const [isViewSubmissionModalOpen, setIsViewSubmissionModalOpen] = useState(false)
+  const [isEditSubmissionModalOpen, setIsEditSubmissionModalOpen] = useState(false)
+  const [showGradeSuccessModal, setShowGradeSuccessModal] = useState(false)
+  const [gradeLoading, setGradeLoading] = useState(false)
   const { username } = use(params)
 
   // Fetch assignments from database
@@ -127,6 +136,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
               submissions.push({
                 ...submission,
                 assignmentTitle: assignment.title,
+                assignmentSubject: assignment.subject,
                 assignmentTotalMarks: assignment.totalMarks
               })
             })
@@ -144,10 +154,14 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
   }
 
   // Fetch user profile from database
-  const fetchUserProfile = async () => {
+  const fetchUserProfile = async (showLoader = false) => {
     if (!session?.user?.email) return
 
-    setProfileLoading(true)
+    // Only show loading spinner on initial load or when explicitly requested
+    if (showLoader) {
+      setProfileLoading(true)
+    }
+
     try {
       const response = await fetch('/api/user-profile')
       if (response.ok) {
@@ -160,7 +174,9 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
     } catch (error) {
       console.error('Error fetching user profile:', error)
     } finally {
-      setProfileLoading(false)
+      if (showLoader) {
+        setProfileLoading(false)
+      }
     }
   }
 
@@ -191,10 +207,12 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
       })
 
       if (response.ok) {
-        const data = await response.json()
-        setUserProfile(data.profile.user)
         setIsEditingProfile(false)
-        alert('Profile updated successfully!')
+
+        // Refetch the profile data with loader to show updated data
+        await fetchUserProfile(true)
+
+        setShowSuccessModal(true)
       } else {
         const errorData = await response.json()
         alert(`Failed to update profile: ${errorData.error}`)
@@ -281,6 +299,30 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
     }
   }
 
+  // Handle view class
+  const handleViewClass = (classItem: any) => {
+    setSelectedClass(classItem)
+    setIsViewClassModalOpen(true)
+  }
+
+  // Handle edit class
+  const handleEditClass = (classItem: any) => {
+    setSelectedClass(classItem)
+    setIsEditClassModalOpen(true)
+  }
+
+  // Handle view submission
+  const handleViewSubmission = (submission: any) => {
+    setSelectedSubmission(submission)
+    setIsViewSubmissionModalOpen(true)
+  }
+
+  // Handle edit submission
+  const handleEditSubmission = (submission: any) => {
+    setSelectedSubmission(submission)
+    setIsEditSubmissionModalOpen(true)
+  }
+
   // Handle view assignment
   const handleViewAssignment = (assignment: Assignment) => {
     setSelectedAssignment(assignment)
@@ -341,7 +383,8 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
   useEffect(() => {
     if (session?.user?.email) {
       fetchAssignments()
-      fetchUserProfile()
+      // Only show loader on initial load (when userProfile is null)
+      fetchUserProfile(userProfile === null)
       fetchClasses()
     }
   }, [session])
@@ -389,14 +432,6 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="h-5 w-5" />
-                {pendingSubmissions > 0 && (
-                  <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center bg-red-500 text-white text-xs">
-                    {pendingSubmissions}
-                  </Badge>
-                )}
-              </Button>
               <Button variant="ghost" size="icon">
                 <Settings className="h-5 w-5" />
               </Button>
@@ -415,27 +450,69 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
       </header>
 
       {/* Navigation Tabs */}
-      <div className="bg-white border-b">
+      <div className="bg-gradient-to-r from-gray-50 to-white border-b">
         <div className="w-full px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-8">
+          <div className="flex space-x-4">
             {[
-              { id: "overview", label: "Overview", icon: TrendingUp },
-              { id: "assignments", label: "Assignments", icon: BookOpen },
-              { id: "submissions", label: "Submissions", icon: FileCheck },
-              { id: "students", label: "Students", icon: Users },
-              { id: "analytics", label: "Analytics", icon: Award },
-              { id: "settings", label: "Settings", icon: Settings }
+              {
+                id: "overview",
+                label: "Overview",
+                icon: TrendingUp,
+                iconColor: "text-blue-500",
+                activeClass: "border-blue-500 text-blue-600 bg-blue-50",
+                inactiveClass: "text-gray-600 hover:text-blue-600 hover:bg-blue-50"
+              },
+              {
+                id: "assignments",
+                label: "Assignments",
+                icon: BookOpen,
+                iconColor: "text-purple-500",
+                activeClass: "border-purple-500 text-purple-600 bg-purple-50",
+                inactiveClass: "text-gray-600 hover:text-purple-600 hover:bg-purple-50"
+              },
+              {
+                id: "submissions",
+                label: "Submissions",
+                icon: FileCheck,
+                iconColor: "text-green-500",
+                activeClass: "border-green-500 text-green-600 bg-green-50",
+                inactiveClass: "text-gray-600 hover:text-green-600 hover:bg-green-50"
+              },
+              {
+                id: "students",
+                label: "Students",
+                icon: Users,
+                iconColor: "text-orange-500",
+                activeClass: "border-orange-500 text-orange-600 bg-orange-50",
+                inactiveClass: "text-gray-600 hover:text-orange-600 hover:bg-orange-50"
+              },
+              {
+                id: "analytics",
+                label: "Analytics",
+                icon: Award,
+                iconColor: "text-pink-500",
+                activeClass: "border-pink-500 text-pink-600 bg-pink-50",
+                inactiveClass: "text-gray-600 hover:text-pink-600 hover:bg-pink-50"
+              },
+              {
+                id: "settings",
+                label: "Settings",
+                icon: Settings,
+                iconColor: "text-gray-600",
+                activeClass: "border-gray-500 text-gray-700 bg-gray-50",
+                inactiveClass: "text-gray-600 hover:text-gray-700 hover:bg-gray-50"
+              }
             ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center space-x-2 py-4 border-b-2 font-medium text-sm transition-colors ${
+                className={`flex items-center space-x-2 py-4 px-3 border-b-2 font-medium text-sm transition-all rounded-t-lg ${
                   activeTab === tab.id
-                    ? "border-primary text-primary"
-                    : "border-transparent text-gray-500 hover:text-gray-700"
+                    ? tab.activeClass
+                    : `border-transparent ${tab.inactiveClass}`
                 }`}
               >
-                <tab.icon className="h-4 w-4" />
+                <tab.icon className={`h-5 w-5 ${tab.iconColor} ${activeTab === tab.id ? 'animate-pulse' : ''}`} />
                 <span>{tab.label}</span>
               </button>
             ))}
@@ -705,103 +782,118 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
               </div>
             </div>
 
-            <div className="grid gap-4">
-              {loading && allSubmissions.length === 0 ? (
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="text-center py-8">
-                      <div className="text-lg text-gray-500">Loading submissions...</div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ) : allSubmissions.length > 0 ? (
-                allSubmissions.map((submission) => (
-                  <Card
-                    key={submission.id}
-                    className={
-                      submission.status === "graded"
-                        ? "bg-gradient-to-br from-green-50 to-emerald-50 border-green-200"
-                        : "bg-gradient-to-br from-amber-50 to-orange-50 border-orange-200"
-                    }
-                  >
-                    <CardContent className="pt-6">
-                      <div className="flex justify-between items-start">
-                        <div className="space-y-2">
-                          <div className="flex items-center space-x-2">
-                            <User className={
-                              submission.status === "graded"
-                                ? "h-4 w-4 text-green-600"
-                                : "h-4 w-4 text-orange-600"
-                            } />
-                            <span className="font-medium text-gray-900">{submission.student?.name || "Unknown Student"}</span>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <BookOpen className={
-                              submission.status === "graded"
-                                ? "h-4 w-4 text-green-600"
-                                : "h-4 w-4 text-orange-600"
-                            } />
-                            <span className="text-sm text-gray-700">{submission.assignmentTitle}</span>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <Calendar className={
-                              submission.status === "graded"
-                                ? "h-4 w-4 text-green-600"
-                                : "h-4 w-4 text-orange-600"
-                            } />
-                            <span className="text-sm text-gray-700">
-                              Submitted: {new Date(submission.submittedAt).toLocaleDateString()}
-                            </span>
-                          </div>
-                        </div>
+            {/* Search Bar */}
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center space-x-2">
+                  <Input
+                    type="text"
+                    placeholder="Search by student name, assignment, or subject..."
+                    value={submissionSearchQuery}
+                    onChange={(e) => setSubmissionSearchQuery(e.target.value)}
+                    className="flex-1"
+                  />
+                </div>
+              </CardContent>
+            </Card>
 
-                        <div className="text-right flex flex-col items-end gap-6">
-                          <Badge
-                            variant={submission.status === "graded" ? "default" : "outline"}
-                            className={submission.status === "submitted" || submission.status === "pending" ? "text-orange-600 border-orange-600 bg-orange-100" : "bg-green-600"}
-                          >
-                            {submission.status}
-                          </Badge>
-                          {submission.status === "graded" ? (
-                            <div className="text-lg font-bold text-green-900">
-                              {submission.marks}/{submission.assignmentTotalMarks}
-                              <span className="text-sm text-green-700 ml-1">
-                                ({((submission.marks / submission.assignmentTotalMarks) * 100).toFixed(1)}%)
-                              </span>
-                            </div>
-                          ) : (
-                            <Button size="sm" className="bg-orange-600 hover:bg-orange-700">
-                              <CheckCircle2 className="h-4 w-4 mr-2" />
-                              Grade Now
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-
-                      {submission.feedback && (
-                        <div className={
-                          submission.status === "graded"
-                            ? "mt-4 p-3 bg-green-100 border border-green-200 rounded-md"
-                            : "mt-4 p-3 bg-orange-100 border border-orange-200 rounded-md"
-                        }>
-                          <p className="text-sm text-gray-700">{submission.feedback}</p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))
-              ) : (
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="text-center py-12">
-                      <FileCheck className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">No submissions yet</h3>
-                      <p className="text-gray-500">Student submissions will appear here once they start submitting assignments.</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+            {/* Submissions Table */}
+            <Card>
+              <CardContent>
+                {loading && allSubmissions.length === 0 ? (
+                  <div className="text-center py-8">
+                    <div className="text-lg text-gray-500">Loading submissions...</div>
+                  </div>
+                ) : allSubmissions.length > 0 ? (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Student Name</TableHead>
+                        <TableHead>Assignment Name</TableHead>
+                        <TableHead>Subject</TableHead>
+                        <TableHead>Graded Marks</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {allSubmissions
+                        .filter((submission) => {
+                          const query = submissionSearchQuery.toLowerCase()
+                          return (
+                            (submission.student?.name || "").toLowerCase().includes(query) ||
+                            (submission.assignmentTitle || "").toLowerCase().includes(query) ||
+                            (submission.assignmentSubject || "").toLowerCase().includes(query)
+                          )
+                        })
+                        .map((submission) => (
+                          <TableRow key={submission.id}>
+                            <TableCell className="font-medium">
+                              {submission.student?.name || submission.student?.username || "Unknown"}
+                            </TableCell>
+                            <TableCell>{submission.assignmentTitle}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline">{submission.assignmentSubject || "N/A"}</Badge>
+                            </TableCell>
+                            <TableCell>
+                              {submission.status === "graded" ? (
+                                <div className="font-semibold">
+                                  {submission.marks}/{submission.assignmentTotalMarks}
+                                  <span className="text-xs text-gray-500 ml-1">
+                                    ({((submission.marks / submission.assignmentTotalMarks) * 100).toFixed(1)}%)
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-gray-400">Not graded</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={submission.status === "graded" ? "default" : "outline"}
+                                className={
+                                  submission.status === "submitted" || submission.status === "pending"
+                                    ? "text-orange-600 border-orange-600 bg-orange-100"
+                                    : "bg-green-600"
+                                }
+                              >
+                                {submission.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end space-x-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleViewSubmission(submission)}
+                                  className="border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300"
+                                >
+                                  <Eye className="h-4 w-4 mr-1" />
+                                  View
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleEditSubmission(submission)}
+                                  className="border-green-200 text-green-700 hover:bg-green-50 hover:border-green-300"
+                                >
+                                  <Edit className="h-4 w-4 mr-1" />
+                                  Edit
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <div className="text-center py-12">
+                    <FileCheck className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No submissions yet</h3>
+                    <p className="text-gray-500">Student submissions will appear here once they start submitting assignments.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         )}
 
@@ -933,11 +1025,21 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                             </span>
                           </div>
                           <div className="flex space-x-2 pt-2">
-                            <Button size="sm" variant="outline" className="flex-1">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="flex-1"
+                              onClick={() => handleViewClass(classItem)}
+                            >
                               <Eye className="h-3 w-3 mr-1" />
                               View
                             </Button>
-                            <Button size="sm" variant="outline" className="flex-1">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="flex-1"
+                              onClick={() => handleEditClass(classItem)}
+                            >
                               <Edit className="h-3 w-3 mr-1" />
                               Edit
                             </Button>
@@ -986,7 +1088,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                         <TableBody>
                           {allStudents.map((student) => (
                             <TableRow key={student.id}>
-                              <TableCell className="font-medium">{student.name || "Unknown"}</TableCell>
+                              <TableCell className="font-medium">{student.username || "Unknown"}</TableCell>
                               <TableCell>{student.email}</TableCell>
                               <TableCell>
                                 <Badge variant="outline" className="bg-blue-50 text-blue-700">
@@ -1100,11 +1202,14 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                   )}
                 </div>
 
-                {profileLoading && !userProfile ? (
-                  <Card className="bg-white border-gray-200 shadow-sm">
+                {profileLoading ? (
+                  <Card className="bg-white border-gray-200 shadow-sm col-span-full">
                     <CardContent className="pt-6">
-                      <div className="text-center py-8">
-                        <div className="text-lg text-gray-500">Loading profile...</div>
+                      <div className="text-center py-12">
+                        <div className="flex flex-col items-center space-y-4">
+                          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                          <div className="text-lg text-gray-600 font-medium">Loading profile...</div>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -1284,15 +1389,25 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                     <div className="space-y-3">
                       <label className="text-sm font-medium text-gray-700">Payment Method</label>
                       {isEditingProfile ? (
-                        <Input
+                        <Select
                           value={editProfileData?.profile?.paymentMethod || ''}
-                          onChange={(e) => setEditProfileData({
+                          onValueChange={(value) => setEditProfileData({
                             ...editProfileData,
-                            profile: {...editProfileData.profile, paymentMethod: e.target.value}
+                            profile: {...editProfileData.profile, paymentMethod: value}
                           })}
-                          className="border-gray-300 focus:border-gray-500"
-                          placeholder="Enter payment method"
-                        />
+                        >
+                          <SelectTrigger className="border-gray-300 focus:border-gray-500">
+                            <SelectValue placeholder="Select payment method" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="easypaisa">Easypaisa</SelectItem>
+                            <SelectItem value="jazzcash">JazzCash</SelectItem>
+                            <SelectItem value="bank-transfer">Bank Transfer</SelectItem>
+                            <SelectItem value="debit-card">Debit Card</SelectItem>
+                            <SelectItem value="credit-card">Credit Card</SelectItem>
+                            <SelectItem value="raast">Raast</SelectItem>
+                          </SelectContent>
+                        </Select>
                       ) : userProfile.profile.paymentMethod ? (
                         <div className="flex items-center space-x-2 bg-gray-50 px-4 py-3 rounded-lg border-2 border-gray-200">
                           <div className="w-8 h-6 bg-gray-600 rounded flex items-center justify-center text-white text-xs font-bold">
@@ -1522,6 +1637,528 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
         variant="danger"
         loading={deleteClassLoading}
       />
+
+      {/* View Class Modal */}
+      {isViewClassModalOpen && selectedClass && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full shadow-xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-start mb-6">
+              <h3 className="text-2xl font-bold text-gray-900">Class Details</h3>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  setIsViewClassModalOpen(false)
+                  setSelectedClass(null)
+                }}
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-gray-600">Class Name</label>
+                <p className="text-lg font-semibold text-gray-900 mt-1">{selectedClass.name}</p>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-600">Description</label>
+                <p className="text-gray-900 mt-1">{selectedClass.description || 'No description'}</p>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-600">Class Code</label>
+                <div className="mt-1">
+                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 font-mono text-lg">
+                    {selectedClass.classCode}
+                  </Badge>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Number of Students</label>
+                  <p className="text-lg font-semibold text-gray-900 mt-1">{selectedClass.studentCount || 0}</p>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Status</label>
+                  <div className="mt-1">
+                    <Badge variant={selectedClass.isActive ? "default" : "outline"}
+                           className={selectedClass.isActive ? "bg-green-100 text-green-800 border-green-300" : ""}>
+                      {selectedClass.isActive ? "Active" : "Inactive"}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-600">Created Date</label>
+                <p className="text-gray-900 mt-1">{new Date(selectedClass.createdAt).toLocaleDateString()}</p>
+              </div>
+
+              {selectedClass.enrollments && selectedClass.enrollments.length > 0 && (
+                <div>
+                  <label className="text-sm font-medium text-gray-600 mb-2 block">Enrolled Students</label>
+                  <div className="bg-gray-50 rounded-lg p-3 max-h-40 overflow-y-auto">
+                    {selectedClass.enrollments.map((enrollment: any, index: number) => (
+                      <div key={enrollment.student.id} className="flex items-center justify-between py-2 border-b last:border-b-0">
+                        <span className="text-sm text-gray-900">{enrollment.student.name || enrollment.student.email}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end mt-6">
+              <Button
+                onClick={() => {
+                  setIsViewClassModalOpen(false)
+                  setSelectedClass(null)
+                }}
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Class Modal */}
+      {isEditClassModalOpen && selectedClass && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl">
+            <div className="flex justify-between items-start mb-6">
+              <h3 className="text-2xl font-bold text-gray-900">Edit Class</h3>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  setIsEditClassModalOpen(false)
+                  setSelectedClass(null)
+                }}
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Class Name</label>
+                <Input
+                  value={selectedClass.name}
+                  onChange={(e) => setSelectedClass({...selectedClass, name: e.target.value})}
+                  placeholder="Enter class name"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Description</label>
+                <Textarea
+                  value={selectedClass.description || ''}
+                  onChange={(e) => setSelectedClass({...selectedClass, description: e.target.value})}
+                  placeholder="Enter class description"
+                  rows={3}
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Status</label>
+                <Select
+                  value={selectedClass.isActive ? "active" : "inactive"}
+                  onValueChange={(value) => setSelectedClass({...selectedClass, isActive: value === "active"})}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3 mt-6">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsEditClassModalOpen(false)
+                  setSelectedClass(null)
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={async () => {
+                  // TODO: Add API call to update class
+                  alert('Class update functionality will be implemented')
+                  setIsEditClassModalOpen(false)
+                  setSelectedClass(null)
+                }}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                Save Changes
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Profile Save Success Modal */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full border-2 border-green-500 shadow-xl">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                <CheckCircle2 className="h-8 w-8 text-green-600" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">Profile Updated!</h3>
+              <p className="text-gray-700 mb-6">
+                Your profile has been saved successfully.
+              </p>
+              <Button
+                onClick={() => setShowSuccessModal(false)}
+                className="bg-green-600 text-white hover:bg-green-700 px-8"
+              >
+                OK
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View Submission Modal */}
+      {isViewSubmissionModalOpen && selectedSubmission && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full shadow-xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-start mb-6">
+              <h3 className="text-2xl font-bold text-gray-900">Submission Details</h3>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  setIsViewSubmissionModalOpen(false)
+                  setSelectedSubmission(null)
+                }}
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Student Name</label>
+                  <p className="text-lg font-semibold text-gray-900 mt-1">
+                    {selectedSubmission.student?.name || selectedSubmission.student?.username || "Unknown"}
+                  </p>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Student Email</label>
+                  <p className="text-gray-900 mt-1">{selectedSubmission.student?.email || "N/A"}</p>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-600">Assignment</label>
+                <p className="text-lg font-semibold text-gray-900 mt-1">{selectedSubmission.assignmentTitle}</p>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-600">Subject</label>
+                <div className="mt-1">
+                  <Badge variant="outline">{selectedSubmission.assignmentSubject || "N/A"}</Badge>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Submitted At</label>
+                  <p className="text-gray-900 mt-1">
+                    {new Date(selectedSubmission.submittedAt).toLocaleString()}
+                  </p>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Status</label>
+                  <div className="mt-1">
+                    <Badge
+                      variant={selectedSubmission.status === "graded" ? "default" : "outline"}
+                      className={
+                        selectedSubmission.status === "submitted" || selectedSubmission.status === "pending"
+                          ? "text-orange-600 border-orange-600 bg-orange-100"
+                          : "bg-green-600"
+                      }
+                    >
+                      {selectedSubmission.status}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              {selectedSubmission.status === "graded" && (
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Marks</label>
+                  <p className="text-2xl font-bold text-green-900 mt-1">
+                    {selectedSubmission.marks}/{selectedSubmission.assignmentTotalMarks}
+                    <span className="text-sm text-gray-600 ml-2">
+                      ({((selectedSubmission.marks / selectedSubmission.assignmentTotalMarks) * 100).toFixed(1)}%)
+                    </span>
+                  </p>
+                </div>
+              )}
+
+              <div>
+                <label className="text-sm font-medium text-gray-600 mb-2 block">Submission Content</label>
+                {selectedSubmission.content ? (
+                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <p className="text-gray-900 whitespace-pre-wrap">{selectedSubmission.content}</p>
+                  </div>
+                ) : (
+                  <p className="text-gray-400 italic">No text content submitted</p>
+                )}
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-600 mb-2 block">Attached File</label>
+                {selectedSubmission.fileUrl ? (
+                  <div className="space-y-3">
+                    {/* File Preview */}
+                    <div className="border border-gray-300 rounded-lg overflow-hidden">
+                      {selectedSubmission.fileUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                        // Image preview
+                        <img
+                          src={selectedSubmission.fileUrl}
+                          alt="Submitted file"
+                          className="w-full max-h-96 object-contain bg-gray-50"
+                        />
+                      ) : selectedSubmission.fileUrl.match(/\.pdf$/i) || selectedSubmission.fileUrl.includes('pdf') ? (
+                        // PDF preview - Using react-pdf viewer
+                        <PDFViewer fileUrl={selectedSubmission.fileUrl} />
+                      ) : (
+                        // Other files - show link
+                        <div className="p-8 bg-gray-50 text-center">
+                          <FileCheck className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                          <p className="text-gray-600 mb-2">File attached</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Download button only - PDF already visible above */}
+                    <div className="flex justify-center">
+                      <a
+                        href={selectedSubmission.fileUrl}
+                        download
+                        className="inline-flex items-center px-6 py-3 bg-green-50 border border-green-200 rounded-lg text-green-700 hover:bg-green-100 hover:border-green-300 transition-colors"
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Download File
+                      </a>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-gray-400 italic">No file attached</p>
+                )}
+              </div>
+
+              {selectedSubmission.feedback && (
+                <div>
+                  <label className="text-sm font-medium text-gray-600 mb-2 block">Feedback</label>
+                  <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                    <p className="text-gray-900">{selectedSubmission.feedback}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end mt-6">
+              <Button
+                onClick={() => {
+                  setIsViewSubmissionModalOpen(false)
+                  setSelectedSubmission(null)
+                }}
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Submission Modal */}
+      {isEditSubmissionModalOpen && selectedSubmission && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl">
+            <div className="flex justify-between items-start mb-6">
+              <h3 className="text-2xl font-bold text-gray-900">Grade Submission</h3>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  setIsEditSubmissionModalOpen(false)
+                  setSelectedSubmission(null)
+                }}
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-1 block">Student</label>
+                <p className="text-gray-900 font-semibold">
+                  {selectedSubmission.student?.name || selectedSubmission.student?.username || "Unknown"}
+                </p>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-1 block">Assignment</label>
+                <p className="text-gray-900">{selectedSubmission.assignmentTitle}</p>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Marks (Out of {selectedSubmission.assignmentTotalMarks})
+                </label>
+                <Input
+                  type="number"
+                  min="0"
+                  max={selectedSubmission.assignmentTotalMarks}
+                  value={selectedSubmission.marks ?? ''}
+                  onChange={(e) => setSelectedSubmission({
+                    ...selectedSubmission,
+                    marks: e.target.value === '' ? null : parseInt(e.target.value)
+                  })}
+                  placeholder="Enter marks"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Feedback</label>
+                <Textarea
+                  value={selectedSubmission.feedback || ''}
+                  onChange={(e) => setSelectedSubmission({
+                    ...selectedSubmission,
+                    feedback: e.target.value
+                  })}
+                  placeholder="Enter feedback for the student"
+                  rows={4}
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Status</label>
+                <Select
+                  value={selectedSubmission.status}
+                  onValueChange={(value) => setSelectedSubmission({
+                    ...selectedSubmission,
+                    status: value
+                  })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="graded">Graded</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3 mt-6">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsEditSubmissionModalOpen(false)
+                  setSelectedSubmission(null)
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={async () => {
+                  // Validate marks is provided
+                  if (selectedSubmission.marks === null || selectedSubmission.marks === undefined || selectedSubmission.marks === '') {
+                    alert('Please enter marks before saving')
+                    return
+                  }
+
+                  setGradeLoading(true)
+                  try {
+                    const response = await fetch('/api/submissions/grade', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({
+                        submissionId: selectedSubmission.id,
+                        marks: selectedSubmission.marks,
+                        feedback: selectedSubmission.feedback || '',
+                        status: selectedSubmission.status
+                      }),
+                    })
+
+                    if (response.ok) {
+                      // Refresh submissions data
+                      await fetchAssignments()
+                      setIsEditSubmissionModalOpen(false)
+                      setSelectedSubmission(null)
+                      setShowGradeSuccessModal(true)
+                    } else {
+                      const errorData = await response.json()
+                      alert(`Failed to grade submission: ${errorData.error}`)
+                    }
+                  } catch (error) {
+                    console.error('Error grading submission:', error)
+                    alert('Failed to grade submission. Please try again.')
+                  } finally {
+                    setGradeLoading(false)
+                  }
+                }}
+                disabled={gradeLoading}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                {gradeLoading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                    Saving...
+                  </>
+                ) : (
+                  'Save Grade'
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Grade Success Modal */}
+      {showGradeSuccessModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full border-2 border-green-500 shadow-xl">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                <CheckCircle2 className="h-8 w-8 text-green-600" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">Graded Successfully!</h3>
+              <p className="text-gray-700 mb-6">
+                The submission has been graded and saved successfully.
+              </p>
+              <Button
+                onClick={() => setShowGradeSuccessModal(false)}
+                className="bg-green-600 text-white hover:bg-green-700 px-8"
+              >
+                OK
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

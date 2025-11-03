@@ -3,6 +3,10 @@ import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
+import cloudinary from "@/lib/cloudinary"
+
+// Force Node.js runtime for file operations
+export const runtime = 'nodejs'
 
 // Simple AI grading function (mock implementation)
 async function gradeSubmission(assignment: any, content: string): Promise<{ marks: number, feedback: string }> {
@@ -179,12 +183,77 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Handle file upload (in a real app, you'd upload to cloud storage)
+    // Handle file upload
     let fileUrl = null
     if (file) {
-      // For now, we'll just store the filename
-      // In production, upload to AWS S3, Google Cloud Storage, etc.
-      fileUrl = `/uploads/${Date.now()}-${file.name}`
+      // Check if Cloudinary is configured
+      const useCloudinary = process.env.CLOUDINARY_CLOUD_NAME &&
+                           process.env.CLOUDINARY_API_KEY &&
+                           process.env.CLOUDINARY_API_SECRET &&
+                           process.env.CLOUDINARY_CLOUD_NAME !== 'your_cloud_name_here'
+
+      if (useCloudinary) {
+        // Upload to Cloudinary
+        try {
+          const bytes = await file.arrayBuffer()
+          const buffer = Buffer.from(bytes)
+          const base64Data = buffer.toString('base64')
+          const dataURI = `data:${file.type};base64,${base64Data}`
+
+          // Remove extension from filename to avoid double extension
+          const fileNameWithoutExt = file.name.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9-]/g, '_')
+
+          // Detect if file is PDF or image
+          const isPDF = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
+          const resourceType = isPDF ? 'raw' : 'auto' // Use 'raw' for PDFs to enable direct viewing
+
+          const uploadResponse = await cloudinary.uploader.upload(dataURI, {
+            folder: 'gradex/submissions',
+            resource_type: resourceType,
+            public_id: `${Date.now()}-${fileNameWithoutExt}`,
+            type: 'upload',
+            access_mode: 'public',
+            invalidate: true,
+          })
+
+          fileUrl = uploadResponse.secure_url
+          console.log(`File uploaded to Cloudinary: ${fileUrl}`)
+        } catch (error) {
+          console.error('Error uploading to Cloudinary:', error)
+          return NextResponse.json(
+            { error: "Failed to upload file to Cloudinary. Please check your credentials." },
+            { status: 500 }
+          )
+        }
+      } else {
+        // Fallback: Save to local storage
+        console.log('Cloudinary not configured, using local storage')
+        try {
+          const fs = require('fs').promises
+          const path = require('path')
+
+          const uploadDir = path.join(process.cwd(), 'public', 'uploads')
+          await fs.mkdir(uploadDir, { recursive: true })
+
+          const timestamp = Date.now()
+          const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
+          const fileName = `${timestamp}-${sanitizedFileName}`
+          const filePath = path.join(uploadDir, fileName)
+
+          const bytes = await file.arrayBuffer()
+          const buffer = Buffer.from(bytes)
+          await fs.writeFile(filePath, buffer)
+
+          fileUrl = `/uploads/${fileName}`
+          console.log(`File saved locally: ${filePath}`)
+        } catch (error) {
+          console.error('Error saving file locally:', error)
+          return NextResponse.json(
+            { error: "Failed to save uploaded file" },
+            { status: 500 }
+          )
+        }
+      }
     }
 
     // Don't auto-grade immediately - let the AI grading modal handle it

@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: "Validation failed",
-          details: validationResult.error.errors
+          details: validationResult.error.issues
         },
         { status: 400 }
       )
@@ -97,7 +97,8 @@ export async function POST(request: NextRequest) {
               select: {
                 id: true,
                 name: true,
-                email: true
+                email: true,
+                username: true
               }
             }
           }
@@ -157,7 +158,8 @@ export async function GET(request: NextRequest) {
               select: {
                 id: true,
                 name: true,
-                email: true
+                email: true,
+                username: true
               }
             }
           }
