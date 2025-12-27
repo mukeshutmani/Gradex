@@ -200,9 +200,9 @@ export function InviteStudentModal({ isOpen, onClose }: InviteStudentModalProps)
                 <h4 className="font-medium text-blue-900 mb-2">Instructions for Students:</h4>
                 <ol className="text-sm text-blue-800 space-y-1">
                   <li>1. Visit the student dashboard</li>
-                  <li>2. Click "Join Class" tab</li>
+                  <li>2. Click &quot;Join Class&quot; tab</li>
                   <li>3. Enter the class code: <code className="bg-blue-100 px-1 rounded">{selectedClass.classCode}</code></li>
-                  <li>4. Click "Join Class" button</li>
+                  <li>4. Click &quot;Join Class&quot; button</li>
                 </ol>
               </div>
             </>

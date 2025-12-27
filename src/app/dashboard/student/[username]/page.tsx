@@ -94,7 +94,7 @@ interface ClassInfo {
   assignments: Assignment[]
 }
 
-export default function StudentDashboard({ params }: { params: { username: string } }) {
+export default function StudentDashboard() {
   const router = useRouter()
   const { data: session, status } = useSession()
   const [activeTab, setActiveTab] = useState("dashboard")

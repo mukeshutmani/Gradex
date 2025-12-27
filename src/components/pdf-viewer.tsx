@@ -13,7 +13,6 @@ export function PDFViewer({ fileUrl }: PDFViewerProps) {
         src={fileUrl}
         className="w-full h-[700px] bg-white"
         title="PDF Viewer"
-        type="application/pdf"
       />
       <div className="bg-gray-50 px-4 py-2 border-t border-gray-300">
         <p className="text-xs text-gray-600 text-center">

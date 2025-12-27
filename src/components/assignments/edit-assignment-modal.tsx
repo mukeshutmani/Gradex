@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge"
 import {
   Upload,
   FileText,
-  Image,
+  Image as ImageIcon,
   Calendar,
   Award,
   BookOpen,
@@ -310,7 +310,7 @@ export function EditAssignmentModal({ isOpen, onClose, onSuccess, assignment }: 
                     onClick={() => setActiveTab("image")}
                     disabled={loading}
                   >
-                    <Image className="h-4 w-4 mr-2" />
+                    <ImageIcon className="h-4 w-4 mr-2" />
                     Image Upload
                   </Button>
                 </div>
