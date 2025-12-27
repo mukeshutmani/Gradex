@@ -17,6 +17,11 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Set dummy env vars for build (real values injected at runtime)
+ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
+ENV NEXTAUTH_SECRET="build-time-secret-not-used"
+ENV NEXTAUTH_URL="http://localhost:3000"
+
 # Generate Prisma client (doesn't need actual DB connection)
 RUN npx prisma generate
 
