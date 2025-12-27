@@ -21,6 +21,7 @@ COPY . .
 ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
 ENV NEXTAUTH_SECRET="build-time-secret-not-used"
 ENV NEXTAUTH_URL="http://localhost:3000"
+ENV OPENAI_API_KEY="sk-dummy-key-for-build-only"
 
 # Generate Prisma client (doesn't need actual DB connection)
 RUN npx prisma generate
