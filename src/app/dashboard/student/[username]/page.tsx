@@ -106,12 +106,14 @@ export default function StudentDashboard({ params }: { params: { username: strin
   const [isSubmissionModalOpen, setIsSubmissionModalOpen] = useState(false)
   const [selectedAssignmentForSubmission, setSelectedAssignmentForSubmission] = useState<Assignment | null>(null)
   const [submissions, setSubmissions] = useState<Submission[]>([])
-  const [resultsActiveTab, setResultsActiveTab] = useState("overview")
+  const [resultsActiveTab, setResultsActiveTab] = useState("submissions")
   const [searchQuery, setSearchQuery] = useState("")
   const [sortBy, setSortBy] = useState<"title" | "dueDate" | "subject" | "status">("dueDate")
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc")
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc")
   const [isViewModalOpen, setIsViewModalOpen] = useState(false)
   const [selectedAssignmentForView, setSelectedAssignmentForView] = useState<Assignment | null>(null)
+  const [isDescriptionModalOpen, setIsDescriptionModalOpen] = useState(false)
+  const [selectedDescription, setSelectedDescription] = useState<{ title: string; description: string } | null>(null)
 
   // Fetch student's enrolled classes and assignments
   const fetchStudentData = async () => {
@@ -223,7 +225,7 @@ export default function StudentDashboard({ params }: { params: { username: strin
 
   const getGradeColor = (percentage: number) => {
     if (percentage >= 90) return "text-green-600 bg-green-100 border-green-300"
-    if (percentage >= 80) return "text-blue-600 bg-blue-100 border-blue-300"
+    if (percentage >= 80) return "text-violet-600 bg-violet-100 border-violet-300"
     if (percentage >= 70) return "text-yellow-600 bg-yellow-100 border-yellow-300"
     if (percentage >= 60) return "text-orange-600 bg-orange-100 border-orange-300"
     return "text-red-600 bg-red-100 border-red-300"
@@ -244,7 +246,20 @@ export default function StudentDashboard({ params }: { params: { username: strin
 
   // Filter and sort assignments
   const getFilteredAndSortedAssignments = () => {
+    const fifteenDaysAgo = new Date()
+    fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15)
+
     let filtered = assignments.filter(assignment => {
+      // Hide assignments that expired more than 15 days ago AND have no submission
+      const dueDate = new Date(assignment.dueDate)
+      const isExpiredOver15Days = dueDate < fifteenDaysAgo
+      const hasNoSubmission = !assignment.submission
+
+      // If expired over 15 days and no submission, hide it
+      if (isExpiredOver15Days && hasNoSubmission) {
+        return false
+      }
+
       const searchLower = searchQuery.toLowerCase()
       return (
         assignment.title.toLowerCase().includes(searchLower) ||
@@ -309,17 +324,14 @@ export default function StudentDashboard({ params }: { params: { username: strin
       <header className="bg-white shadow-sm border-b">
         <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-3">
-              <Button
-                variant="ghost"
-                size="sm"
+            <div className="flex items-center gap-1">
+             
+              <img
+                src="https://res.cloudinary.com/dolpat4s3/image/upload/v1766249987/Black_Green_Letter_G_Logo_wafmuu.svg"
+                alt="Gradex Logo"
                 onClick={() => router.push('/')}
-                className="p-2"
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-              <ClipboardCheck className="h-8 w-8 text-primary" />
-              <span className="ml-2 text-xl font-bold text-gray-900">Gradex Student</span>
+                className="h-16 w-auto cursor-pointer"
+              />
             </div>
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
@@ -337,23 +349,23 @@ export default function StudentDashboard({ params }: { params: { username: strin
       {/* Navigation Tabs */}
       <div className="bg-white border-b">
         <div className="w-full px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-8">
+          <div className="flex space-x-6">
             {[
-              { id: "dashboard", label: "Dashboard", icon: TrendingUp, color: "text-blue-500" },
-              { id: "assignments", label: "Assignments", icon: BookOpen, color: "text-purple-500" },
-              { id: "join", label: "Class Assignment", icon: Plus, color: "text-orange-500" },
-              { id: "results", label: "View Results", icon: Award, color: "text-yellow-500" }
+              { id: "dashboard", label: "Dashboard", icon: TrendingUp },
+              { id: "assignments", label: "Assignments", icon: BookOpen },
+              { id: "join", label: "Class Assignment", icon: Plus },
+              { id: "results", label: "View Results", icon: Award }
             ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center space-x-2 py-4 border-b-2 font-medium text-sm transition-colors ${
+                className={`flex items-center space-x-2 py-4 border-b-2 font-medium text-sm transition-all ${
                   activeTab === tab.id
-                    ? "border-primary text-primary"
-                    : "border-transparent text-gray-500 hover:text-gray-700"
+                    ? "border-violet-600 text-violet-600"
+                    : "border-transparent text-gray-600 hover:text-violet-600 hover:border-violet-300"
                 }`}
               >
-                <tab.icon className={`h-4 w-4 ${tab.color}`} />
+                <tab.icon className={`h-4 w-4 ${activeTab === tab.id ? "text-violet-600" : "text-black"}`} />
                 <span>{tab.label}</span>
               </button>
             ))}
@@ -368,61 +380,61 @@ export default function StudentDashboard({ params }: { params: { username: strin
           <div className="space-y-6">
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card className="bg-gradient-to-br from-blue-50 to-cyan-50 border-blue-200 shadow-md hover:shadow-lg transition-shadow">
+              <Card className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-blue-900">Total Assignments</CardTitle>
-                  <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
-                    <BookOpen className="h-5 w-5 text-white" />
+                  <CardTitle className="text-sm font-medium text-gray-600">Total Assignments</CardTitle>
+                  <div className="w-10 h-10 bg-violet-100 rounded-full flex items-center justify-center">
+                    <BookOpen className="h-5 w-5 text-violet-600" />
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-blue-700">{totalAssignments}</div>
-                  <p className="text-xs text-blue-600 mt-1">
+                  <div className="text-3xl font-bold text-gray-900">{totalAssignments}</div>
+                  <p className="text-xs text-gray-500 mt-1">
                     Across all classes
                   </p>
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 shadow-md hover:shadow-lg transition-shadow">
+              <Card className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-green-900">Submitted</CardTitle>
-                  <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
-                    <CheckCircle2 className="h-5 w-5 text-white" />
+                  <CardTitle className="text-sm font-medium text-gray-600">Submitted</CardTitle>
+                  <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                    <CheckCircle2 className="h-5 w-5 text-green-600" />
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-green-700">{submittedAssignments}</div>
-                  <p className="text-xs text-green-600 mt-1">
+                  <div className="text-3xl font-bold text-gray-900">{submittedAssignments}</div>
+                  <p className="text-xs text-gray-500 mt-1">
                     Completed assignments
                   </p>
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-orange-50 to-amber-50 border-orange-200 shadow-md hover:shadow-lg transition-shadow">
+              <Card className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-orange-900">Pending</CardTitle>
-                  <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center">
-                    <Clock className="h-5 w-5 text-white" />
+                  <CardTitle className="text-sm font-medium text-gray-600">Pending</CardTitle>
+                  <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                    <Clock className="h-5 w-5 text-orange-600" />
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-orange-700">{pendingAssignments}</div>
-                  <p className="text-xs text-orange-600 mt-1">
+                  <div className="text-3xl font-bold text-gray-900">{pendingAssignments}</div>
+                  <p className="text-xs text-gray-500 mt-1">
                     Need to submit
                   </p>
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-red-50 to-pink-50 border-red-200 shadow-md hover:shadow-lg transition-shadow">
+              <Card className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-red-900">Overdue</CardTitle>
-                  <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center">
-                    <AlertCircle className="h-5 w-5 text-white" />
+                  <CardTitle className="text-sm font-medium text-gray-600">Overdue</CardTitle>
+                  <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                    <AlertCircle className="h-5 w-5 text-red-600" />
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-red-700">{overdueAssignments}</div>
-                  <p className="text-xs text-red-600 mt-1">
+                  <div className="text-3xl font-bold text-gray-900">{overdueAssignments}</div>
+                  <p className="text-xs text-gray-500 mt-1">
                     Past due date
                   </p>
                 </CardContent>
@@ -434,7 +446,7 @@ export default function StudentDashboard({ params }: { params: { username: strin
               <Card className="bg-white border-gray-200 shadow-sm">
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">
-                    <BookOpen className="h-5 w-5 text-blue-500" />
+                    <BookOpen className="h-5 w-5 text-violet-500" />
                     <span>Recent Assignments</span>
                   </CardTitle>
                 </CardHeader>
@@ -467,7 +479,7 @@ export default function StudentDashboard({ params }: { params: { username: strin
                             isOverdue ? "destructive" : "outline"
                           } className={
                             isGraded ? "bg-green-100 text-green-800 border-green-300" :
-                            hasSubmission ? "bg-blue-100 text-blue-800 border-blue-300" : ""
+                            hasSubmission ? "bg-violet-100 text-violet-800 border-violet-300" : ""
                           }>
                             {isGraded ? "Graded" :
                              hasSubmission ? "Submitted" :
@@ -499,7 +511,7 @@ export default function StudentDashboard({ params }: { params: { username: strin
                         <p className="text-sm font-medium">{classItem.name}</p>
                         <p className="text-xs text-muted-foreground">Teacher: {classItem.teacher.name}</p>
                       </div>
-                      <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                      <Badge variant="outline" className="bg-violet-50 text-violet-700">
                         {classItem.assignments.length} assignments
                       </Badge>
                     </div>
@@ -551,19 +563,14 @@ export default function StudentDashboard({ params }: { params: { username: strin
         {/* Assignments Tab */}
         {activeTab === "assignments" && (
           <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h1 className="text-2xl font-bold text-gray-900">All Assignments</h1>
-              <div className="flex items-center space-x-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    placeholder="Search assignments..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 w-64"
-                  />
-                </div>
-              </div>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search assignments..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 w-64"
+              />
             </div>
 
             {assignments.length === 0 ? (
@@ -582,7 +589,7 @@ export default function StudentDashboard({ params }: { params: { username: strin
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-gray-50">
-                        <TableHead className="w-[300px]">
+                        <TableHead className="w-[250px]">
                           <Button
                             variant="ghost"
                             onClick={() => handleSort("title")}
@@ -595,19 +602,7 @@ export default function StudentDashboard({ params }: { params: { username: strin
                             {sortBy !== "title" && <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />}
                           </Button>
                         </TableHead>
-                        <TableHead>
-                          <Button
-                            variant="ghost"
-                            onClick={() => handleSort("subject")}
-                            className="h-auto p-0 hover:bg-transparent font-semibold"
-                          >
-                            Subject
-                            {sortBy === "subject" && (
-                              sortOrder === "asc" ? <ArrowUp className="ml-2 h-4 w-4" /> : <ArrowDown className="ml-2 h-4 w-4" />
-                            )}
-                            {sortBy !== "subject" && <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />}
-                          </Button>
-                        </TableHead>
+                        <TableHead className="text-center w-[100px]">Description</TableHead>
                         <TableHead>Class</TableHead>
                         <TableHead>Teacher</TableHead>
                         <TableHead className="text-center">Total Marks</TableHead>
@@ -637,7 +632,12 @@ export default function StudentDashboard({ params }: { params: { username: strin
                             {sortBy !== "status" && <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />}
                           </Button>
                         </TableHead>
-                        <TableHead className="text-center">Score</TableHead>
+                        <TableHead className="text-center">
+                          <div className="flex flex-col items-center">
+                            <span>Your Score</span>
+                            <span className="text-xs font-normal text-gray-400">(Marks / Total)</span>
+                          </div>
+                        </TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -650,17 +650,29 @@ export default function StudentDashboard({ params }: { params: { username: strin
                         return (
                           <TableRow key={assignment.id} className="hover:bg-gray-50">
                             <TableCell className="font-medium">
-                              <div>
-                                <div className="font-semibold text-gray-900">{assignment.title}</div>
-                                {assignment.description && (
-                                  <div className="text-xs text-gray-500 mt-1 line-clamp-2">{assignment.description}</div>
-                                )}
-                              </div>
+                              <div className="font-semibold text-gray-900">{assignment.title}</div>
                             </TableCell>
-                            <TableCell>
-                              <Badge variant="outline" className="bg-blue-50 text-blue-700">
-                                {assignment.subject}
-                              </Badge>
+                            <TableCell className="text-center">
+                              {assignment.description ? (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    setSelectedDescription({
+                                      title: assignment.title,
+                                      description: assignment.description || ""
+                                    })
+                                    setIsDescriptionModalOpen(true)
+                                  }}
+                                  className="text-violet-600 hover:text-violet-700 hover:bg-violet-50"
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              ) : (
+                                <span className="text-gray-300">
+                                  <Eye className="h-4 w-4 inline" />
+                                </span>
+                              )}
                             </TableCell>
                             <TableCell className="text-sm text-gray-600">{assignment.class?.name || "N/A"}</TableCell>
                             <TableCell className="text-sm text-gray-600">{assignment.class?.teacher.name || "N/A"}</TableCell>
@@ -676,7 +688,7 @@ export default function StudentDashboard({ params }: { params: { username: strin
                                   Graded
                                 </Badge>
                               ) : hasSubmission ? (
-                                <Badge className="bg-blue-100 text-blue-800 border-blue-300">
+                                <Badge className="bg-violet-100 text-violet-800 border-violet-300">
                                   Submitted
                                 </Badge>
                               ) : (
@@ -687,43 +699,94 @@ export default function StudentDashboard({ params }: { params: { username: strin
                             </TableCell>
                             <TableCell className="text-center">
                               {isGraded ? (
-                                <div>
-                                  <div className="font-bold text-green-600">
+                                <div className="flex flex-col items-center">
+                                  <div className={`font-bold text-lg ${
+                                    ((assignment.submission?.marks || 0) / assignment.totalMarks * 100) >= 80
+                                      ? 'text-green-600'
+                                      : ((assignment.submission?.marks || 0) / assignment.totalMarks * 100) >= 60
+                                        ? 'text-violet-600'
+                                        : ((assignment.submission?.marks || 0) / assignment.totalMarks * 100) >= 40
+                                          ? 'text-orange-600'
+                                          : 'text-red-600'
+                                  }`}>
                                     {assignment.submission?.marks}/{assignment.totalMarks}
                                   </div>
-                                  <div className="text-xs text-gray-500">
-                                    ({((assignment.submission?.marks || 0) / assignment.totalMarks * 100).toFixed(1)}%)
-                                  </div>
+                                  <Badge variant="outline" className={`text-xs mt-1 ${
+                                    ((assignment.submission?.marks || 0) / assignment.totalMarks * 100) >= 80
+                                      ? 'bg-green-50 text-green-700 border-green-300'
+                                      : ((assignment.submission?.marks || 0) / assignment.totalMarks * 100) >= 60
+                                        ? 'bg-violet-50 text-violet-700 border-violet-300'
+                                        : ((assignment.submission?.marks || 0) / assignment.totalMarks * 100) >= 40
+                                          ? 'bg-orange-50 text-orange-700 border-orange-300'
+                                          : 'bg-red-50 text-red-700 border-red-300'
+                                  }`}>
+                                    {((assignment.submission?.marks || 0) / assignment.totalMarks * 100).toFixed(0)}%
+                                  </Badge>
                                 </div>
                               ) : hasSubmission ? (
-                                <div className="text-xs text-gray-500">Awaiting</div>
+                                <div className="flex flex-col items-center">
+                                  <Clock className="h-4 w-4 text-violet-500 mb-1" />
+                                  <span className="text-xs text-violet-600 font-medium">Awaiting</span>
+                                  <span className="text-xs text-gray-400">Grade</span>
+                                </div>
                               ) : (
-                                <div className="text-xs text-gray-400">-</div>
+                                <div className="flex flex-col items-center">
+                                  <span className="text-xs text-gray-400 font-medium">Not</span>
+                                  <span className="text-xs text-gray-400">Submitted</span>
+                                </div>
                               )}
                             </TableCell>
                             <TableCell className="text-right">
                               {!hasSubmission ? (
-                                <Button
-                                  size="sm"
-                                  onClick={() => {
-                                    setSelectedAssignmentForSubmission(assignment)
-                                    setIsSubmissionModalOpen(true)
-                                  }}
-                                  className={isOverdue ? "bg-orange-600 hover:bg-orange-700" : "bg-blue-600 hover:bg-blue-700"}
-                                >
-                                  <FileText className="h-3 w-3 mr-1" />
-                                  {isOverdue ? "Submit Late" : "Submit"}
-                                </Button>
-                              ) : isGraded && assignment.submission?.feedback ? (
+                                isOverdue ? (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    disabled
+                                    className="border-red-200 text-red-500 cursor-not-allowed opacity-70"
+                                  >
+                                    <AlertCircle className="h-3 w-3 mr-1" />
+                                    Expired
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    size="sm"
+                                    onClick={() => {
+                                      setSelectedAssignmentForSubmission(assignment)
+                                      setIsSubmissionModalOpen(true)
+                                    }}
+                                    className="bg-violet-600 hover:bg-violet-700"
+                                  >
+                                    <FileText className="h-3 w-3 mr-1" />
+                                    Submit
+                                  </Button>
+                                )
+                              ) : isGraded ? (
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  className="border-green-200 text-green-700"
+                                  className="border-green-200 text-green-700 hover:bg-green-50"
+                                  onClick={() => {
+                                    setSelectedDescription({
+                                      title: `Feedback: ${assignment.title}`,
+                                      description: assignment.submission?.feedback || "No feedback provided yet."
+                                    })
+                                    setIsDescriptionModalOpen(true)
+                                  }}
                                 >
+                                  <Eye className="h-3 w-3 mr-1" />
                                   View Feedback
                                 </Button>
                               ) : (
-                                <span className="text-xs text-gray-400">-</span>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  disabled
+                                  className="border-violet-200 text-violet-600 cursor-not-allowed opacity-70"
+                                >
+                                  <CheckCircle2 className="h-3 w-3 mr-1" />
+                                  Submitted
+                                </Button>
                               )}
                             </TableCell>
                           </TableRow>
@@ -750,9 +813,8 @@ export default function StudentDashboard({ params }: { params: { username: strin
             {/* Results Sub-Tabs */}
             <div className="flex space-x-4 border-b">
               {[
-                { id: "overview", label: "Overview", icon: BarChart3, color: "text-blue-500" },
                 { id: "submissions", label: "All Submissions", icon: FileText, color: "text-green-500" },
-                { id: "subjects", label: "By Subject", icon: BookOpen, color: "text-purple-500" }
+                { id: "subjects", label: "By Subject", icon: BookOpen, color: "text-violet-500" }
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -783,164 +845,6 @@ export default function StudentDashboard({ params }: { params: { username: strin
               </Card>
             ) : (
               <>
-                {/* Overview Sub-Tab */}
-                {resultsActiveTab === "overview" && (
-                  <div className="space-y-6">
-                    {/* Statistics Cards with Colorful Gradients */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                      <Card className="bg-gradient-to-br from-blue-500 to-blue-600 border-0 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 hover:-translate-y-1 cursor-pointer group animate-fade-in">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                          <CardTitle className="text-sm font-medium text-white">Overall Average</CardTitle>
-                          <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center group-hover:bg-white/30 transition-all duration-300 group-hover:rotate-12">
-                            <TrendingUp className="h-5 w-5 text-white" />
-                          </div>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="text-3xl font-bold text-white group-hover:scale-110 transition-transform duration-300">{averagePercentage.toFixed(1)}%</div>
-                          <p className="text-xs text-blue-100 mt-1">
-                            Grade: {getGradeLetter(averagePercentage)}
-                          </p>
-                        </CardContent>
-                      </Card>
-
-                      <Card className="bg-gradient-to-br from-yellow-400 to-orange-500 border-0 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 hover:-translate-y-1 cursor-pointer group animate-fade-in" style={{ animationDelay: '100ms' }}>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                          <CardTitle className="text-sm font-medium text-white">Best Grade</CardTitle>
-                          <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center group-hover:bg-white/30 transition-all duration-300 group-hover:rotate-12">
-                            <Star className="h-5 w-5 text-white group-hover:animate-spin" />
-                          </div>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="text-3xl font-bold text-white group-hover:scale-110 transition-transform duration-300">{bestGrade.toFixed(1)}%</div>
-                          <p className="text-xs text-yellow-100 mt-1">
-                            Grade: {getGradeLetter(bestGrade)}
-                          </p>
-                        </CardContent>
-                      </Card>
-
-                      <Card className="bg-gradient-to-br from-green-500 to-emerald-600 border-0 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 hover:-translate-y-1 cursor-pointer group animate-fade-in" style={{ animationDelay: '200ms' }}>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                          <CardTitle className="text-sm font-medium text-white">Total Submissions</CardTitle>
-                          <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center group-hover:bg-white/30 transition-all duration-300 group-hover:rotate-12">
-                            <FileText className="h-5 w-5 text-white" />
-                          </div>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="text-3xl font-bold text-white group-hover:scale-110 transition-transform duration-300">{submissions.length}</div>
-                          <p className="text-xs text-green-100 mt-1">
-                            {gradedSubmissions.length} graded
-                          </p>
-                        </CardContent>
-                      </Card>
-
-                      <Card className="bg-gradient-to-br from-purple-500 to-pink-500 border-0 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 hover:-translate-y-1 cursor-pointer group animate-fade-in" style={{ animationDelay: '300ms' }}>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                          <CardTitle className="text-sm font-medium text-white">Points Earned</CardTitle>
-                          <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center group-hover:bg-white/30 transition-all duration-300 group-hover:rotate-12">
-                            <Award className="h-5 w-5 text-white" />
-                          </div>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="text-3xl font-bold text-white group-hover:scale-110 transition-transform duration-300">{totalMarks}</div>
-                          <p className="text-xs text-purple-100 mt-1">
-                            out of {totalPossible} possible
-                          </p>
-                        </CardContent>
-                      </Card>
-                    </div>
-
-                    {/* Performance Overview with Enhanced Design */}
-                    <Card className="bg-gradient-to-br from-indigo-50 to-purple-50 border-2 border-indigo-200 shadow-lg">
-                      <CardHeader>
-                        <CardTitle className="flex items-center space-x-2">
-                          <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center">
-                            <BarChart3 className="h-5 w-5 text-white" />
-                          </div>
-                          <span className="text-gray-900">Performance Overview</span>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="pt-6">
-                        <div className="space-y-6">
-                          <div className="bg-white p-4 rounded-lg shadow-sm border border-indigo-100">
-                            <div className="flex justify-between text-sm mb-3">
-                              <span className="font-semibold text-gray-700">Overall Progress</span>
-                              <span className="font-bold text-indigo-600">{averagePercentage.toFixed(1)}%</span>
-                            </div>
-                            <div className="relative h-3 bg-gray-200 rounded-full overflow-hidden">
-                              <div
-                                className="absolute inset-y-0 left-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-full transition-all duration-1000 ease-out"
-                                style={{ width: `${averagePercentage}%` }}
-                              >
-                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30 animate-shimmer"></div>
-                              </div>
-                            </div>
-                          </div>
-
-                          {gradedSubmissions.length > 0 && (
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                              <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-6 rounded-xl border-2 border-green-200 text-center hover:shadow-md transition-shadow">
-                                <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                                  <CheckCircle2 className="h-6 w-6 text-white" />
-                                </div>
-                                <div className="text-3xl font-bold text-green-600 mb-1">
-                                  {gradedSubmissions.filter(s => ((s.marks || 0) / s.assignment.totalMarks) >= 0.8).length}
-                                </div>
-                                <div className="text-sm font-medium text-green-700">Assignments with 80%+</div>
-                              </div>
-                              <div className="bg-gradient-to-br from-blue-50 to-cyan-50 p-6 rounded-xl border-2 border-blue-200 text-center hover:shadow-md transition-shadow">
-                                <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                                  <TrendingUp className="h-6 w-6 text-white" />
-                                </div>
-                                <div className="text-3xl font-bold text-blue-600 mb-1">
-                                  {gradedSubmissions.filter(s => ((s.marks || 0) / s.assignment.totalMarks) >= 0.7).length}
-                                </div>
-                                <div className="text-sm font-medium text-blue-700">Assignments with 70%+</div>
-                              </div>
-                              <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-6 rounded-xl border-2 border-purple-200 text-center hover:shadow-md transition-shadow">
-                                <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                                  <Star className="h-6 w-6 text-white" />
-                                </div>
-                                <div className="text-3xl font-bold text-purple-600 mb-1">
-                                  {gradedSubmissions.filter(s => ((s.marks || 0) / s.assignment.totalMarks) >= 0.6).length}
-                                </div>
-                                <div className="text-sm font-medium text-purple-700">Assignments with 60%+</div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                )}
-
-                {/* Combined Styles for Overview Tab */}
-                <style jsx>{`
-                  @keyframes fade-in {
-                    from {
-                      opacity: 0;
-                      transform: translateY(20px);
-                    }
-                    to {
-                      opacity: 1;
-                      transform: translateY(0);
-                    }
-                  }
-                  @keyframes shimmer {
-                    0% {
-                      transform: translateX(-100%);
-                    }
-                    100% {
-                      transform: translateX(100%);
-                    }
-                  }
-                  .animate-fade-in {
-                    animation: fade-in 0.6s ease-out forwards;
-                  }
-                  .animate-shimmer {
-                    animation: shimmer 2s infinite;
-                  }
-                `}</style>
-
                 {/* All Submissions Sub-Tab */}
                 {resultsActiveTab === "submissions" && (
                   <Card className="bg-white border-gray-200 shadow-sm">
@@ -967,7 +871,7 @@ export default function StudentDashboard({ params }: { params: { username: strin
                                 <div className="flex-1">
                                   <div className="flex items-center space-x-2 mb-2">
                                     <h3 className="font-semibold text-gray-900">{submission.assignment.title}</h3>
-                                    <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                                    <Badge variant="outline" className="bg-violet-50 text-violet-700">
                                       {submission.assignment.subject}
                                     </Badge>
                                   </div>
@@ -979,13 +883,13 @@ export default function StudentDashboard({ params }: { params: { username: strin
                                     </div>
                                     <div>
                                       <span className="font-medium">Submitted:</span>
-                                      <p className="text-indigo-600 font-semibold">{new Date(submission.submittedAt).toLocaleDateString()}</p>
+                                      <p className="text-violet-600 font-semibold">{new Date(submission.submittedAt).toLocaleDateString()}</p>
                                     </div>
                                     <div>
                                       <span className="font-medium">Status:</span>
                                       <Badge
                                         variant={isGraded ? "default" : "secondary"}
-                                        className={`ml-1 ${isGraded ? 'bg-green-100 text-green-800 border-green-300' : 'bg-blue-100 text-blue-800 border-blue-300'}`}
+                                        className={`ml-1 ${isGraded ? 'bg-green-100 text-green-800 border-green-300' : 'bg-violet-100 text-violet-800 border-violet-300'}`}
                                       >
                                         {isGraded ? "Graded" : "Submitted"}
                                       </Badge>
@@ -1005,7 +909,7 @@ export default function StudentDashboard({ params }: { params: { username: strin
                                     </div>
                                   ) : (
                                     <div className="space-y-2">
-                                      <Badge className="bg-blue-100 text-blue-800">
+                                      <Badge className="bg-violet-100 text-violet-800">
                                         <Clock className="h-3 w-3 mr-1" />
                                         Pending
                                       </Badge>
@@ -1060,7 +964,7 @@ export default function StudentDashboard({ params }: { params: { username: strin
                             <CardHeader>
                               <div className="flex items-center justify-between">
                                 <CardTitle className="flex items-center space-x-2">
-                                  <BookOpen className="h-5 w-5 text-blue-500" />
+                                  <BookOpen className="h-5 w-5 text-violet-500" />
                                   <span>{subject}</span>
                                 </CardTitle>
                                 <div className="text-right">
@@ -1104,7 +1008,7 @@ export default function StudentDashboard({ params }: { params: { username: strin
                                             </div>
                                           </div>
                                         ) : (
-                                          <Badge className="bg-blue-100 text-blue-800">
+                                          <Badge className="bg-violet-100 text-violet-800">
                                             <Clock className="h-3 w-3 mr-1" />
                                             Pending
                                           </Badge>
@@ -1151,6 +1055,48 @@ export default function StudentDashboard({ params }: { params: { username: strin
         }}
         assignment={selectedAssignmentForView}
       />
+
+      {/* Description Modal */}
+      {isDescriptionModalOpen && selectedDescription && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-lg w-full shadow-xl">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">Assignment Description</h3>
+                <p className="text-sm text-violet-600 font-medium mt-1">{selectedDescription.title}</p>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setIsDescriptionModalOpen(false)
+                  setSelectedDescription(null)
+                }}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <span className="sr-only">Close</span>
+                ✕
+              </Button>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+              <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
+                {selectedDescription.description}
+              </p>
+            </div>
+            <div className="flex justify-end mt-4">
+              <Button
+                onClick={() => {
+                  setIsDescriptionModalOpen(false)
+                  setSelectedDescription(null)
+                }}
+                className="bg-violet-600 hover:bg-violet-700"
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

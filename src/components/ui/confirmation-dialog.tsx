@@ -56,10 +56,10 @@ export function ConfirmationDialog({
         }
       case "info":
         return {
-          icon: <AlertTriangle className="h-6 w-6 text-blue-600" />,
-          iconBg: "bg-blue-100",
-          confirmButton: "bg-blue-600 hover:bg-blue-700 text-white",
-          titleColor: "text-blue-900"
+          icon: <AlertTriangle className="h-6 w-6 text-violet-600" />,
+          iconBg: "bg-violet-100",
+          confirmButton: "bg-violet-600 hover:bg-violet-700 text-white",
+          titleColor: "text-violet-900"
         }
       default:
         return {

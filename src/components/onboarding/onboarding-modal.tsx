@@ -193,7 +193,7 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
         <div className="px-6 py-2 flex-shrink-0">
           <div className="w-full bg-gray-700 rounded-full h-2">
             <div
-              className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+              className="bg-violet-500 h-2 rounded-full transition-all duration-300"
               style={{ width: `${(currentStep / totalSteps) * 100}%` }}
             />
           </div>
@@ -211,7 +211,7 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
                 <div className="space-y-2 mb-4">
                   <label className="text-sm font-medium text-gray-300">Your Role</label>
                   <Select value={formData.role} onValueChange={(value) => updateFormData("role", value)}>
-                    <SelectTrigger className="w-full bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500">
+                    <SelectTrigger className="w-full bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-violet-500 focus:border-violet-500">
                       <SelectValue placeholder="Select your role" />
                     </SelectTrigger>
                     <SelectContent className="z-[60]">
@@ -232,7 +232,7 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
                     value={formData.username}
                     onChange={(e) => updateFormData("username", e.target.value)}
                     readOnly={!!session?.user?.name}
-                    className={`w-full bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500 ${errors.username ? "border-red-500" : ""} ${!!session?.user?.name ? "cursor-not-allowed opacity-75" : ""}`}
+                    className={`w-full bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-violet-500 focus:border-violet-500 ${errors.username ? "border-red-500" : ""} ${!!session?.user?.name ? "cursor-not-allowed opacity-75" : ""}`}
                   />
                   {errors.username && (
                     <p className="text-red-400 text-sm mt-1">{errors.username}</p>
@@ -243,7 +243,7 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-300">Institution Type</label>
                   <Select value={formData.institutionType} onValueChange={(value) => updateFormData("institutionType", value)}>
-                    <SelectTrigger className={`w-full bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500 ${errors.institutionType ? "border-red-500" : ""}`}>
+                    <SelectTrigger className={`w-full bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-violet-500 focus:border-violet-500 ${errors.institutionType ? "border-red-500" : ""}`}>
                       <SelectValue placeholder="Select institution type" />
                     </SelectTrigger>
                     <SelectContent className="z-[60]">
@@ -279,7 +279,7 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
                     placeholder={`Enter your ${formData.institutionType || 'institution'} name`}
                     value={formData.institutionName}
                     onChange={(e) => updateFormData("institutionName", e.target.value)}
-                    className={`w-full bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500 ${errors.institutionName ? "border-red-500" : ""}`}
+                    className={`w-full bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-violet-500 focus:border-violet-500 ${errors.institutionName ? "border-red-500" : ""}`}
                   />
                   {errors.institutionName && (
                     <p className="text-red-400 text-sm mt-1">{errors.institutionName}</p>
@@ -290,7 +290,7 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-300">Number of Students</label>
                   <Select value={formData.studentCount} onValueChange={(value) => updateFormData("studentCount", value)}>
-                    <SelectTrigger className={`w-full bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500 ${errors.studentCount ? "border-red-500" : ""}`}>
+                    <SelectTrigger className={`w-full bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-violet-500 focus:border-violet-500 ${errors.studentCount ? "border-red-500" : ""}`}>
                       <SelectValue placeholder="Select student count range" />
                     </SelectTrigger>
                     <SelectContent className="z-[60]">
@@ -323,7 +323,7 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
                     placeholder="Enter subjects you teach (e.g., Mathematics, Science, English)"
                     value={formData.subjects}
                     onChange={(e) => updateFormData("subjects", e.target.value)}
-                    className={`w-full bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500 ${errors.subjects ? "border-red-500" : ""}`}
+                    className={`w-full bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-violet-500 focus:border-violet-500 ${errors.subjects ? "border-red-500" : ""}`}
                   />
                   {errors.subjects && (
                     <p className="text-red-400 text-sm mt-1">{errors.subjects}</p>
@@ -337,7 +337,7 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-300">Teaching Experience <span className="text-xs text-gray-400">(Optional)</span></label>
                   <Select value={formData.experience} onValueChange={(value) => updateFormData("experience", value)}>
-                    <SelectTrigger className={`w-full bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500 ${errors.experience ? "border-red-500" : ""}`}>
+                    <SelectTrigger className={`w-full bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-violet-500 focus:border-violet-500 ${errors.experience ? "border-red-500" : ""}`}>
                       <SelectValue placeholder="Select your experience level" />
                     </SelectTrigger>
                     <SelectContent className="z-[60]">
@@ -362,12 +362,12 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
                 <h3 className="text-xl font-semibold mb-4">Choose Your Plan</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {/* Free Plan */}
-                  <Card className={`cursor-pointer transition-all bg-gray-800 border-gray-600 text-white ${formData.plan === "free" ? "ring-2 ring-blue-500 bg-gray-700" : ""}`}
+                  <Card className={`cursor-pointer transition-all bg-gray-800 border-gray-600 text-white ${formData.plan === "free" ? "ring-2 ring-violet-500 bg-gray-700" : ""}`}
                         onClick={() => updateFormData("plan", "free")}>
                     <CardHeader>
                       <CardTitle className="flex items-center">
                         Free
-                        {formData.plan === "free" && <Check className="ml-2 h-5 w-5 text-blue-500" />}
+                        {formData.plan === "free" && <Check className="ml-2 h-5 w-5 text-violet-500" />}
                       </CardTitle>
                       <CardDescription>Perfect for trying out</CardDescription>
                     </CardHeader>
@@ -383,13 +383,13 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
                   </Card>
 
                   {/* Standard Plan */}
-                  <Card className={`cursor-pointer transition-all bg-gray-800 border-gray-600 text-white ${formData.plan === "standard" ? "ring-2 ring-blue-500 bg-gray-700" : ""}`}
+                  <Card className={`cursor-pointer transition-all bg-gray-800 border-gray-600 text-white ${formData.plan === "standard" ? "ring-2 ring-violet-500 bg-gray-700" : ""}`}
                         onClick={() => updateFormData("plan", "standard")}>
                     <CardHeader>
                       <CardTitle className="flex items-center">
                         Standard
                         <Star className="ml-2 h-4 w-4 text-yellow-500" />
-                        {formData.plan === "standard" && <Check className="ml-2 h-5 w-5 text-blue-500" />}
+                        {formData.plan === "standard" && <Check className="ml-2 h-5 w-5 text-violet-500" />}
                       </CardTitle>
                       <CardDescription>Most popular choice</CardDescription>
                     </CardHeader>
@@ -405,12 +405,12 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
                   </Card>
 
                   {/* Premium Plan */}
-                  <Card className={`cursor-pointer transition-all bg-gray-800 border-gray-600 text-white ${formData.plan === "premium" ? "ring-2 ring-blue-500 bg-gray-700" : ""}`}
+                  <Card className={`cursor-pointer transition-all bg-gray-800 border-gray-600 text-white ${formData.plan === "premium" ? "ring-2 ring-violet-500 bg-gray-700" : ""}`}
                         onClick={() => updateFormData("plan", "premium")}>
                     <CardHeader>
                       <CardTitle className="flex items-center">
                         Premium
-                        {formData.plan === "premium" && <Check className="ml-2 h-5 w-5 text-blue-500" />}
+                        {formData.plan === "premium" && <Check className="ml-2 h-5 w-5 text-violet-500" />}
                       </CardTitle>
                       <CardDescription>For institutions</CardDescription>
                     </CardHeader>
@@ -452,7 +452,7 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
                     <label className="text-sm font-medium text-gray-300">Select Payment Method</label>
 
                     <div className="space-y-2">
-                      <Card className={`cursor-pointer transition-all p-4 bg-gray-800 border-gray-600 text-white ${formData.paymentMethod === "easypaisa" ? "ring-2 ring-blue-500 bg-gray-700" : ""}`}
+                      <Card className={`cursor-pointer transition-all p-4 bg-gray-800 border-gray-600 text-white ${formData.paymentMethod === "easypaisa" ? "ring-2 ring-violet-500 bg-gray-700" : ""}`}
                             onClick={() => updateFormData("paymentMethod", "easypaisa")}>
                         <div className="flex items-center">
                           <Smartphone className="h-5 w-5 mr-3" />
@@ -460,11 +460,11 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
                             <div className="font-medium">Easypaisa</div>
                             <div className="text-sm text-gray-400">Mobile wallet payment</div>
                           </div>
-                          {formData.paymentMethod === "easypaisa" && <Check className="ml-auto h-5 w-5 text-blue-500" />}
+                          {formData.paymentMethod === "easypaisa" && <Check className="ml-auto h-5 w-5 text-violet-500" />}
                         </div>
                       </Card>
 
-                      <Card className={`cursor-pointer transition-all p-4 bg-gray-800 border-gray-600 text-white ${formData.paymentMethod === "jazzcash" ? "ring-2 ring-blue-500 bg-gray-700" : ""}`}
+                      <Card className={`cursor-pointer transition-all p-4 bg-gray-800 border-gray-600 text-white ${formData.paymentMethod === "jazzcash" ? "ring-2 ring-violet-500 bg-gray-700" : ""}`}
                             onClick={() => updateFormData("paymentMethod", "jazzcash")}>
                         <div className="flex items-center">
                           <Smartphone className="h-5 w-5 mr-3" />
@@ -472,11 +472,11 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
                             <div className="font-medium">JazzCash</div>
                             <div className="text-sm text-gray-400">Mobile wallet payment</div>
                           </div>
-                          {formData.paymentMethod === "jazzcash" && <Check className="ml-auto h-5 w-5 text-blue-500" />}
+                          {formData.paymentMethod === "jazzcash" && <Check className="ml-auto h-5 w-5 text-violet-500" />}
                         </div>
                       </Card>
 
-                      <Card className={`cursor-pointer transition-all p-4 bg-gray-800 border-gray-600 text-white ${formData.paymentMethod === "bank-transfer" ? "ring-2 ring-blue-500 bg-gray-700" : ""}`}
+                      <Card className={`cursor-pointer transition-all p-4 bg-gray-800 border-gray-600 text-white ${formData.paymentMethod === "bank-transfer" ? "ring-2 ring-violet-500 bg-gray-700" : ""}`}
                             onClick={() => updateFormData("paymentMethod", "bank-transfer")}>
                         <div className="flex items-center">
                           <CreditCard className="h-5 w-5 mr-3" />
@@ -484,11 +484,11 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
                             <div className="font-medium">Bank Transfer</div>
                             <div className="text-sm text-gray-400">Direct bank transfer</div>
                           </div>
-                          {formData.paymentMethod === "bank-transfer" && <Check className="ml-auto h-5 w-5 text-blue-500" />}
+                          {formData.paymentMethod === "bank-transfer" && <Check className="ml-auto h-5 w-5 text-violet-500" />}
                         </div>
                       </Card>
 
-                      <Card className={`cursor-pointer transition-all p-4 bg-gray-800 border-gray-600 text-white ${formData.paymentMethod === "credit-card" ? "ring-2 ring-blue-500 bg-gray-700" : ""}`}
+                      <Card className={`cursor-pointer transition-all p-4 bg-gray-800 border-gray-600 text-white ${formData.paymentMethod === "credit-card" ? "ring-2 ring-violet-500 bg-gray-700" : ""}`}
                             onClick={() => updateFormData("paymentMethod", "credit-card")}>
                         <div className="flex items-center">
                           <CreditCard className="h-5 w-5 mr-3" />
@@ -496,7 +496,7 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
                             <div className="font-medium">Credit/Debit Card</div>
                             <div className="text-sm text-gray-400">Visa, Mastercard</div>
                           </div>
-                          {formData.paymentMethod === "credit-card" && <Check className="ml-auto h-5 w-5 text-blue-500" />}
+                          {formData.paymentMethod === "credit-card" && <Check className="ml-auto h-5 w-5 text-violet-500" />}
                         </div>
                       </Card>
                     </div>
@@ -550,7 +550,7 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
               <div
                 key={index}
                 className={`w-2 h-2 rounded-full ${
-                  index + 1 <= currentStep ? "bg-blue-600" : "bg-gray-300"
+                  index + 1 <= currentStep ? "bg-violet-600" : "bg-gray-300"
                 }`}
               />
             ))}

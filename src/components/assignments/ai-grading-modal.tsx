@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { CheckCircle2, Loader2, Award } from "lucide-react"
+import { CheckCircle2, Loader2, Award, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 interface AIGradingModalProps {
@@ -10,6 +10,7 @@ interface AIGradingModalProps {
   onClose: () => void
   assignmentTitle: string
   totalMarks: number
+  submissionId: string
   onGradingComplete?: (marks: number, feedback: string) => void
 }
 
@@ -25,6 +26,7 @@ export function AIGradingModal({
   onClose,
   assignmentTitle,
   totalMarks,
+  submissionId,
   onGradingComplete
 }: AIGradingModalProps) {
   const [steps, setSteps] = useState<GradingStep[]>([
@@ -38,6 +40,7 @@ export function AIGradingModal({
   ])
 
   const [isComplete, setIsComplete] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [gradingResult, setGradingResult] = useState<{
     marks: number
     percentage: number
@@ -54,74 +57,79 @@ export function AIGradingModal({
   const startGrading = async () => {
     setIsComplete(false)
     setGradingResult(null)
+    setError(null)
 
-    // Simulate AI grading process
-    for (let i = 0; i < steps.length; i++) {
-      // Set current step as loading
-      setSteps(prev => prev.map((step, index) => ({
-        ...step,
-        loading: index === i,
-        completed: index < i
-      })))
+    // Animate through the steps while waiting for API
+    const animateSteps = async () => {
+      for (let i = 0; i < steps.length - 1; i++) {
+        setSteps(prev => prev.map((step, index) => ({
+          ...step,
+          loading: index === i,
+          completed: index < i
+        })))
+        await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 600))
+        setSteps(prev => prev.map((step, index) => ({
+          ...step,
+          loading: false,
+          completed: index <= i
+        })))
+      }
+    }
 
-      // Simulate processing time (1-2 seconds per step)
-      await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000))
+    // Start animation and API call concurrently
+    const animationPromise = animateSteps()
 
-      // Complete current step
-      setSteps(prev => prev.map((step, index) => ({
+    try {
+      // Call the AI grading API
+      const response = await fetch("/api/submissions/ai-grade", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ submissionId }),
+      })
+
+      const data = await response.json()
+
+      // Wait for animation to complete
+      await animationPromise
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to grade submission")
+      }
+
+      // Set final step as complete
+      setSteps(prev => prev.map(step => ({
         ...step,
         loading: false,
-        completed: index <= i
+        completed: true
       })))
-    }
 
-    // Generate mock grading result
-    // In production, this will come from AI API
-    const marks = Math.floor(Math.random() * (totalMarks * 0.3)) + (totalMarks * 0.7) // 70-100% range
-    const percentage = (marks / totalMarks) * 100
-    const grade = getGradeLetter(percentage)
+      const { marks, percentage, grade, feedback } = data
 
-    const feedback = generateMockFeedback(percentage)
+      setGradingResult({
+        marks,
+        percentage,
+        grade,
+        feedback
+      })
 
-    setGradingResult({
-      marks,
-      percentage,
-      grade,
-      feedback
-    })
+      setIsComplete(true)
 
-    setIsComplete(true)
+      // Call the callback with results
+      if (onGradingComplete) {
+        await onGradingComplete(marks, feedback)
+      }
+    } catch (err) {
+      // Wait for animation to complete even on error
+      await animationPromise
 
-    // Call the callback with results and AWAIT it to ensure grading is saved before modal closes
-    if (onGradingComplete) {
-      await onGradingComplete(marks, feedback)
-    }
-  }
-
-  const getGradeLetter = (percentage: number): string => {
-    if (percentage >= 90) return "A+"
-    if (percentage >= 85) return "A"
-    if (percentage >= 80) return "A-"
-    if (percentage >= 75) return "B+"
-    if (percentage >= 70) return "B"
-    if (percentage >= 65) return "B-"
-    if (percentage >= 60) return "C+"
-    if (percentage >= 55) return "C"
-    if (percentage >= 50) return "C-"
-    return "F"
-  }
-
-  const generateMockFeedback = (percentage: number): string => {
-    if (percentage >= 90) {
-      return "Excellent work! Your submission demonstrates a thorough understanding of the topic. The content is well-structured, comprehensive, and shows critical thinking. Grammar and presentation are impeccable. Keep up the outstanding work!"
-    } else if (percentage >= 80) {
-      return "Great job! Your work shows strong understanding and good effort. The content is well-organized and covers most key points effectively. Minor improvements could be made in depth of analysis or presentation."
-    } else if (percentage >= 70) {
-      return "Good work! You have demonstrated a solid grasp of the material. The submission covers the main points adequately. Consider adding more detail and examples to strengthen your arguments. Review grammar and formatting for improvement."
-    } else if (percentage >= 60) {
-      return "Satisfactory work. You have covered the basic requirements, but there is room for improvement. Focus on developing your ideas more fully and ensuring accuracy of content. Pay attention to grammar and structure."
-    } else {
-      return "Your submission needs improvement. Please review the assignment requirements carefully and ensure you address all key points. Consider seeking additional help to strengthen your understanding of the topic. Focus on content accuracy, organization, and presentation."
+      setError(err instanceof Error ? err.message : "Failed to grade submission")
+      setSteps(prev => prev.map(step => ({
+        ...step,
+        loading: false,
+        completed: false
+      })))
     }
   }
 
@@ -144,21 +152,27 @@ export function AIGradingModal({
         <div className="space-y-6 py-4">
           {/* Header */}
           <div className="text-center">
-            <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mb-4">
-              {isComplete ? (
+            <div className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4 ${
+              error
+                ? "bg-gradient-to-br from-red-500 to-red-600"
+                : "bg-gradient-to-br from-blue-500 to-purple-600"
+            }`}>
+              {error ? (
+                <AlertCircle className="h-8 w-8 text-white" />
+              ) : isComplete ? (
                 <Award className="h-8 w-8 text-white" />
               ) : (
                 <Loader2 className="h-8 w-8 text-white animate-spin" />
               )}
             </div>
             <h2 className="text-2xl font-bold text-gray-900">
-              {isComplete ? "Grading Complete!" : "AI Grading in Progress"}
+              {error ? "Grading Failed" : isComplete ? "Grading Complete!" : "AI Grading in Progress"}
             </h2>
             <p className="text-sm text-gray-600 mt-2">{assignmentTitle}</p>
           </div>
 
           {/* Grading Steps */}
-          {!isComplete && (
+          {!isComplete && !error && (
             <div className="space-y-3">
               {steps.map((step) => (
                 <div key={step.id} className="flex items-center space-x-3">
@@ -188,6 +202,36 @@ export function AIGradingModal({
                   </span>
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* Error Display */}
+          {error && (
+            <div className="space-y-4">
+              <div className="bg-red-50 p-4 rounded-lg border border-red-200">
+                <div className="flex items-start space-x-3">
+                  <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h3 className="font-semibold text-red-800">Unable to Grade</h3>
+                    <p className="text-sm text-red-700 mt-1">{error}</p>
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-center pt-2">
+                <Button
+                  onClick={onClose}
+                  variant="outline"
+                  className="mr-2"
+                >
+                  Close
+                </Button>
+                <Button
+                  onClick={startGrading}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+                >
+                  Try Again
+                </Button>
+              </div>
             </div>
           )}
 

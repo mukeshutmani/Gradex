@@ -108,37 +108,6 @@ export function SubmitAssignmentModal({
     }
   }
 
-  const handleGradingComplete = async (marks: number, feedback: string) => {
-    // Update submission with marks and feedback in database
-    if (submissionId) {
-      try {
-        const response = await fetch("/api/submissions/grade", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            submissionId,
-            marks,
-            feedback,
-            status: "graded"
-          }),
-        })
-
-        if (response.ok) {
-          console.log("Grading saved successfully")
-        } else {
-          const errorData = await response.json()
-          console.error("Failed to save grading:", errorData)
-          alert(`Failed to save grading: ${errorData.error || 'Unknown error'}`)
-        }
-      } catch (error) {
-        console.error("Error saving grading:", error)
-        alert("Error saving grading. Please check the console for details.")
-      }
-    }
-  }
-
   const handleGradingModalClose = () => {
     setIsGradingModalOpen(false)
     setSubmissionId(null)
@@ -359,13 +328,15 @@ export function SubmitAssignmentModal({
     </Dialog>
 
     {/* AI Grading Modal */}
-    <AIGradingModal
-      isOpen={isGradingModalOpen}
-      onClose={handleGradingModalClose}
-      assignmentTitle={assignment?.title || ""}
-      totalMarks={assignment?.totalMarks || 100}
-      onGradingComplete={handleGradingComplete}
-    />
+    {submissionId && (
+      <AIGradingModal
+        isOpen={isGradingModalOpen}
+        onClose={handleGradingModalClose}
+        assignmentTitle={assignment?.title || ""}
+        totalMarks={assignment?.totalMarks || 100}
+        submissionId={submissionId}
+      />
+    )}
   </>
   )
 }

@@ -157,8 +157,11 @@ export default function DashboardPage() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <div className="flex items-center">
-                <ClipboardCheck className="h-8 w-8 text-black" />
-                <span className="ml-2 text-xl font-bold text-black">Gradex</span>
+                <img
+                  src="https://res.cloudinary.com/dolpat4s3/image/upload/v1766249987/Black_Green_Letter_G_Logo_wafmuu.svg"
+                  alt="Gradex Logo"
+                  className="h-16 w-auto"
+                />
               </div>
             </div>
 
@@ -168,36 +171,36 @@ export default function DashboardPage() {
                 onClick={() => {
                   window.scrollTo({ top: 0, behavior: 'smooth' })
                 }}
-                className="flex items-center space-x-2 text-sm font-medium text-gray-700 hover:text-black transition-colors cursor-pointer"
+                className="group flex items-center space-x-2 text-sm font-medium text-gray-700 hover:text-violet-600 transition-colors cursor-pointer"
               >
-                <LayoutDashboard className="h-4 w-4 text-blue-500" />
+                <LayoutDashboard className="h-4 w-4 text-black group-hover:text-violet-600 transition-colors" />
                 <span>Dashboard</span>
               </button>
               <button
                 onClick={() => {
                   document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })
                 }}
-                className="flex items-center space-x-2 text-sm font-medium text-gray-700 hover:text-black transition-colors cursor-pointer"
+                className="group flex items-center space-x-2 text-sm font-medium text-gray-700 hover:text-violet-600 transition-colors cursor-pointer"
               >
-                <Sparkles className="h-4 w-4 text-purple-500" />
+                <Sparkles className="h-4 w-4 text-black group-hover:text-violet-600 transition-colors" />
                 <span>Features</span>
               </button>
               <button
                 onClick={() => {
                   document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })
                 }}
-                className="flex items-center space-x-2 text-sm font-medium text-gray-700 hover:text-black transition-colors cursor-pointer"
+                className="group flex items-center space-x-2 text-sm font-medium text-gray-700 hover:text-violet-600 transition-colors cursor-pointer"
               >
-                <DollarSign className="h-4 w-4 text-green-500" />
+                <DollarSign className="h-4 w-4 text-black group-hover:text-violet-600 transition-colors" />
                 <span>Pricing</span>
               </button>
               <button
                 onClick={() => {
                   document.getElementById('support')?.scrollIntoView({ behavior: 'smooth' })
                 }}
-                className="flex items-center space-x-2 text-sm font-medium text-gray-700 hover:text-black transition-colors cursor-pointer"
+                className="group flex items-center space-x-2 text-sm font-medium text-gray-700 hover:text-violet-600 transition-colors cursor-pointer"
               >
-                <HelpCircle className="h-4 w-4 text-orange-500" />
+                <HelpCircle className="h-4 w-4 text-black group-hover:text-violet-600 transition-colors" />
                 <span>Support</span>
               </button>
             </nav>
@@ -252,12 +255,12 @@ export default function DashboardPage() {
       {/* Main Content */}
       <main className="w-full px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Section */}
-        <div className="mb-8 text-center relative py-12 bg-gradient-to-br from-green-50 to-white rounded-lg">
+        <div className="mb-8 text-center relative py-12 bg-gradient-to-br from-violet-50 to-white rounded-lg">
           {/* Dotted Background Pattern */}
           <div
             className="absolute inset-0 -z-10"
             style={{
-              backgroundImage: 'radial-gradient(circle, #70be78 3px, transparent 3px)',
+              backgroundImage: 'radial-gradient(circle, #7C3AED 3px, transparent 3px)',
               backgroundSize: '30px 30px',
               opacity: 0.15
             }}
@@ -290,10 +293,10 @@ export default function DashboardPage() {
         <div id="features" className="mb-8 scroll-mt-20">
           <h2 className="text-2xl font-semibold text-gray-900 mb-4">Our Services</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer">
+            <Card className="bg-gradient-to-br from-violet-50 to-violet-100 border-violet-200 hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer">
               <CardHeader>
                 <CardTitle className="flex items-center">
-                  <Bot className="mr-2 h-5 w-5 text-blue-600" />
+                  <Bot className="mr-2 h-5 w-5 text-violet-600" />
                   AI-Powered Grading
                 </CardTitle>
                 <CardDescription>
@@ -307,10 +310,10 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200 hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer">
+            <Card className="bg-gradient-to-br from-violet-50 to-violet-100 border-violet-200 hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer">
               <CardHeader>
                 <CardTitle className="flex items-center">
-                  <FileCheck className="mr-2 h-5 w-5 text-green-600" />
+                  <FileCheck className="mr-2 h-5 w-5 text-violet-600" />
                   Assignment Management
                 </CardTitle>
                 <CardDescription>
@@ -324,10 +327,10 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer">
+            <Card className="bg-gradient-to-br from-violet-50 to-violet-100 border-violet-200 hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer">
               <CardHeader>
                 <CardTitle className="flex items-center">
-                  <CheckCircle2 className="mr-2 h-5 w-5 text-purple-600" />
+                  <CheckCircle2 className="mr-2 h-5 w-5 text-violet-600" />
                   Plagiarism Detection
                 </CardTitle>
                 <CardDescription>
@@ -348,10 +351,10 @@ export default function DashboardPage() {
           <div className="mb-8">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">Teacher Dashboard Features</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200 hover:shadow-xl hover:scale-105 transition-all duration-300">
+            <Card className="bg-gradient-to-br from-violet-50 to-violet-100 border-violet-200 hover:shadow-xl hover:scale-105 transition-all duration-300">
               <CardHeader>
                 <CardTitle className="flex items-center text-lg">
-                  <TrendingUp className="mr-2 h-5 w-5 text-orange-600" />
+                  <TrendingUp className="mr-2 h-5 w-5 text-violet-600" />
                   Grading Analytics
                 </CardTitle>
               </CardHeader>
@@ -361,16 +364,16 @@ export default function DashboardPage() {
                 </p>
               </CardContent>
               <CardFooter>
-                <Button variant="outline" size="sm" className="w-full border-orange-400 text-orange-700 hover:bg-orange-100">
+                <Button variant="outline" size="sm" className="w-full border-violet-300 text-violet-700 hover:bg-violet-100">
                   View Analytics
                 </Button>
               </CardFooter>
             </Card>
 
-            <Card className="bg-gradient-to-br from-cyan-50 to-cyan-100 border-cyan-200 hover:shadow-xl hover:scale-105 transition-all duration-300">
+            <Card className="bg-gradient-to-br from-violet-50 to-violet-100 border-violet-200 hover:shadow-xl hover:scale-105 transition-all duration-300">
               <CardHeader>
                 <CardTitle className="flex items-center text-lg">
-                  <Calendar className="mr-2 h-5 w-5 text-cyan-600" />
+                  <Calendar className="mr-2 h-5 w-5 text-violet-600" />
                   Assignment Scheduler
                 </CardTitle>
               </CardHeader>
@@ -380,16 +383,16 @@ export default function DashboardPage() {
                 </p>
               </CardContent>
               <CardFooter>
-                <Button variant="outline" size="sm" className="w-full border-cyan-400 text-cyan-700 hover:bg-cyan-100">
+                <Button variant="outline" size="sm" className="w-full border-violet-300 text-violet-700 hover:bg-violet-100">
                   Manage Schedule
                 </Button>
               </CardFooter>
             </Card>
 
-            <Card className="bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-200 hover:shadow-xl hover:scale-105 transition-all duration-300">
+            <Card className="bg-gradient-to-br from-violet-50 to-violet-100 border-violet-200 hover:shadow-xl hover:scale-105 transition-all duration-300">
               <CardHeader>
                 <CardTitle className="flex items-center text-lg">
-                  <Award className="mr-2 h-5 w-5 text-yellow-600" />
+                  <Award className="mr-2 h-5 w-5 text-violet-600" />
                   Grade Reports
                 </CardTitle>
               </CardHeader>
@@ -399,16 +402,16 @@ export default function DashboardPage() {
                 </p>
               </CardContent>
               <CardFooter>
-                <Button variant="outline" size="sm" className="w-full border-yellow-400 text-yellow-700 hover:bg-yellow-100">
+                <Button variant="outline" size="sm" className="w-full border-violet-300 text-violet-700 hover:bg-violet-100">
                   Generate Reports
                 </Button>
               </CardFooter>
             </Card>
 
-            <Card className="bg-gradient-to-br from-teal-50 to-teal-100 border-teal-200 hover:shadow-xl hover:scale-105 transition-all duration-300">
+            <Card className="bg-gradient-to-br from-violet-50 to-violet-100 border-violet-200 hover:shadow-xl hover:scale-105 transition-all duration-300">
               <CardHeader>
                 <CardTitle className="flex items-center text-lg">
-                  <Users className="mr-2 h-5 w-5 text-teal-600" />
+                  <Users className="mr-2 h-5 w-5 text-violet-600" />
                   Class Management
                 </CardTitle>
               </CardHeader>
@@ -418,7 +421,7 @@ export default function DashboardPage() {
                 </p>
               </CardContent>
               <CardFooter>
-                <Button variant="outline" size="sm" className="w-full border-teal-400 text-teal-700 hover:bg-teal-100">
+                <Button variant="outline" size="sm" className="w-full border-violet-300 text-violet-700 hover:bg-violet-100">
                   Manage Classes
                 </Button>
               </CardFooter>
@@ -432,10 +435,10 @@ export default function DashboardPage() {
           <div className="mb-8">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">Student Dashboard Features</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card className="bg-gradient-to-br from-pink-50 to-pink-100 border-pink-200 hover:shadow-xl hover:scale-105 transition-all duration-300">
+              <Card className="bg-gradient-to-br from-violet-50 to-violet-100 border-violet-200 hover:shadow-xl hover:scale-105 transition-all duration-300">
                 <CardHeader>
                   <CardTitle className="flex items-center text-lg">
-                    <BookOpen className="mr-2 h-5 w-5 text-pink-600" />
+                    <BookOpen className="mr-2 h-5 w-5 text-violet-600" />
                     My Assignments
                   </CardTitle>
                 </CardHeader>
@@ -445,16 +448,16 @@ export default function DashboardPage() {
                   </p>
                 </CardContent>
                 <CardFooter>
-                  <Button variant="outline" size="sm" className="w-full border-pink-400 text-pink-700 hover:bg-pink-100 hover:text-pink-700">
+                  <Button variant="outline" size="sm" className="w-full border-violet-300 text-violet-700 hover:bg-violet-100 hover:text-violet-700">
                     View Assignments
                   </Button>
                 </CardFooter>
               </Card>
 
-              <Card className="bg-gradient-to-br from-indigo-50 to-indigo-100 border-indigo-200 hover:shadow-xl hover:scale-105 transition-all duration-300">
+              <Card className="bg-gradient-to-br from-violet-50 to-violet-100 border-violet-200 hover:shadow-xl hover:scale-105 transition-all duration-300">
                 <CardHeader>
                   <CardTitle className="flex items-center text-lg">
-                    <Award className="mr-2 h-5 w-5 text-indigo-600" />
+                    <Award className="mr-2 h-5 w-5 text-violet-600" />
                     My Grades
                   </CardTitle>
                 </CardHeader>
@@ -464,16 +467,16 @@ export default function DashboardPage() {
                   </p>
                 </CardContent>
                 <CardFooter>
-                  <Button variant="outline" size="sm" className="w-full border-indigo-400 text-indigo-700 hover:bg-indigo-100 hover:text-indigo-700">
+                  <Button variant="outline" size="sm" className="w-full border-violet-400 text-violet-700 hover:bg-violet-100 hover:text-violet-700">
                     View Grades
                   </Button>
                 </CardFooter>
               </Card>
 
-              <Card className="bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200 hover:shadow-xl hover:scale-105 transition-all duration-300">
+              <Card className="bg-gradient-to-br from-violet-50 to-violet-100 border-violet-200 hover:shadow-xl hover:scale-105 transition-all duration-300">
                 <CardHeader>
                   <CardTitle className="flex items-center text-lg">
-                    <Users className="mr-2 h-5 w-5 text-emerald-600" />
+                    <Users className="mr-2 h-5 w-5 text-violet-600" />
                     My Classes
                   </CardTitle>
                 </CardHeader>
@@ -483,7 +486,7 @@ export default function DashboardPage() {
                   </p>
                 </CardContent>
                 <CardFooter>
-                  <Button variant="outline" size="sm" className="w-full border-emerald-400 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-700">
+                  <Button variant="outline" size="sm" className="w-full border-violet-300 text-violet-700 hover:bg-violet-100 hover:text-violet-700">
                     View Classes
                   </Button>
                 </CardFooter>
@@ -688,10 +691,10 @@ export default function DashboardPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            <Card className="bg-gradient-to-br from-sky-50 to-sky-100 border-sky-200 hover:shadow-xl hover:scale-105 transition-all duration-300">
+            <Card className="bg-gradient-to-br from-violet-50 to-violet-100 border-violet-200 hover:shadow-xl hover:scale-105 transition-all duration-300">
               <CardHeader>
                 <CardTitle className="flex items-center text-lg">
-                  <Bell className="mr-2 h-5 w-5 text-sky-600" />
+                  <Bell className="mr-2 h-5 w-5 text-violet-600" />
                   Help Center
                 </CardTitle>
               </CardHeader>
@@ -699,14 +702,14 @@ export default function DashboardPage() {
                 <p className="text-sm text-gray-700 mb-4">
                   Browse our comprehensive documentation and FAQs to find answers to common questions.
                 </p>
-                <Button variant="outline" className="w-full border-sky-400 text-sky-700 hover:bg-sky-100 hover:text-sky-700">Visit Help Center</Button>
+                <Button variant="outline" className="w-full border-violet-300 text-violet-700 hover:bg-violet-100 hover:text-violet-700">Visit Help Center</Button>
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200 hover:shadow-xl hover:scale-105 transition-all duration-300">
+            <Card className="bg-gradient-to-br from-violet-50 to-violet-100 border-violet-200 hover:shadow-xl hover:scale-105 transition-all duration-300">
               <CardHeader>
                 <CardTitle className="flex items-center text-lg">
-                  <Users className="mr-2 h-5 w-5 text-amber-600" />
+                  <Users className="mr-2 h-5 w-5 text-violet-600" />
                   Community Forum
                 </CardTitle>
               </CardHeader>
@@ -714,14 +717,14 @@ export default function DashboardPage() {
                 <p className="text-sm text-gray-700 mb-4">
                   Connect with other educators and share best practices in our community forum.
                 </p>
-                <Button variant="outline" className="w-full border-amber-400 text-amber-700 hover:bg-amber-100 hover:text-amber-700">Join Community</Button>
+                <Button variant="outline" className="w-full border-violet-300 text-violet-700 hover:bg-violet-100 hover:text-violet-700">Join Community</Button>
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-rose-50 to-rose-100 border-rose-200 hover:shadow-xl hover:scale-105 transition-all duration-300">
+            <Card className="bg-gradient-to-br from-violet-50 to-violet-100 border-violet-200 hover:shadow-xl hover:scale-105 transition-all duration-300">
               <CardHeader>
                 <CardTitle className="flex items-center text-lg">
-                  <FileCheck className="mr-2 h-5 w-5 text-rose-600" />
+                  <FileCheck className="mr-2 h-5 w-5 text-violet-600" />
                   Contact Support
                 </CardTitle>
               </CardHeader>
@@ -729,7 +732,7 @@ export default function DashboardPage() {
                 <p className="text-sm text-gray-700 mb-4">
                   Get in touch with our support team for personalized assistance.
                 </p>
-                <Button onClick={() => setShowContactModal(true)} className="w-full bg-black text-white hover:bg-black/90">Contact Us</Button>
+                <Button onClick={() => setShowContactModal(true)} className="w-full bg-violet-600 text-white hover:bg-violet-700">Contact Us</Button>
               </CardContent>
             </Card>
           </div>

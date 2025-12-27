@@ -427,8 +427,11 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <div className="flex items-center">
-                <ClipboardCheck className="h-8 w-8 text-primary" />
-                <span className="ml-2 text-xl font-bold text-gray-900">Gradex Admin</span>
+                <img
+                  src="https://res.cloudinary.com/dolpat4s3/image/upload/v1766249987/Black_Green_Letter_G_Logo_wafmuu.svg"
+                  alt="Gradex Logo"
+                  className="h-14 w-auto"
+                />
               </div>
             </div>
             <div className="flex items-center space-x-4">
@@ -458,49 +461,43 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                 id: "overview",
                 label: "Overview",
                 icon: TrendingUp,
-                iconColor: "text-blue-500",
-                activeClass: "border-blue-500 text-blue-600 bg-blue-50",
-                inactiveClass: "text-gray-600 hover:text-blue-600 hover:bg-blue-50"
+                activeClass: "border-violet-500 text-violet-600 bg-violet-50",
+                inactiveClass: "text-gray-600 hover:text-violet-600 hover:bg-violet-50"
               },
               {
                 id: "assignments",
                 label: "Assignments",
                 icon: BookOpen,
-                iconColor: "text-purple-500",
-                activeClass: "border-purple-500 text-purple-600 bg-purple-50",
-                inactiveClass: "text-gray-600 hover:text-purple-600 hover:bg-purple-50"
+                activeClass: "border-violet-500 text-violet-600 bg-violet-50",
+                inactiveClass: "text-gray-600 hover:text-violet-600 hover:bg-violet-50"
               },
               {
                 id: "submissions",
                 label: "Submissions",
                 icon: FileCheck,
-                iconColor: "text-green-500",
-                activeClass: "border-green-500 text-green-600 bg-green-50",
-                inactiveClass: "text-gray-600 hover:text-green-600 hover:bg-green-50"
+                activeClass: "border-violet-500 text-violet-600 bg-violet-50",
+                inactiveClass: "text-gray-600 hover:text-violet-600 hover:bg-violet-50"
               },
               {
                 id: "students",
                 label: "Students",
                 icon: Users,
-                iconColor: "text-orange-500",
-                activeClass: "border-orange-500 text-orange-600 bg-orange-50",
-                inactiveClass: "text-gray-600 hover:text-orange-600 hover:bg-orange-50"
+                activeClass: "border-violet-500 text-violet-600 bg-violet-50",
+                inactiveClass: "text-gray-600 hover:text-violet-600 hover:bg-violet-50"
               },
               {
                 id: "analytics",
                 label: "Analytics",
                 icon: Award,
-                iconColor: "text-pink-500",
-                activeClass: "border-pink-500 text-pink-600 bg-pink-50",
-                inactiveClass: "text-gray-600 hover:text-pink-600 hover:bg-pink-50"
+                activeClass: "border-violet-500 text-violet-600 bg-violet-50",
+                inactiveClass: "text-gray-600 hover:text-violet-600 hover:bg-violet-50"
               },
               {
                 id: "settings",
                 label: "Settings",
                 icon: Settings,
-                iconColor: "text-gray-600",
-                activeClass: "border-gray-500 text-gray-700 bg-gray-50",
-                inactiveClass: "text-gray-600 hover:text-gray-700 hover:bg-gray-50"
+                activeClass: "border-violet-500 text-violet-600 bg-violet-50",
+                inactiveClass: "text-gray-600 hover:text-violet-600 hover:bg-violet-50"
               }
             ].map((tab) => (
               <button
@@ -512,7 +509,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                     : `border-transparent ${tab.inactiveClass}`
                 }`}
               >
-                <tab.icon className={`h-5 w-5 ${tab.iconColor} ${activeTab === tab.id ? 'animate-pulse' : ''}`} />
+                <tab.icon className={`h-5 w-5 text-black ${activeTab === tab.id ? 'animate-pulse' : ''}`} />
                 <span>{tab.label}</span>
               </button>
             ))}
@@ -527,53 +524,53 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
           <div className="space-y-6">
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+              <Card className="bg-gradient-to-br from-violet-50 to-violet-100 border-violet-200">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-blue-900">Total Assignments</CardTitle>
-                  <BookOpen className="h-4 w-4 text-blue-600" />
+                  <CardTitle className="text-sm font-medium text-violet-900">Total Assignments</CardTitle>
+                  <BookOpen className="h-4 w-4 text-violet-600" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-blue-900">{totalAssignments}</div>
-                  <p className="text-xs text-blue-700">
+                  <div className="text-2xl font-bold text-violet-900">{totalAssignments}</div>
+                  <p className="text-xs text-violet-700">
                     Total assignments created
                   </p>
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+              <Card className="bg-gradient-to-br from-violet-50 to-violet-100 border-violet-200">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-orange-900">Pending Reviews</CardTitle>
-                  <Clock className="h-4 w-4 text-orange-600" />
+                  <CardTitle className="text-sm font-medium text-violet-900">Pending Reviews</CardTitle>
+                  <Clock className="h-4 w-4 text-violet-600" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-orange-900">{pendingSubmissions}</div>
-                  <p className="text-xs text-orange-700">
+                  <div className="text-2xl font-bold text-violet-900">{pendingSubmissions}</div>
+                  <p className="text-xs text-violet-700">
                     Requires your attention
                   </p>
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+              <Card className="bg-gradient-to-br from-violet-50 to-violet-100 border-violet-200">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-green-900">Average Grade</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-green-600" />
+                  <CardTitle className="text-sm font-medium text-violet-900">Average Grade</CardTitle>
+                  <TrendingUp className="h-4 w-4 text-violet-600" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-green-900">{averageGrade.toFixed(1)}%</div>
-                  <p className="text-xs text-green-700">
+                  <div className="text-2xl font-bold text-violet-900">{averageGrade.toFixed(1)}%</div>
+                  <p className="text-xs text-violet-700">
                     Class average grade
                   </p>
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+              <Card className="bg-gradient-to-br from-violet-50 to-violet-100 border-violet-200">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-purple-900">Total Students</CardTitle>
-                  <Users className="h-4 w-4 text-purple-600" />
+                  <CardTitle className="text-sm font-medium text-violet-900">Total Students</CardTitle>
+                  <Users className="h-4 w-4 text-violet-600" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-purple-900">{totalStudents}</div>
-                  <p className="text-xs text-purple-700">
+                  <div className="text-2xl font-bold text-violet-900">{totalStudents}</div>
+                  <p className="text-xs text-violet-700">
                     Active students
                   </p>
                 </CardContent>
@@ -721,7 +718,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                                   variant="outline"
                                   size="sm"
                                   onClick={() => handleViewAssignment(assignment)}
-                                  className="border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300"
+                                  className="border-violet-200 text-violet-700 hover:bg-violet-50 hover:border-violet-300"
                                 >
                                   <Eye className="h-4 w-4 mr-1" />
                                   View
@@ -865,7 +862,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                                   variant="outline"
                                   size="sm"
                                   onClick={() => handleViewSubmission(submission)}
-                                  className="border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300"
+                                  className="border-violet-200 text-violet-700 hover:bg-violet-50 hover:border-violet-300"
                                 >
                                   <Eye className="h-4 w-4 mr-1" />
                                   View
@@ -912,7 +909,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                 </Button>
                 <Button
                   onClick={() => setIsInviteStudentModalOpen(true)}
-                  className="bg-blue-600 hover:bg-blue-700"
+                  className="bg-violet-600 hover:bg-violet-700"
                 >
                   <Users className="h-4 w-4 mr-2" />
                   Invite Students
@@ -925,7 +922,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
               <Card className="bg-white border-gray-200 shadow-sm">
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2 text-gray-800">
-                    <Users className="h-5 w-5 text-blue-500" />
+                    <Users className="h-5 w-5 text-violet-500" />
                     <span>Total Students</span>
                   </CardTitle>
                 </CardHeader>
@@ -951,7 +948,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
               <Card className="bg-white border-gray-200 shadow-sm">
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2 text-gray-800">
-                    <Target className="h-5 w-5 text-purple-500" />
+                    <Target className="h-5 w-5 text-violet-500" />
                     <span>Avg. Performance</span>
                   </CardTitle>
                 </CardHeader>
@@ -1010,7 +1007,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                         <div className="space-y-3">
                           <div className="flex items-center space-x-2">
                             <span className="text-sm text-gray-500">Class Code:</span>
-                            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                            <Badge variant="outline" className="bg-violet-50 text-violet-700 border-violet-200">
                               {classItem.classCode}
                             </Badge>
                           </div>
@@ -1091,7 +1088,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                               <TableCell className="font-medium">{student.username || "Unknown"}</TableCell>
                               <TableCell>{student.email}</TableCell>
                               <TableCell>
-                                <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                                <Badge variant="outline" className="bg-violet-50 text-violet-700">
                                   {student.className}
                                 </Badge>
                               </TableCell>
@@ -1176,7 +1173,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                 <div className="flex justify-between items-center">
                   <h2 className="text-xl font-semibold text-gray-900">Account Information</h2>
                   {!isEditingProfile ? (
-                    <Button onClick={handleEditProfile} className="bg-blue-600 hover:bg-blue-700">
+                    <Button onClick={handleEditProfile} className="bg-violet-600 hover:bg-violet-700">
                       <Edit className="h-4 w-4 mr-2" />
                       Edit Profile
                     </Button>
@@ -1207,7 +1204,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                     <CardContent className="pt-6">
                       <div className="text-center py-12">
                         <div className="flex flex-col items-center space-y-4">
-                          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                          <div className="w-12 h-12 border-4 border-violet-500 border-t-transparent rounded-full animate-spin"></div>
                           <div className="text-lg text-gray-600 font-medium">Loading profile...</div>
                         </div>
                       </div>
@@ -1219,7 +1216,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                 <Card className="bg-white border-gray-200 shadow-sm">
                   <CardHeader>
                     <CardTitle className="flex items-center space-x-2 text-gray-800">
-                      <User className="h-5 w-5 text-blue-500" />
+                      <User className="h-5 w-5 text-violet-500" />
                       <span>User Information</span>
                     </CardTitle>
                   </CardHeader>
@@ -1353,7 +1350,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                 <Card className="bg-white border-gray-200 shadow-sm">
                   <CardHeader>
                     <CardTitle className="flex items-center space-x-2 text-gray-800">
-                      <Award className="h-5 w-5 text-purple-500" />
+                      <Award className="h-5 w-5 text-violet-500" />
                       <span>Plan & Payment</span>
                     </CardTitle>
                   </CardHeader>
@@ -1670,7 +1667,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
               <div>
                 <label className="text-sm font-medium text-gray-600">Class Code</label>
                 <div className="mt-1">
-                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 font-mono text-lg">
+                  <Badge variant="outline" className="bg-violet-50 text-violet-700 border-violet-200 font-mono text-lg">
                     {selectedClass.classCode}
                   </Badge>
                 </div>
@@ -1798,7 +1795,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                   setIsEditClassModalOpen(false)
                   setSelectedClass(null)
                 }}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-violet-600 hover:bg-violet-700"
               >
                 Save Changes
               </Button>

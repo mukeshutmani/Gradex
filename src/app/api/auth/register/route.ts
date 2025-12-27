@@ -25,18 +25,28 @@ export async function POST(request: NextRequest) {
     
     const { username, email, password, role } = validation.data
     
-    const existingUser = await prisma.user.findFirst({
-      where: {
-        OR: [
-          { email },
-          { username }
-        ]
-      }
+    // Check for existing email
+    const existingEmail = await prisma.user.findUnique({
+      where: { email },
+      select: { id: true }
     })
 
-    if (existingUser) {
+    if (existingEmail) {
       return NextResponse.json(
-        { error: "User with this email or username already exists" },
+        { error: "An account with this email already exists", field: "email" },
+        { status: 409 }
+      )
+    }
+
+    // Check for existing username
+    const existingUsername = await prisma.user.findUnique({
+      where: { username },
+      select: { id: true }
+    })
+
+    if (existingUsername) {
+      return NextResponse.json(
+        { error: "This username is already taken", field: "username" },
         { status: 409 }
       )
     }
