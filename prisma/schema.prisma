@@ -132,8 +132,8 @@ model UserProfile {
   institutionType   String
   institutionName   String
   studentCount      String
-  subjects          String
-  experience        String
+  subjects          String?
+  experience        String?
   plan              String
   paymentMethod     String?
   isOnboardingComplete Boolean @default(false)

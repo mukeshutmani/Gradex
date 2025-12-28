@@ -559,7 +559,7 @@ export default function DashboardPage() {
         {/* Pricing Section */}
         <div id="pricing" className="mt-16 scroll-mt-20">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-black mb-4">Choose Your Plan</h2>
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Choose Your Plan</h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               Select the perfect plan for your institution. All plans include our core AI-powered grading features.
             </p>
@@ -567,115 +567,115 @@ export default function DashboardPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {/* Basic Plan */}
-            <Card className="border-2 hover:border-black transition-colors">
+            <Card className="border-2 border-gray-200 hover:border-violet-300 transition-colors">
               <CardHeader>
-                <CardTitle className="text-2xl font-bold text-black">Basic</CardTitle>
+                <CardTitle className="text-2xl font-bold text-gray-900">Basic</CardTitle>
                 <CardDescription className="text-gray-600">Perfect for individual teachers</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="text-4xl font-bold text-black">
+                <div className="text-4xl font-bold text-gray-900">
                   $29<span className="text-lg text-gray-600">/month</span>
                 </div>
                 <ul className="space-y-3">
                   <li className="flex items-center text-sm">
-                    <CheckCircle2 className="h-4 w-4 mr-2 text-black" />
+                    <CheckCircle2 className="h-4 w-4 mr-2 text-violet-600" />
                     Up to 100 assignments/month
                   </li>
                   <li className="flex items-center text-sm">
-                    <CheckCircle2 className="h-4 w-4 mr-2 text-black" />
+                    <CheckCircle2 className="h-4 w-4 mr-2 text-violet-600" />
                     AI-powered grading
                   </li>
                   <li className="flex items-center text-sm">
-                    <CheckCircle2 className="h-4 w-4 mr-2 text-black" />
+                    <CheckCircle2 className="h-4 w-4 mr-2 text-violet-600" />
                     Basic analytics
                   </li>
                   <li className="flex items-center text-sm">
-                    <CheckCircle2 className="h-4 w-4 mr-2 text-black" />
+                    <CheckCircle2 className="h-4 w-4 mr-2 text-violet-600" />
                     Email support
                   </li>
                 </ul>
               </CardContent>
               <CardFooter>
-                <Button onClick={handlePricingClick} className="w-full bg-black text-white hover:bg-black/90">Get Started</Button>
+                <Button onClick={handlePricingClick} className="w-full bg-violet-600 text-white hover:bg-violet-700">Get Started</Button>
               </CardFooter>
             </Card>
 
             {/* Pro Plan */}
-            <Card className="border-2 border-black shadow-lg relative">
+            <Card className="border-2 border-violet-600 shadow-lg relative">
               <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                <Badge className="bg-black text-white px-4 py-1">Most Popular</Badge>
+                <Badge className="bg-violet-600 text-white px-4 py-1">Most Popular</Badge>
               </div>
               <CardHeader>
-                <CardTitle className="text-2xl font-bold text-black">Pro</CardTitle>
+                <CardTitle className="text-2xl font-bold text-gray-900">Pro</CardTitle>
                 <CardDescription className="text-gray-600">Best for schools & departments</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="text-4xl font-bold text-black">
+                <div className="text-4xl font-bold text-gray-900">
                   $79<span className="text-lg text-gray-600">/month</span>
                 </div>
                 <ul className="space-y-3">
                   <li className="flex items-center text-sm">
-                    <CheckCircle2 className="h-4 w-4 mr-2 text-black" />
+                    <CheckCircle2 className="h-4 w-4 mr-2 text-violet-600" />
                     Up to 500 assignments/month
                   </li>
                   <li className="flex items-center text-sm">
-                    <CheckCircle2 className="h-4 w-4 mr-2 text-black" />
+                    <CheckCircle2 className="h-4 w-4 mr-2 text-violet-600" />
                     Advanced AI grading
                   </li>
                   <li className="flex items-center text-sm">
-                    <CheckCircle2 className="h-4 w-4 mr-2 text-black" />
+                    <CheckCircle2 className="h-4 w-4 mr-2 text-violet-600" />
                     Plagiarism detection
                   </li>
                   <li className="flex items-center text-sm">
-                    <CheckCircle2 className="h-4 w-4 mr-2 text-black" />
+                    <CheckCircle2 className="h-4 w-4 mr-2 text-violet-600" />
                     Advanced analytics
                   </li>
                   <li className="flex items-center text-sm">
-                    <CheckCircle2 className="h-4 w-4 mr-2 text-black" />
+                    <CheckCircle2 className="h-4 w-4 mr-2 text-violet-600" />
                     Priority support
                   </li>
                 </ul>
               </CardContent>
               <CardFooter>
-                <Button onClick={handlePricingClick} className="w-full bg-black text-white hover:bg-black/90">Get Started</Button>
+                <Button onClick={handlePricingClick} className="w-full bg-violet-600 text-white hover:bg-violet-700">Get Started</Button>
               </CardFooter>
             </Card>
 
             {/* Enterprise Plan */}
-            <Card className="border-2 hover:border-black transition-colors">
+            <Card className="border-2 border-gray-200 hover:border-violet-300 transition-colors">
               <CardHeader>
-                <CardTitle className="text-2xl font-bold text-black">Enterprise</CardTitle>
+                <CardTitle className="text-2xl font-bold text-gray-900">Enterprise</CardTitle>
                 <CardDescription className="text-gray-600">For universities & institutions</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="text-4xl font-bold text-black">
+                <div className="text-4xl font-bold text-gray-900">
                   Custom
                 </div>
                 <ul className="space-y-3">
                   <li className="flex items-center text-sm">
-                    <CheckCircle2 className="h-4 w-4 mr-2 text-black" />
+                    <CheckCircle2 className="h-4 w-4 mr-2 text-violet-600" />
                     Unlimited assignments
                   </li>
                   <li className="flex items-center text-sm">
-                    <CheckCircle2 className="h-4 w-4 mr-2 text-black" />
+                    <CheckCircle2 className="h-4 w-4 mr-2 text-violet-600" />
                     Custom AI models
                   </li>
                   <li className="flex items-center text-sm">
-                    <CheckCircle2 className="h-4 w-4 mr-2 text-black" />
+                    <CheckCircle2 className="h-4 w-4 mr-2 text-violet-600" />
                     White-label solution
                   </li>
                   <li className="flex items-center text-sm">
-                    <CheckCircle2 className="h-4 w-4 mr-2 text-black" />
+                    <CheckCircle2 className="h-4 w-4 mr-2 text-violet-600" />
                     Dedicated support
                   </li>
                   <li className="flex items-center text-sm">
-                    <CheckCircle2 className="h-4 w-4 mr-2 text-black" />
+                    <CheckCircle2 className="h-4 w-4 mr-2 text-violet-600" />
                     Custom integrations
                   </li>
                 </ul>
               </CardContent>
               <CardFooter>
-                <Button onClick={handlePricingClick} className="w-full bg-black text-white hover:bg-black/90">Contact Sales</Button>
+                <Button onClick={handlePricingClick} className="w-full bg-violet-600 text-white hover:bg-violet-700">Contact Sales</Button>
               </CardFooter>
             </Card>
           </div>

@@ -3,6 +3,7 @@
 import { useEffect, useState, use } from "react"
 import { useSession } from "next-auth/react"
 import { redirect, useRouter } from "next/navigation"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -426,13 +427,13 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
         <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <div className="flex items-center">
+              <Link href="/dashboard" className="flex items-center cursor-pointer">
                 <img
                   src="https://res.cloudinary.com/dolpat4s3/image/upload/v1766249987/Black_Green_Letter_G_Logo_wafmuu.svg"
                   alt="Gradex Logo"
                   className="h-14 w-auto"
                 />
-              </div>
+              </Link>
             </div>
             <div className="flex items-center space-x-4">
               <Button variant="ghost" size="icon">
@@ -503,11 +504,10 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center space-x-2 py-4 px-3 border-b-2 font-medium text-sm transition-all rounded-t-lg ${
-                  activeTab === tab.id
+                className={`flex items-center space-x-2 py-4 px-3 border-b-2 font-medium text-sm transition-all rounded-t-lg ${activeTab === tab.id
                     ? tab.activeClass
                     : `border-transparent ${tab.inactiveClass}`
-                }`}
+                  }`}
               >
                 <tab.icon className={`h-5 w-5 text-black ${activeTab === tab.id ? 'animate-pulse' : ''}`} />
                 <span>{tab.label}</span>
@@ -708,7 +708,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                             </TableCell>
                             <TableCell>
                               <Badge variant={isDuePassed ? "destructive" : "default"}
-                                     className={isDuePassed ? "" : "bg-green-100 text-green-800 border-green-300 hover:bg-green-200"}>
+                                className={isDuePassed ? "" : "bg-green-100 text-green-800 border-green-300 hover:bg-green-200"}>
                                 {isDuePassed ? "Past Due" : "Active"}
                               </Badge>
                             </TableCell>
@@ -902,7 +902,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
               <div className="flex space-x-2">
                 <Button
                   onClick={() => setIsCreateClassModalOpen(true)}
-                  className="bg-green-600 hover:bg-green-700"
+                  className="bg-violet-600 hover:bg-violet-700"
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Create Class
@@ -917,48 +917,6 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
               </div>
             </div>
 
-            {/* Class Overview Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card className="bg-white border-gray-200 shadow-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2 text-gray-800">
-                    <Users className="h-5 w-5 text-violet-500" />
-                    <span>Total Students</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-gray-900">{totalStudents}</div>
-                  <p className="text-sm text-gray-500">Active students</p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-white border-gray-200 shadow-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2 text-gray-800">
-                    <GraduationCap className="h-5 w-5 text-green-500" />
-                    <span>Active Classes</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-gray-900">{classes.length}</div>
-                  <p className="text-sm text-gray-500">Classes created</p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-white border-gray-200 shadow-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2 text-gray-800">
-                    <Target className="h-5 w-5 text-violet-500" />
-                    <span>Avg. Performance</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-gray-900">{averageGrade.toFixed(1)}%</div>
-                  <p className="text-sm text-gray-500">Class average</p>
-                </CardContent>
-              </Card>
-            </div>
-
             {/* Classes and Students Tabs */}
             <div className="bg-white border-b">
               <div className="flex space-x-8">
@@ -969,11 +927,10 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                   <button
                     key={tab.id}
                     onClick={() => setStudentManagementTab(tab.id)}
-                    className={`flex items-center space-x-2 py-4 border-b-2 font-medium text-sm transition-colors ${
-                      studentManagementTab === tab.id
+                    className={`flex items-center space-x-2 py-4 border-b-2 font-medium text-sm transition-colors ${studentManagementTab === tab.id
                         ? "border-primary text-primary"
                         : "border-transparent text-gray-500 hover:text-gray-700"
-                    }`}
+                      }`}
                   >
                     <tab.icon className="h-4 w-4" />
                     <span>{tab.label}</span>
@@ -986,77 +943,96 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
             {studentManagementTab === "classes" && (
               <div className="space-y-4">
                 <h2 className="text-lg font-semibold text-gray-900">Your Classes</h2>
-                {classesLoading && classes.length === 0 ? (
-                  <div className="text-center py-8">
-                    <div className="text-lg text-gray-500">Loading classes...</div>
-                  </div>
-                ) : classes.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {classes.map((classItem) => (
-                    <Card key={classItem.id} className="bg-white border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-                      <CardHeader>
-                        <CardTitle className="flex items-center justify-between">
-                          <span className="text-gray-800">{classItem.name}</span>
-                          <Badge variant="outline" className="bg-gray-100 text-gray-600">
-                            {classItem.studentCount} students
-                          </Badge>
-                        </CardTitle>
-                        <p className="text-sm text-gray-600">{classItem.description}</p>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-3">
-                          <div className="flex items-center space-x-2">
-                            <span className="text-sm text-gray-500">Class Code:</span>
-                            <Badge variant="outline" className="bg-violet-50 text-violet-700 border-violet-200">
-                              {classItem.classCode}
-                            </Badge>
-                          </div>
-                          <div className="flex items-center justify-between text-sm text-gray-500">
-                            <span>Created: {classItem.createdAt}</span>
-                            <span className={`px-2 py-1 rounded-full text-xs ${
-                              classItem.isActive
-                                ? 'bg-green-100 text-green-700'
-                                : 'bg-gray-100 text-gray-700'
-                            }`}>
-                              {classItem.isActive ? 'Active' : 'Inactive'}
-                            </span>
-                          </div>
-                          <div className="flex space-x-2 pt-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="flex-1"
-                              onClick={() => handleViewClass(classItem)}
-                            >
-                              <Eye className="h-3 w-3 mr-1" />
-                              View
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="flex-1"
-                              onClick={() => handleEditClass(classItem)}
-                            >
-                              <Edit className="h-3 w-3 mr-1" />
-                              Edit
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-                ) : (
-                  <div className="text-center py-12">
-                    <GraduationCap className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No classes yet</h3>
-                    <p className="text-gray-500 mb-4">Create your first class to start organizing students.</p>
-                    <Button onClick={() => setIsCreateClassModalOpen(true)} className="bg-green-600 hover:bg-green-700">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Create Your First Class
-                    </Button>
-                  </div>
-                )}
+                <Card className="bg-white border-gray-200 shadow-sm">
+                  <CardContent>
+                    {classesLoading && classes.length === 0 ? (
+                      <div className="text-center py-8">
+                        <div className="text-lg text-gray-500">Loading classes...</div>
+                      </div>
+                    ) : classes.length > 0 ? (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Class Name</TableHead>
+                            <TableHead>Class Code</TableHead>
+                            <TableHead>Students</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Created Date</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {classes.map((classItem) => (
+                            <TableRow key={classItem.id}>
+                              <TableCell className="font-medium">
+                                <div className="font-semibold text-gray-900">{classItem.name}</div>
+                                {classItem.description && (
+                                  <div className="text-xs text-gray-500 mt-1">{classItem.description}</div>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="bg-violet-50 text-violet-700 border-violet-200 font-mono">
+                                  {classItem.classCode}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center space-x-1">
+                                  <Users className="h-4 w-4 text-gray-400" />
+                                  <span className="font-semibold">{classItem.studentCount || 0}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge
+                                  variant={classItem.isActive ? "default" : "outline"}
+                                  className={classItem.isActive ? "bg-green-100 text-green-800 border-green-300 hover:bg-green-200" : ""}
+                                >
+                                  {classItem.isActive ? "Active" : "Inactive"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div className="text-sm text-gray-600">
+                                  {new Date(classItem.createdAt).toLocaleDateString()}
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex items-center justify-end space-x-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleViewClass(classItem)}
+                                    className="border-violet-200 text-violet-700 hover:bg-violet-50 hover:border-violet-300"
+                                  >
+                                    <Eye className="h-4 w-4 mr-1" />
+                                    View
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleEditClass(classItem)}
+                                    className="border-violet-200 text-violet-700 hover:bg-violet-50 hover:border-violet-300"
+                                  >
+                                    <Edit className="h-4 w-4 mr-1" />
+                                    Edit
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    ) : (
+                      <div className="text-center py-12">
+                        <GraduationCap className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">No classes yet</h3>
+                        <p className="text-gray-500 mb-4">Create your first class to start organizing students.</p>
+                        <Button onClick={() => setIsCreateClassModalOpen(true)} className="bg-violet-600 hover:bg-violet-700">
+                          <Plus className="h-4 w-4 mr-2" />
+                          Create Your First Class
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               </div>
             )}
 
@@ -1154,11 +1130,10 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                   <button
                     key={tab.id}
                     onClick={() => setSettingsTab(tab.id)}
-                    className={`flex items-center space-x-2 py-4 border-b-2 font-medium text-sm transition-colors ${
-                      settingsTab === tab.id
+                    className={`flex items-center space-x-2 py-4 border-b-2 font-medium text-sm transition-colors ${settingsTab === tab.id
                         ? "border-primary text-primary"
                         : "border-transparent text-gray-500 hover:text-gray-700"
-                    }`}
+                      }`}
                   >
                     <tab.icon className="h-4 w-4" />
                     <span>{tab.label}</span>
@@ -1211,230 +1186,230 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                     </CardContent>
                   </Card>
                 ) : userProfile?.profile ? (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* User Information */}
-                <Card className="bg-white border-gray-200 shadow-sm">
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2 text-gray-800">
-                      <User className="h-5 w-5 text-violet-500" />
-                      <span>User Information</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4 pt-6">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Name</label>
-                      {isEditingProfile ? (
-                        <Input
-                          value={editProfileData?.name || ''}
-                          onChange={(e) => setEditProfileData({...editProfileData, name: e.target.value})}
-                          className="border-gray-300 focus:border-gray-500"
-                        />
-                      ) : (
-                        <p className="text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">{userProfile.name || 'Not provided'}</p>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Email</label>
-                      <p className="text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">{userProfile.email}</p>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Role</label>
-                      <Badge variant="outline" className="capitalize bg-gray-100 text-gray-700 border-gray-300">
-                        {userProfile.profile.role}
-                      </Badge>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Institution Information */}
-                <Card className="bg-white border-gray-200 shadow-sm">
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2 text-gray-800">
-                      <GraduationCap className="h-5 w-5 text-green-500" />
-                      <span>Institution Details</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4 pt-6">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Institution Type</label>
-                      {isEditingProfile ? (
-                        <Input
-                          value={editProfileData?.profile?.institutionType || ''}
-                          onChange={(e) => setEditProfileData({
-                            ...editProfileData,
-                            profile: {...editProfileData.profile, institutionType: e.target.value}
-                          })}
-                          className="border-gray-300 focus:border-gray-500"
-                        />
-                      ) : (
-                        <p className="text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">{userProfile.profile.institutionType}</p>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Institution Name</label>
-                      {isEditingProfile ? (
-                        <Input
-                          value={editProfileData?.profile?.institutionName || ''}
-                          onChange={(e) => setEditProfileData({
-                            ...editProfileData,
-                            profile: {...editProfileData.profile, institutionName: e.target.value}
-                          })}
-                          className="border-gray-300 focus:border-gray-500"
-                        />
-                      ) : (
-                        <p className="text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">{userProfile.profile.institutionName}</p>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Student Count</label>
-                      {isEditingProfile ? (
-                        <Input
-                          value={editProfileData?.profile?.studentCount || ''}
-                          onChange={(e) => setEditProfileData({
-                            ...editProfileData,
-                            profile: {...editProfileData.profile, studentCount: e.target.value}
-                          })}
-                          className="border-gray-300 focus:border-gray-500"
-                        />
-                      ) : (
-                        <p className="text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">{userProfile.profile.studentCount}</p>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Teaching Information */}
-                <Card className="bg-white border-gray-200 shadow-sm">
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2 text-gray-800">
-                      <BookOpen className="h-5 w-5 text-orange-500" />
-                      <span>Teaching Information</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4 pt-6">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Subjects</label>
-                      {isEditingProfile ? (
-                        <Textarea
-                          value={editProfileData?.profile?.subjects || ''}
-                          onChange={(e) => setEditProfileData({
-                            ...editProfileData,
-                            profile: {...editProfileData.profile, subjects: e.target.value}
-                          })}
-                          className="border-gray-300 focus:border-gray-500"
-                          rows={3}
-                        />
-                      ) : (
-                        <p className="text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">{userProfile.profile.subjects}</p>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">Experience</label>
-                      {isEditingProfile ? (
-                        <Input
-                          value={editProfileData?.profile?.experience || ''}
-                          onChange={(e) => setEditProfileData({
-                            ...editProfileData,
-                            profile: {...editProfileData.profile, experience: e.target.value}
-                          })}
-                          className="border-gray-300 focus:border-gray-500"
-                        />
-                      ) : (
-                        <p className="text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">{userProfile.profile.experience}</p>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Plan & Payment Information */}
-                <Card className="bg-white border-gray-200 shadow-sm">
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2 text-gray-800">
-                      <Award className="h-5 w-5 text-violet-500" />
-                      <span>Plan & Payment</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-6 pt-6">
-                    <div className="space-y-3">
-                      <label className="text-sm font-medium text-gray-700">Selected Plan</label>
-                      {isEditingProfile ? (
-                        <Select
-                          value={editProfileData?.profile?.plan || ''}
-                          onValueChange={(value) => setEditProfileData({
-                            ...editProfileData,
-                            profile: {...editProfileData.profile, plan: value}
-                          })}
-                        >
-                          <SelectTrigger className="border-gray-300 focus:border-gray-500">
-                            <SelectValue placeholder="Select a plan" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="free">Free Plan</SelectItem>
-                            <SelectItem value="basic">Basic Plan</SelectItem>
-                            <SelectItem value="premium">Premium Plan</SelectItem>
-                            <SelectItem value="pro">Pro Plan</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <div className="flex items-center space-x-2 bg-gray-50 px-4 py-2 rounded-lg border-2 border-gray-200">
-                          <div className="w-3 h-3 bg-gray-600 rounded-full"></div>
-                          <span className="font-semibold text-gray-800 capitalize text-lg">{userProfile.profile.plan}</span>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* User Information */}
+                    <Card className="bg-white border-gray-200 shadow-sm">
+                      <CardHeader>
+                        <CardTitle className="flex items-center space-x-2 text-gray-800">
+                          <User className="h-5 w-5 text-violet-500" />
+                          <span>User Information</span>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4 pt-6">
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-gray-700">Name</label>
+                          {isEditingProfile ? (
+                            <Input
+                              value={editProfileData?.name || ''}
+                              onChange={(e) => setEditProfileData({ ...editProfileData, name: e.target.value })}
+                              className="border-gray-300 focus:border-gray-500"
+                            />
+                          ) : (
+                            <p className="text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">{userProfile.name || 'Not provided'}</p>
+                          )}
                         </div>
-                      )}
-                    </div>
-
-                    <div className="space-y-3">
-                      <label className="text-sm font-medium text-gray-700">Payment Method</label>
-                      {isEditingProfile ? (
-                        <Select
-                          value={editProfileData?.profile?.paymentMethod || ''}
-                          onValueChange={(value) => setEditProfileData({
-                            ...editProfileData,
-                            profile: {...editProfileData.profile, paymentMethod: value}
-                          })}
-                        >
-                          <SelectTrigger className="border-gray-300 focus:border-gray-500">
-                            <SelectValue placeholder="Select payment method" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="easypaisa">Easypaisa</SelectItem>
-                            <SelectItem value="jazzcash">JazzCash</SelectItem>
-                            <SelectItem value="bank-transfer">Bank Transfer</SelectItem>
-                            <SelectItem value="debit-card">Debit Card</SelectItem>
-                            <SelectItem value="credit-card">Credit Card</SelectItem>
-                            <SelectItem value="raast">Raast</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      ) : userProfile.profile.paymentMethod ? (
-                        <div className="flex items-center space-x-2 bg-gray-50 px-4 py-3 rounded-lg border-2 border-gray-200">
-                          <div className="w-8 h-6 bg-gray-600 rounded flex items-center justify-center text-white text-xs font-bold">
-                            $$
-                          </div>
-                          <span className="text-gray-900 capitalize font-medium">{userProfile.profile.paymentMethod}</span>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-gray-700">Email</label>
+                          <p className="text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">{userProfile.email}</p>
                         </div>
-                      ) : (
-                        <p className="text-gray-500 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">Not provided</p>
-                      )}
-                    </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-gray-700">Role</label>
+                          <Badge variant="outline" className="capitalize bg-gray-100 text-gray-700 border-gray-300">
+                            {userProfile.profile.role}
+                          </Badge>
+                        </div>
+                      </CardContent>
+                    </Card>
 
-                    <div className="space-y-3">
-                      <label className="text-sm font-medium text-gray-700">Onboarding Status</label>
-                      <div className="flex items-center space-x-2">
-                        {userProfile.profile.isOnboardingComplete ? (
-                          <div className="flex items-center space-x-2 bg-gray-100 px-4 py-2 rounded-lg border-2 border-gray-300">
-                            <CheckCircle2 className="h-4 w-4 text-gray-700" />
-                            <span className="font-semibold text-gray-700">Completed</span>
+                    {/* Institution Information */}
+                    <Card className="bg-white border-gray-200 shadow-sm">
+                      <CardHeader>
+                        <CardTitle className="flex items-center space-x-2 text-gray-800">
+                          <GraduationCap className="h-5 w-5 text-green-500" />
+                          <span>Institution Details</span>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4 pt-6">
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-gray-700">Institution Type</label>
+                          {isEditingProfile ? (
+                            <Input
+                              value={editProfileData?.profile?.institutionType || ''}
+                              onChange={(e) => setEditProfileData({
+                                ...editProfileData,
+                                profile: { ...editProfileData.profile, institutionType: e.target.value }
+                              })}
+                              className="border-gray-300 focus:border-gray-500"
+                            />
+                          ) : (
+                            <p className="text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">{userProfile.profile.institutionType}</p>
+                          )}
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-gray-700">Institution Name</label>
+                          {isEditingProfile ? (
+                            <Input
+                              value={editProfileData?.profile?.institutionName || ''}
+                              onChange={(e) => setEditProfileData({
+                                ...editProfileData,
+                                profile: { ...editProfileData.profile, institutionName: e.target.value }
+                              })}
+                              className="border-gray-300 focus:border-gray-500"
+                            />
+                          ) : (
+                            <p className="text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">{userProfile.profile.institutionName}</p>
+                          )}
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-gray-700">Student Count</label>
+                          {isEditingProfile ? (
+                            <Input
+                              value={editProfileData?.profile?.studentCount || ''}
+                              onChange={(e) => setEditProfileData({
+                                ...editProfileData,
+                                profile: { ...editProfileData.profile, studentCount: e.target.value }
+                              })}
+                              className="border-gray-300 focus:border-gray-500"
+                            />
+                          ) : (
+                            <p className="text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">{userProfile.profile.studentCount}</p>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Teaching Information */}
+                    <Card className="bg-white border-gray-200 shadow-sm">
+                      <CardHeader>
+                        <CardTitle className="flex items-center space-x-2 text-gray-800">
+                          <BookOpen className="h-5 w-5 text-orange-500" />
+                          <span>Teaching Information</span>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4 pt-6">
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-gray-700">Subjects</label>
+                          {isEditingProfile ? (
+                            <Textarea
+                              value={editProfileData?.profile?.subjects || ''}
+                              onChange={(e) => setEditProfileData({
+                                ...editProfileData,
+                                profile: { ...editProfileData.profile, subjects: e.target.value }
+                              })}
+                              className="border-gray-300 focus:border-gray-500"
+                              rows={3}
+                            />
+                          ) : (
+                            <p className="text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">{userProfile.profile.subjects}</p>
+                          )}
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-gray-700">Experience</label>
+                          {isEditingProfile ? (
+                            <Input
+                              value={editProfileData?.profile?.experience || ''}
+                              onChange={(e) => setEditProfileData({
+                                ...editProfileData,
+                                profile: { ...editProfileData.profile, experience: e.target.value }
+                              })}
+                              className="border-gray-300 focus:border-gray-500"
+                            />
+                          ) : (
+                            <p className="text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">{userProfile.profile.experience}</p>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Plan & Payment Information */}
+                    <Card className="bg-white border-gray-200 shadow-sm">
+                      <CardHeader>
+                        <CardTitle className="flex items-center space-x-2 text-gray-800">
+                          <Award className="h-5 w-5 text-violet-500" />
+                          <span>Plan & Payment</span>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-6 pt-6">
+                        <div className="space-y-3">
+                          <label className="text-sm font-medium text-gray-700">Selected Plan</label>
+                          {isEditingProfile ? (
+                            <Select
+                              value={editProfileData?.profile?.plan || ''}
+                              onValueChange={(value) => setEditProfileData({
+                                ...editProfileData,
+                                profile: { ...editProfileData.profile, plan: value }
+                              })}
+                            >
+                              <SelectTrigger className="border-gray-300 focus:border-gray-500">
+                                <SelectValue placeholder="Select a plan" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="free">Free Plan</SelectItem>
+                                <SelectItem value="basic">Basic Plan</SelectItem>
+                                <SelectItem value="premium">Premium Plan</SelectItem>
+                                <SelectItem value="pro">Pro Plan</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <div className="flex items-center space-x-2 bg-gray-50 px-4 py-2 rounded-lg border-2 border-gray-200">
+                              <div className="w-3 h-3 bg-gray-600 rounded-full"></div>
+                              <span className="font-semibold text-gray-800 capitalize text-lg">{userProfile.profile.plan}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="space-y-3">
+                          <label className="text-sm font-medium text-gray-700">Payment Method</label>
+                          {isEditingProfile ? (
+                            <Select
+                              value={editProfileData?.profile?.paymentMethod || ''}
+                              onValueChange={(value) => setEditProfileData({
+                                ...editProfileData,
+                                profile: { ...editProfileData.profile, paymentMethod: value }
+                              })}
+                            >
+                              <SelectTrigger className="border-gray-300 focus:border-gray-500">
+                                <SelectValue placeholder="Select payment method" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="easypaisa">Easypaisa</SelectItem>
+                                <SelectItem value="jazzcash">JazzCash</SelectItem>
+                                <SelectItem value="bank-transfer">Bank Transfer</SelectItem>
+                                <SelectItem value="debit-card">Debit Card</SelectItem>
+                                <SelectItem value="credit-card">Credit Card</SelectItem>
+                                <SelectItem value="raast">Raast</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          ) : userProfile.profile.paymentMethod ? (
+                            <div className="flex items-center space-x-2 bg-gray-50 px-4 py-3 rounded-lg border-2 border-gray-200">
+                              <div className="w-8 h-6 bg-gray-600 rounded flex items-center justify-center text-white text-xs font-bold">
+                                $$
+                              </div>
+                              <span className="text-gray-900 capitalize font-medium">{userProfile.profile.paymentMethod}</span>
+                            </div>
+                          ) : (
+                            <p className="text-gray-500 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">Not provided</p>
+                          )}
+                        </div>
+
+                        <div className="space-y-3">
+                          <label className="text-sm font-medium text-gray-700">Onboarding Status</label>
+                          <div className="flex items-center space-x-2">
+                            {userProfile.profile.isOnboardingComplete ? (
+                              <div className="flex items-center space-x-2 bg-gray-100 px-4 py-2 rounded-lg border-2 border-gray-300">
+                                <CheckCircle2 className="h-4 w-4 text-gray-700" />
+                                <span className="font-semibold text-gray-700">Completed</span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center space-x-2 bg-gray-50 px-4 py-2 rounded-lg border-2 border-gray-200">
+                                <Clock className="h-4 w-4 text-gray-600" />
+                                <span className="font-semibold text-gray-600">Pending</span>
+                              </div>
+                            )}
                           </div>
-                        ) : (
-                          <div className="flex items-center space-x-2 bg-gray-50 px-4 py-2 rounded-lg border-2 border-gray-200">
-                            <Clock className="h-4 w-4 text-gray-600" />
-                            <span className="font-semibold text-gray-600">Pending</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
                 ) : (
                   <Card>
@@ -1453,100 +1428,100 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
             {/* Class Management Tab */}
             {settingsTab === "classes" && (
               <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold text-gray-900">Class Management</h2>
-                <Button onClick={() => setIsCreateClassModalOpen(true)} className="bg-green-600 hover:bg-green-700">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create New Class
-                </Button>
-              </div>
+                <div className="flex justify-between items-center">
+                  <h2 className="text-2xl font-bold text-gray-900">Class Management</h2>
+                  <Button onClick={() => setIsCreateClassModalOpen(true)} className="bg-violet-600 hover:bg-violet-700">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create New Class
+                  </Button>
+                </div>
 
-              <Card className="bg-white border-gray-200 shadow-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2 text-gray-800">
-                    <GraduationCap className="h-5 w-5 text-green-500" />
-                    <span>Your Classes</span>
-                  </CardTitle>
-                  <CardDescription>Manage and delete your classes</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {classesLoading && classes.length === 0 ? (
-                    <div className="text-center py-8">
-                      <div className="text-lg text-gray-500">Loading classes...</div>
-                    </div>
-                  ) : classes.length > 0 ? (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Class Name</TableHead>
-                          <TableHead>Class Code</TableHead>
-                          <TableHead>Students</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Created Date</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {classes.map((classItem) => (
-                          <TableRow key={classItem.id}>
-                            <TableCell className="font-medium">
-                              <div className="font-semibold text-gray-900">{classItem.name}</div>
-                              {classItem.description && (
-                                <div className="text-xs text-gray-500">{classItem.description}</div>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 font-mono">
-                                {classItem.classCode}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center space-x-1">
-                                <Users className="h-4 w-4 text-gray-400" />
-                                <span className="font-semibold">{classItem.studentCount || 0}</span>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant={classItem.isActive ? "default" : "outline"}
-                                     className={classItem.isActive ? "bg-green-100 text-green-800 border-green-300" : ""}>
-                                {classItem.isActive ? "Active" : "Inactive"}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <div className="text-sm text-gray-600">
-                                {new Date(classItem.createdAt).toLocaleDateString()}
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleDeleteClass(classItem)}
-                                  className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300 transition-all duration-200"
-                                >
-                                  <Trash2 className="h-4 w-4 mr-1" />
-                                  Delete
-                                </Button>
-                              </div>
-                            </TableCell>
+                <Card className="bg-white border-gray-200 shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2 text-gray-800">
+                      <GraduationCap className="h-5 w-5 text-green-500" />
+                      <span>Your Classes</span>
+                    </CardTitle>
+                    <CardDescription>Manage and delete your classes</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {classesLoading && classes.length === 0 ? (
+                      <div className="text-center py-8">
+                        <div className="text-lg text-gray-500">Loading classes...</div>
+                      </div>
+                    ) : classes.length > 0 ? (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Class Name</TableHead>
+                            <TableHead>Class Code</TableHead>
+                            <TableHead>Students</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Created Date</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  ) : (
-                    <div className="text-center py-12">
-                      <GraduationCap className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">No classes yet</h3>
-                      <p className="text-gray-500 mb-4">Create your first class to start organizing students.</p>
-                      <Button onClick={() => setIsCreateClassModalOpen(true)} className="bg-green-600 hover:bg-green-700">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Create Your First Class
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                        </TableHeader>
+                        <TableBody>
+                          {classes.map((classItem) => (
+                            <TableRow key={classItem.id}>
+                              <TableCell className="font-medium">
+                                <div className="font-semibold text-gray-900">{classItem.name}</div>
+                                {classItem.description && (
+                                  <div className="text-xs text-gray-500">{classItem.description}</div>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 font-mono">
+                                  {classItem.classCode}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center space-x-1">
+                                  <Users className="h-4 w-4 text-gray-400" />
+                                  <span className="font-semibold">{classItem.studentCount || 0}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={classItem.isActive ? "default" : "outline"}
+                                  className={classItem.isActive ? "bg-green-100 text-green-800 border-green-300" : ""}>
+                                  {classItem.isActive ? "Active" : "Inactive"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div className="text-sm text-gray-600">
+                                  {new Date(classItem.createdAt).toLocaleDateString()}
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleDeleteClass(classItem)}
+                                    className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300 transition-all duration-200"
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-1" />
+                                    Delete
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    ) : (
+                      <div className="text-center py-12">
+                        <GraduationCap className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">No classes yet</h3>
+                        <p className="text-gray-500 mb-4">Create your first class to start organizing students.</p>
+                        <Button onClick={() => setIsCreateClassModalOpen(true)} className="bg-violet-600 hover:bg-violet-700">
+                          <Plus className="h-4 w-4 mr-2" />
+                          Create Your First Class
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               </div>
             )}
           </div>
@@ -1683,7 +1658,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                   <label className="text-sm font-medium text-gray-600">Status</label>
                   <div className="mt-1">
                     <Badge variant={selectedClass.isActive ? "default" : "outline"}
-                           className={selectedClass.isActive ? "bg-green-100 text-green-800 border-green-300" : ""}>
+                      className={selectedClass.isActive ? "bg-green-100 text-green-800 border-green-300" : ""}>
                       {selectedClass.isActive ? "Active" : "Inactive"}
                     </Badge>
                   </div>
@@ -1746,7 +1721,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                 <label className="text-sm font-medium text-gray-700 mb-2 block">Class Name</label>
                 <Input
                   value={selectedClass.name}
-                  onChange={(e) => setSelectedClass({...selectedClass, name: e.target.value})}
+                  onChange={(e) => setSelectedClass({ ...selectedClass, name: e.target.value })}
                   placeholder="Enter class name"
                 />
               </div>
@@ -1755,7 +1730,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                 <label className="text-sm font-medium text-gray-700 mb-2 block">Description</label>
                 <Textarea
                   value={selectedClass.description || ''}
-                  onChange={(e) => setSelectedClass({...selectedClass, description: e.target.value})}
+                  onChange={(e) => setSelectedClass({ ...selectedClass, description: e.target.value })}
                   placeholder="Enter class description"
                   rows={3}
                 />
@@ -1765,7 +1740,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                 <label className="text-sm font-medium text-gray-700 mb-2 block">Status</label>
                 <Select
                   value={selectedClass.isActive ? "active" : "inactive"}
-                  onValueChange={(value) => setSelectedClass({...selectedClass, isActive: value === "active"})}
+                  onValueChange={(value) => setSelectedClass({ ...selectedClass, isActive: value === "active" })}
                 >
                   <SelectTrigger>
                     <SelectValue />

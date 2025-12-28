@@ -1,0 +1,44 @@
+version: "3.8"
+
+services:
+  gradex:
+    image: ghcr.io/YOUR_USERNAME/gradex:latest
+    # Or use local build:
+    # build: .
+    container_name: gradex
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://user:password@db:5432/gradex
+      - NEXTAUTH_SECRET=your-super-secret-key-change-this
+      - NEXTAUTH_URL=https://yourdomain.com
+      - OPENAI_API_KEY=sk-your-openai-api-key
+      - CLOUDINARY_CLOUD_NAME=your-cloud-name
+      - CLOUDINARY_API_KEY=your-api-key
+      - CLOUDINARY_API_SECRET=your-api-secret
+    depends_on:
+      - db
+    networks:
+      - gradex-network
+
+  db:
+    image: postgres:15-alpine
+    container_name: gradex-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=gradex
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - gradex-network
+
+volumes:
+  postgres_data:
+
+networks:
+  gradex-network:
+    driver: bridge
