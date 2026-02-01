@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, use } from "react"
-import { useSession } from "next-auth/react"
+import { useSession, signOut } from "next-auth/react"
 import { redirect, useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -41,7 +41,11 @@ import {
   Download,
   Trash2,
   Save,
-  X
+  X,
+  LayoutDashboard,
+  LogOut,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react"
 
 // Remove mock data - will use real data from database
@@ -83,6 +87,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
   const router = useRouter()
   const { data: session, status } = useSession()
   const [activeTab, setActiveTab] = useState("overview")
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isViewModalOpen, setIsViewModalOpen] = useState(false)
@@ -108,6 +113,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
   const [allSubmissions, setAllSubmissions] = useState<any[]>([])
   const [allStudents, setAllStudents] = useState<any[]>([])
   const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [showProfilePopup, setShowProfilePopup] = useState(false)
   const [isViewClassModalOpen, setIsViewClassModalOpen] = useState(false)
   const [isEditClassModalOpen, setIsEditClassModalOpen] = useState(false)
   const [submissionSearchQuery, setSubmissionSearchQuery] = useState("")
@@ -119,10 +125,12 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
   const { username } = use(params)
 
   // Fetch assignments from database
-  const fetchAssignments = async () => {
+  const fetchAssignments = async (showLoader = true) => {
     if (!session?.user?.email) return
 
-    setLoading(true)
+    if (showLoader && assignments.length === 0) {
+      setLoading(true)
+    }
     try {
       const response = await fetch('/api/assignments')
       if (response.ok) {
@@ -145,7 +153,8 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
         })
         setAllSubmissions(submissions)
       } else {
-        console.error('Failed to fetch assignments')
+        const errorData = await response.json().catch(() => ({}))
+        console.error('Failed to fetch assignments:', response.status, errorData)
       }
     } catch (error) {
       console.error('Error fetching assignments:', error)
@@ -170,7 +179,8 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
         setUserProfile(data.user)
         setEditProfileData(data.user)
       } else {
-        console.error('Failed to fetch user profile')
+        const errorData = await response.json().catch(() => ({}))
+        console.error('Failed to fetch user profile:', response.status, errorData)
       }
     } catch (error) {
       console.error('Error fetching user profile:', error)
@@ -230,7 +240,9 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
   const fetchClasses = async () => {
     if (!session?.user?.email) return
 
-    setClassesLoading(true)
+    if (classes.length === 0) {
+      setClassesLoading(true)
+    }
     try {
       const response = await fetch('/api/classes')
       if (response.ok) {
@@ -371,15 +383,12 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
 
   useEffect(() => {
     if (status === "unauthenticated") {
-      redirect("/login")
-    } else if (status === "authenticated" && session?.user) {
-      // Redirect students to student dashboard
-      if (session.user.role === "student") {
-        redirect(`/dashboard/student/${session.user.username}`)
-      }
-      // Clients stay on admin panel
+      router.push("/login")
+    } else if (status === "authenticated" && session?.user?.role === "student") {
+      router.push(`/dashboard/student/${session.user.username}`)
     }
-  }, [status, session])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status])
 
   useEffect(() => {
     if (session?.user?.email) {
@@ -388,12 +397,26 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
       fetchUserProfile(userProfile === null)
       fetchClasses()
     }
-  }, [session])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.user?.email])
 
   if (status === "loading") {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">Loading admin dashboard...</div>
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white">
+        <div className="animate-pulse">
+          <img
+            src="https://res.cloudinary.com/dolpat4s3/image/upload/v1766249987/Black_Green_Letter_G_Logo_wafmuu.svg"
+            alt="Gradex Logo"
+            width={64}
+            height={64}
+            className="h-16 w-16"
+          />
+        </div>
+        <div className="mt-6 flex items-center gap-1.5">
+          <div className="h-2 w-2 rounded-full bg-violet-600 animate-bounce" style={{ animationDelay: "0ms" }} />
+          <div className="h-2 w-2 rounded-full bg-violet-600 animate-bounce" style={{ animationDelay: "150ms" }} />
+          <div className="h-2 w-2 rounded-full bg-violet-600 animate-bounce" style={{ animationDelay: "300ms" }} />
+        </div>
       </div>
     )
   }
@@ -420,157 +443,145 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
   // Calculate total enrolled students across all classes
   const totalEnrollments = classes.reduce((acc, classItem) => acc + (classItem.studentCount || 0), 0)
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="w-full px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <Link href="/dashboard" className="flex items-center cursor-pointer">
-                <img
-                  src="https://res.cloudinary.com/dolpat4s3/image/upload/v1766249987/Black_Green_Letter_G_Logo_wafmuu.svg"
-                  alt="Gradex Logo"
-                  className="h-14 w-auto"
-                />
-              </Link>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="icon">
-                <Settings className="h-5 w-5" />
-              </Button>
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                  <User className="h-4 w-4 text-white" />
-                </div>
-                <div className="text-sm">
-                  <div className="font-medium text-gray-900">{session.user?.name || "Teacher"}</div>
-                  <div className="text-gray-500">Administrator</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
+  const sidebarNavItems = [
+    { id: "overview", label: "Overview", icon: LayoutDashboard },
+    { id: "classes", label: "Classes", icon: GraduationCap },
+    { id: "assignments", label: "Assignments", icon: BookOpen },
+    { id: "submissions", label: "Submissions", icon: FileCheck },
+    { id: "students", label: "Students", icon: Users },
+    { id: "analytics", label: "Analytics", icon: Award },
+    { id: "settings", label: "Settings", icon: Settings },
+  ]
 
-      {/* Navigation Tabs */}
-      <div className="bg-gradient-to-r from-gray-50 to-white border-b">
-        <div className="w-full px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-4">
-            {[
-              {
-                id: "overview",
-                label: "Overview",
-                icon: TrendingUp,
-                activeClass: "border-violet-500 text-violet-600 bg-violet-50",
-                inactiveClass: "text-gray-600 hover:text-violet-600 hover:bg-violet-50"
-              },
-              {
-                id: "assignments",
-                label: "Assignments",
-                icon: BookOpen,
-                activeClass: "border-violet-500 text-violet-600 bg-violet-50",
-                inactiveClass: "text-gray-600 hover:text-violet-600 hover:bg-violet-50"
-              },
-              {
-                id: "submissions",
-                label: "Submissions",
-                icon: FileCheck,
-                activeClass: "border-violet-500 text-violet-600 bg-violet-50",
-                inactiveClass: "text-gray-600 hover:text-violet-600 hover:bg-violet-50"
-              },
-              {
-                id: "students",
-                label: "Students",
-                icon: Users,
-                activeClass: "border-violet-500 text-violet-600 bg-violet-50",
-                inactiveClass: "text-gray-600 hover:text-violet-600 hover:bg-violet-50"
-              },
-              {
-                id: "analytics",
-                label: "Analytics",
-                icon: Award,
-                activeClass: "border-violet-500 text-violet-600 bg-violet-50",
-                inactiveClass: "text-gray-600 hover:text-violet-600 hover:bg-violet-50"
-              },
-              {
-                id: "settings",
-                label: "Settings",
-                icon: Settings,
-                activeClass: "border-violet-500 text-violet-600 bg-violet-50",
-                inactiveClass: "text-gray-600 hover:text-violet-600 hover:bg-violet-50"
-              }
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center space-x-2 py-4 px-3 border-b-2 font-medium text-sm transition-all rounded-t-lg ${activeTab === tab.id
-                    ? tab.activeClass
-                    : `border-transparent ${tab.inactiveClass}`
-                  }`}
-              >
-                <tab.icon className={`h-5 w-5 text-black ${activeTab === tab.id ? 'animate-pulse' : ''}`} />
-                <span>{tab.label}</span>
-              </button>
-            ))}
-          </div>
+  return (
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* Sidebar */}
+      <aside className={`fixed inset-y-0 left-0 z-30 flex flex-col bg-violet-50 border-r border-violet-200 transition-all duration-300 ${sidebarCollapsed ? 'w-[72px]' : 'w-60'}`}>
+        {/* Logo */}
+        <div className="flex items-center justify-between h-16 px-4 border-b border-violet-200">
+          <Link href="/dashboard" className="flex items-center cursor-pointer">
+            <img
+              src="https://res.cloudinary.com/dolpat4s3/image/upload/v1766249987/Black_Green_Letter_G_Logo_wafmuu.svg"
+              alt="Gradex Logo"
+              className="h-10 w-auto"
+            />
+            {!sidebarCollapsed && <span className="ml-0 text-lg font-bold text-gray-900">Gradex</span>}
+          </Link>
+          <button
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="p-1.5 rounded-lg text-violet-400 hover:text-violet-600 hover:bg-violet-100 transition-colors cursor-pointer"
+          >
+            {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          </button>
         </div>
-      </div>
+
+        {/* Navigation */}
+        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+          {sidebarNavItems.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => setActiveTab(item.id)}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-none text-sm font-medium transition-all cursor-pointer ${
+                activeTab === item.id
+                  ? 'bg-violet-200 text-black border-l-4 border-violet-600'
+                  : 'text-black hover:bg-violet-100'
+              } ${sidebarCollapsed ? 'justify-center' : ''}`}
+              title={sidebarCollapsed ? item.label : undefined}
+            >
+              <item.icon className="h-5 w-5 shrink-0 text-black" />
+              {!sidebarCollapsed && <span>{item.label}</span>}
+            </button>
+          ))}
+        </nav>
+
+        {/* User section */}
+        <div className="border-t border-violet-200 p-3">
+          <button
+            onClick={() => setShowProfilePopup(true)}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-violet-100 transition-colors cursor-pointer ${sidebarCollapsed ? 'justify-center' : ''}`}
+            title={sidebarCollapsed ? session.user?.name || 'Profile' : undefined}
+          >
+            <div className="w-8 h-8 bg-violet-600 rounded-full flex items-center justify-center shrink-0">
+              <User className="h-4 w-4 text-white" />
+            </div>
+            {!sidebarCollapsed && (
+              <div className="flex-1 min-w-0 text-left">
+                <div className="text-sm font-medium text-gray-900 truncate">{session.user?.name || "Teacher"}</div>
+                <div className="text-xs text-violet-600">Administrator</div>
+              </div>
+            )}
+          </button>
+          <button
+            onClick={() => signOut({ callbackUrl: '/login' })}
+            className={`w-full flex items-center gap-3 px-3 py-2 mt-1 rounded-lg text-sm text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors cursor-pointer ${sidebarCollapsed ? 'justify-center' : ''}`}
+            title={sidebarCollapsed ? 'Log out' : undefined}
+          >
+            <LogOut className="h-4 w-4 shrink-0" />
+            {!sidebarCollapsed && <span>Log out</span>}
+          </button>
+        </div>
+      </aside>
 
       {/* Main Content */}
-      <main className="w-full px-4 sm:px-6 lg:px-8 py-8">
+      <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'ml-[72px]' : 'ml-60'}`}>
+        {/* Top Bar */}
+        <header className="sticky top-0 z-20 bg-white border-b border-gray-200 h-16 flex items-center px-6">
+          <h1 className="text-lg font-semibold text-gray-900 capitalize">{activeTab}</h1>
+        </header>
+
+        <main className="px-6 py-8">
         {/* Overview Tab */}
         {activeTab === "overview" && (
           <div className="space-y-6">
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card className="bg-gradient-to-br from-violet-50 to-violet-100 border-violet-200">
+              <Card className="bg-white border-violet-200">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-violet-900">Total Assignments</CardTitle>
-                  <BookOpen className="h-4 w-4 text-violet-600" />
+                  <CardTitle className="text-sm font-medium text-gray-900">Total Assignments</CardTitle>
+                  <BookOpen className="h-4 w-4 text-black" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-violet-900">{totalAssignments}</div>
-                  <p className="text-xs text-violet-700">
+                  <div className="text-2xl font-bold text-gray-900">{totalAssignments}</div>
+                  <p className="text-xs text-gray-600">
                     Total assignments created
                   </p>
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-violet-50 to-violet-100 border-violet-200">
+              <Card className="bg-white border-violet-200">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-violet-900">Pending Reviews</CardTitle>
-                  <Clock className="h-4 w-4 text-violet-600" />
+                  <CardTitle className="text-sm font-medium text-gray-900">Pending Reviews</CardTitle>
+                  <Clock className="h-4 w-4 text-black" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-violet-900">{pendingSubmissions}</div>
-                  <p className="text-xs text-violet-700">
+                  <div className="text-2xl font-bold text-gray-900">{pendingSubmissions}</div>
+                  <p className="text-xs text-gray-600">
                     Requires your attention
                   </p>
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-violet-50 to-violet-100 border-violet-200">
+              <Card className="bg-white border-violet-200">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-violet-900">Average Grade</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-violet-600" />
+                  <CardTitle className="text-sm font-medium text-gray-900">Average Grade</CardTitle>
+                  <TrendingUp className="h-4 w-4 text-black" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-violet-900">{averageGrade.toFixed(1)}%</div>
-                  <p className="text-xs text-violet-700">
+                  <div className="text-2xl font-bold text-gray-900">{averageGrade.toFixed(1)}%</div>
+                  <p className="text-xs text-gray-600">
                     Class average grade
                   </p>
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-violet-50 to-violet-100 border-violet-200">
+              <Card className="bg-white border-violet-200">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-violet-900">Total Students</CardTitle>
-                  <Users className="h-4 w-4 text-violet-600" />
+                  <CardTitle className="text-sm font-medium text-gray-900">Total Students</CardTitle>
+                  <Users className="h-4 w-4 text-black" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-violet-900">{totalStudents}</div>
-                  <p className="text-xs text-violet-700">
+                  <div className="text-2xl font-bold text-gray-900">{totalStudents}</div>
+                  <p className="text-xs text-gray-600">
                     Active students
                   </p>
                 </CardContent>
@@ -610,10 +621,9 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                     <div className="text-center py-4">
                       <p className="text-sm text-gray-500">No assignments created yet</p>
                       <Button
-                        variant="outline"
                         size="sm"
                         onClick={() => setIsCreateModalOpen(true)}
-                        className="mt-2"
+                        className="mt-2 bg-violet-600 text-white hover:bg-violet-200 border-none"
                       >
                         Create First Assignment
                       </Button>
@@ -653,6 +663,110 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                 </CardContent>
               </Card>
             </div>
+          </div>
+        )}
+
+        {/* Classes Tab */}
+        {activeTab === "classes" && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h1 className="text-2xl font-bold text-gray-900">Class Management</h1>
+              <Button onClick={() => setIsCreateClassModalOpen(true)} className="bg-violet-600 hover:bg-violet-700">
+                <Plus className="h-4 w-4 mr-2" />
+                Create Class
+              </Button>
+            </div>
+
+            <Card>
+              <CardContent>
+                {classesLoading && classes.length === 0 ? (
+                  <div className="text-center py-8">
+                    <div className="text-lg text-gray-500">Loading classes...</div>
+                  </div>
+                ) : classes.length > 0 ? (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Class Name</TableHead>
+                        <TableHead>Class Code</TableHead>
+                        <TableHead>Students</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Created Date</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {classes.map((classItem) => (
+                        <TableRow key={classItem.id}>
+                          <TableCell className="font-medium">
+                            <div className="font-semibold text-gray-900">{classItem.name}</div>
+                            {classItem.description && (
+                              <div className="text-xs text-gray-500 mt-1">{classItem.description}</div>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="bg-violet-50 text-violet-700 border-violet-200 font-mono">
+                              {classItem.classCode}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center space-x-1">
+                              <Users className="h-4 w-4 text-gray-400" />
+                              <span className="font-semibold">{classItem.studentCount || 0}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={classItem.isActive ? "default" : "outline"}
+                              className={classItem.isActive ? "bg-green-100 text-green-800 border-green-300 hover:bg-green-200" : "bg-red-100 text-red-800 border-red-300"}
+                            >
+                              {classItem.isActive ? "Active" : "Inactive"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm text-gray-600">
+                              {new Date(classItem.createdAt).toLocaleDateString()}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end space-x-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleViewClass(classItem)}
+                                className="border-violet-200 text-violet-700 hover:bg-violet-50 hover:border-violet-300"
+                              >
+                                <Eye className="h-4 w-4 mr-1" />
+                                View
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEditClass(classItem)}
+                                className="border-violet-200 text-violet-700 hover:bg-violet-50 hover:border-violet-300"
+                              >
+                                <Edit className="h-4 w-4 mr-1" />
+                                Edit
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <div className="text-center py-12">
+                    <GraduationCap className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No classes yet</h3>
+                    <p className="text-gray-500 mb-4">Create your first class to start organizing students.</p>
+                    <Button onClick={() => setIsCreateClassModalOpen(true)} className="bg-violet-600 hover:bg-violet-700">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Your First Class
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         )}
 
@@ -899,147 +1013,16 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h1 className="text-2xl font-bold text-gray-900">Student Management</h1>
-              <div className="flex space-x-2">
-                <Button
-                  onClick={() => setIsCreateClassModalOpen(true)}
-                  className="bg-violet-600 hover:bg-violet-700"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Class
-                </Button>
-                <Button
-                  onClick={() => setIsInviteStudentModalOpen(true)}
-                  className="bg-violet-600 hover:bg-violet-700"
-                >
-                  <Users className="h-4 w-4 mr-2" />
-                  Invite Students
-                </Button>
-              </div>
+              <Button
+                onClick={() => setIsInviteStudentModalOpen(true)}
+                className="bg-violet-600 hover:bg-violet-700"
+              >
+                <Users className="h-4 w-4 mr-2" />
+                Invite Students
+              </Button>
             </div>
 
-            {/* Classes and Students Tabs */}
-            <div className="bg-white border-b">
-              <div className="flex space-x-8">
-                {[
-                  { id: "classes", label: "Classes", icon: GraduationCap },
-                  { id: "allStudents", label: "All Students", icon: Users }
-                ].map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setStudentManagementTab(tab.id)}
-                    className={`flex items-center space-x-2 py-4 border-b-2 font-medium text-sm transition-colors ${studentManagementTab === tab.id
-                        ? "border-primary text-primary"
-                        : "border-transparent text-gray-500 hover:text-gray-700"
-                      }`}
-                  >
-                    <tab.icon className="h-4 w-4" />
-                    <span>{tab.label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Classes View */}
-            {studentManagementTab === "classes" && (
-              <div className="space-y-4">
-                <h2 className="text-lg font-semibold text-gray-900">Your Classes</h2>
-                <Card className="bg-white border-gray-200 shadow-sm">
-                  <CardContent>
-                    {classesLoading && classes.length === 0 ? (
-                      <div className="text-center py-8">
-                        <div className="text-lg text-gray-500">Loading classes...</div>
-                      </div>
-                    ) : classes.length > 0 ? (
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Class Name</TableHead>
-                            <TableHead>Class Code</TableHead>
-                            <TableHead>Students</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Created Date</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {classes.map((classItem) => (
-                            <TableRow key={classItem.id}>
-                              <TableCell className="font-medium">
-                                <div className="font-semibold text-gray-900">{classItem.name}</div>
-                                {classItem.description && (
-                                  <div className="text-xs text-gray-500 mt-1">{classItem.description}</div>
-                                )}
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant="outline" className="bg-violet-50 text-violet-700 border-violet-200 font-mono">
-                                  {classItem.classCode}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex items-center space-x-1">
-                                  <Users className="h-4 w-4 text-gray-400" />
-                                  <span className="font-semibold">{classItem.studentCount || 0}</span>
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <Badge
-                                  variant={classItem.isActive ? "default" : "outline"}
-                                  className={classItem.isActive ? "bg-green-100 text-green-800 border-green-300 hover:bg-green-200" : ""}
-                                >
-                                  {classItem.isActive ? "Active" : "Inactive"}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                <div className="text-sm text-gray-600">
-                                  {new Date(classItem.createdAt).toLocaleDateString()}
-                                </div>
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <div className="flex items-center justify-end space-x-2">
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleViewClass(classItem)}
-                                    className="border-violet-200 text-violet-700 hover:bg-violet-50 hover:border-violet-300"
-                                  >
-                                    <Eye className="h-4 w-4 mr-1" />
-                                    View
-                                  </Button>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleEditClass(classItem)}
-                                    className="border-violet-200 text-violet-700 hover:bg-violet-50 hover:border-violet-300"
-                                  >
-                                    <Edit className="h-4 w-4 mr-1" />
-                                    Edit
-                                  </Button>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    ) : (
-                      <div className="text-center py-12">
-                        <GraduationCap className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">No classes yet</h3>
-                        <p className="text-gray-500 mb-4">Create your first class to start organizing students.</p>
-                        <Button onClick={() => setIsCreateClassModalOpen(true)} className="bg-violet-600 hover:bg-violet-700">
-                          <Plus className="h-4 w-4 mr-2" />
-                          Create Your First Class
-                        </Button>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-
-            {/* All Students View */}
-            {studentManagementTab === "allStudents" && (
-              <div className="space-y-4">
-                <h2 className="text-lg font-semibold text-gray-900">All Students</h2>
+            <div className="space-y-4">
                 <Card className="bg-white border-gray-200 shadow-sm">
                   <CardContent>
                     {classesLoading && allStudents.length === 0 ? (
@@ -1100,7 +1083,6 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                   </CardContent>
                 </Card>
               </div>
-            )}
           </div>
         )}
 
@@ -1430,10 +1412,6 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <h2 className="text-2xl font-bold text-gray-900">Class Management</h2>
-                  <Button onClick={() => setIsCreateClassModalOpen(true)} className="bg-violet-600 hover:bg-violet-700">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create New Class
-                  </Button>
                 </div>
 
                 <Card className="bg-white border-gray-200 shadow-sm">
@@ -1483,7 +1461,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                               </TableCell>
                               <TableCell>
                                 <Badge variant={classItem.isActive ? "default" : "outline"}
-                                  className={classItem.isActive ? "bg-green-100 text-green-800 border-green-300" : ""}>
+                                  className={classItem.isActive ? "bg-green-100 text-green-800 border-green-300" : "bg-red-100 text-red-800 border-red-300"}>
                                   {classItem.isActive ? "Active" : "Inactive"}
                                 </Badge>
                               </TableCell>
@@ -1526,7 +1504,8 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
             )}
           </div>
         )}
-      </main>
+        </main>
+      </div>
 
       {/* Create Assignment Modal */}
       <CreateAssignmentModal
@@ -1658,7 +1637,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                   <label className="text-sm font-medium text-gray-600">Status</label>
                   <div className="mt-1">
                     <Badge variant={selectedClass.isActive ? "default" : "outline"}
-                      className={selectedClass.isActive ? "bg-green-100 text-green-800 border-green-300" : ""}>
+                      className={selectedClass.isActive ? "bg-green-100 text-green-800 border-green-300" : "bg-red-100 text-red-800 border-red-300"}>
                       {selectedClass.isActive ? "Active" : "Inactive"}
                     </Badge>
                   </div>
@@ -1765,14 +1744,107 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
               </Button>
               <Button
                 onClick={async () => {
-                  // TODO: Add API call to update class
-                  alert('Class update functionality will be implemented')
-                  setIsEditClassModalOpen(false)
-                  setSelectedClass(null)
+                  try {
+                    const response = await fetch('/api/classes', {
+                      method: 'PUT',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        id: selectedClass.id,
+                        name: selectedClass.name,
+                        description: selectedClass.description,
+                        isActive: selectedClass.isActive,
+                      }),
+                    })
+                    if (response.ok) {
+                      fetchClasses()
+                      setIsEditClassModalOpen(false)
+                      setSelectedClass(null)
+                    } else {
+                      const data = await response.json()
+                      console.error('Failed to update class:', data.error)
+                    }
+                  } catch (error) {
+                    console.error('Error updating class:', error)
+                  }
                 }}
                 className="bg-violet-600 hover:bg-violet-700"
               >
                 Save Changes
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Profile Popup Modal */}
+      {showProfilePopup && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowProfilePopup(false)}>
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-start mb-6">
+              <h3 className="text-xl font-bold text-gray-900">Profile</h3>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowProfilePopup(false)}
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+
+            <div className="flex flex-col items-center mb-6">
+              <div className="w-16 h-16 bg-violet-600 rounded-full flex items-center justify-center mb-3">
+                <User className="h-8 w-8 text-white" />
+              </div>
+              <h4 className="text-lg font-semibold text-gray-900">{session.user?.name || "Teacher"}</h4>
+              <p className="text-sm text-gray-500">{session.user?.email}</p>
+              <Badge className="mt-2 bg-violet-100 text-violet-700 border-violet-200">Administrator</Badge>
+            </div>
+
+            {userProfile?.profile && (
+              <div className="space-y-3 border-t border-gray-200 pt-4">
+                {userProfile.profile.institutionName && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Institution</span>
+                    <span className="text-gray-900 font-medium">{userProfile.profile.institutionName}</span>
+                  </div>
+                )}
+                {userProfile.profile.institutionType && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Type</span>
+                    <span className="text-gray-900 font-medium capitalize">{userProfile.profile.institutionType}</span>
+                  </div>
+                )}
+                {userProfile.profile.subjects && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Subjects</span>
+                    <span className="text-gray-900 font-medium">{userProfile.profile.subjects}</span>
+                  </div>
+                )}
+                {userProfile.profile.experience && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Experience</span>
+                    <span className="text-gray-900 font-medium">{userProfile.profile.experience}</span>
+                  </div>
+                )}
+                {userProfile.profile.plan && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Plan</span>
+                    <span className="text-gray-900 font-medium capitalize">{userProfile.profile.plan}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="mt-6 pt-4 border-t border-gray-200">
+              <Button
+                className="w-full bg-violet-600 hover:bg-violet-700"
+                onClick={() => {
+                  setShowProfilePopup(false)
+                  setActiveTab("settings")
+                }}
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Edit Profile
               </Button>
             </div>
           </div>

@@ -8,24 +8,14 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
 
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
       )
     }
 
-    // Find the user by email
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
-    })
-
-    if (!user) {
-      return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
-      )
-    }
+    const userId = session.user.id
 
     // Create sample class
     const sampleClass = await prisma.class.create({
@@ -33,7 +23,7 @@ export async function POST(request: NextRequest) {
         name: "Mathematics Grade 10 - Demo",
         description: "Sample mathematics class for demonstration",
         classCode: "DEMO10",
-        teacherId: user.id,
+        teacherId: userId,
       }
     })
 
@@ -47,7 +37,7 @@ export async function POST(request: NextRequest) {
           textContent: "1. Solve for x: 2x + 5 = 15\n2. Solve for y: 3y - 7 = 14\n3. Solve for z: 5z + 3 = 2z + 15",
           totalMarks: 30,
           dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
-          teacherId: user.id,
+          teacherId: userId,
           classId: sampleClass.id,
         }
       }),
@@ -58,7 +48,7 @@ export async function POST(request: NextRequest) {
           description: "Write a short essay explaining the steps of the scientific method with examples.",
           totalMarks: 25,
           dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // 5 days from now
-          teacherId: user.id,
+          teacherId: userId,
           classId: sampleClass.id,
         }
       }),
@@ -69,7 +59,7 @@ export async function POST(request: NextRequest) {
           description: "Write a comprehensive book review discussing the main themes and characters.",
           totalMarks: 40,
           dueDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), // 10 days from now
-          teacherId: user.id,
+          teacherId: userId,
           classId: sampleClass.id,
         }
       }),
@@ -81,7 +71,7 @@ export async function POST(request: NextRequest) {
           description: "Answer questions about key events and figures of World War II.",
           totalMarks: 20,
           dueDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago (overdue)
-          teacherId: user.id,
+          teacherId: userId,
           classId: sampleClass.id,
         }
       })
@@ -146,7 +136,7 @@ This method ensures that scientific knowledge is based on evidence rather than o
       await prisma.submission.create({
         data: {
           assignmentId: sub.assignmentId,
-          studentId: user.id,
+          studentId: userId,
           content: sub.content,
           marks: sub.marks,
           feedback: sub.feedback,

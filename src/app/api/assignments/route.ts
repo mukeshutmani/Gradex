@@ -33,29 +33,17 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
 
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
       )
     }
 
-    // Find the user by email
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
-    })
-
-    if (!user) {
-      return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
-      )
-    }
-
     // Fetch assignments created by this teacher
     const assignments = await prisma.assignment.findMany({
       where: {
-        teacherId: user.id
+        teacherId: session.user.id
       },
       include: {
         submissions: {
@@ -98,22 +86,10 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
 
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
-      )
-    }
-
-    // Find the user by email
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
-    })
-
-    if (!user) {
-      return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
       )
     }
 
@@ -147,7 +123,7 @@ export async function POST(request: NextRequest) {
     const classExists = await prisma.class.findFirst({
       where: {
         id: classId,
-        teacherId: user.id
+        teacherId: session.user.id
       }
     })
 
@@ -168,7 +144,7 @@ export async function POST(request: NextRequest) {
         imageUrl: imageUrl || null,
         totalMarks,
         dueDate: new Date(dueDate),
-        teacherId: user.id,
+        teacherId: session.user.id,
         classId: classId,
       },
       include: {
@@ -203,22 +179,10 @@ export async function PUT(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
 
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
-      )
-    }
-
-    // Find the user by email
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
-    })
-
-    if (!user) {
-      return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
       )
     }
 
@@ -260,7 +224,7 @@ export async function PUT(request: NextRequest) {
     const existingAssignment = await prisma.assignment.findFirst({
       where: {
         id: assignmentId,
-        teacherId: user.id
+        teacherId: session.user.id
       }
     })
 
@@ -276,7 +240,7 @@ export async function PUT(request: NextRequest) {
       const classExists = await prisma.class.findFirst({
         where: {
           id: classId,
-          teacherId: user.id
+          teacherId: session.user.id
         }
       })
 
@@ -333,22 +297,10 @@ export async function DELETE(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
 
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
-      )
-    }
-
-    // Find the user by email
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
-    })
-
-    if (!user) {
-      return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
       )
     }
 
@@ -366,7 +318,7 @@ export async function DELETE(request: NextRequest) {
     const existingAssignment = await prisma.assignment.findFirst({
       where: {
         id: assignmentId,
-        teacherId: user.id
+        teacherId: session.user.id
       }
     })
 

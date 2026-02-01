@@ -25,22 +25,10 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
 
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
-      )
-    }
-
-    // Find the user by email
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
-    })
-
-    if (!user) {
-      return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
       )
     }
 
@@ -81,7 +69,7 @@ export async function POST(request: NextRequest) {
         name,
         description,
         classCode,
-        teacherId: user.id,
+        teacherId: session.user.id,
       },
       include: {
         teacher: {
@@ -127,29 +115,17 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
 
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
       )
     }
 
-    // Find the user by email
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
-    })
-
-    if (!user) {
-      return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
-      )
-    }
-
     // Fetch user's classes
     const classes = await prisma.class.findMany({
       where: {
-        teacherId: user.id
+        teacherId: session.user.id
       },
       include: {
         enrollments: {
@@ -193,27 +169,88 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// DELETE - Delete a class
-export async function DELETE(request: NextRequest) {
+// PUT - Update a class
+export async function PUT(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
 
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
       )
     }
 
-    // Find the user by email
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
+    const body = await request.json()
+    const { id, name, description, isActive } = body
+
+    if (!id) {
+      return NextResponse.json(
+        { error: "Class ID is required" },
+        { status: 400 }
+      )
+    }
+
+    // Check if class exists and belongs to the teacher
+    const existingClass = await prisma.class.findFirst({
+      where: {
+        id,
+        teacherId: session.user.id
+      }
     })
 
-    if (!user) {
+    if (!existingClass) {
       return NextResponse.json(
-        { error: "User not found" },
+        { error: "Class not found or you don't have permission to edit it" },
         { status: 404 }
+      )
+    }
+
+    const updatedClass = await prisma.class.update({
+      where: { id },
+      data: {
+        ...(name !== undefined && { name }),
+        ...(description !== undefined && { description }),
+        ...(isActive !== undefined && { isActive }),
+      },
+      include: {
+        enrollments: {
+          include: {
+            student: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                username: true
+              }
+            }
+          }
+        }
+      }
+    })
+
+    return NextResponse.json({
+      message: "Class updated successfully",
+      class: updatedClass
+    })
+  } catch (error) {
+    console.error("Error updating class:", error)
+    return NextResponse.json(
+      { error: "Failed to update class" },
+      { status: 500 }
+    )
+  }
+}
+
+// DELETE - Delete a class
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
       )
     }
 
@@ -231,7 +268,7 @@ export async function DELETE(request: NextRequest) {
     const existingClass = await prisma.class.findFirst({
       where: {
         id: classId,
-        teacherId: user.id
+        teacherId: session.user.id
       }
     })
 

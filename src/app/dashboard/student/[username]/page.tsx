@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useSession } from "next-auth/react"
+import { useSession, signOut } from "next-auth/react"
 import { redirect, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -29,7 +29,12 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
-  Eye
+  Eye,
+  LayoutDashboard,
+  LogOut,
+  ChevronLeft,
+  ChevronRight,
+  Settings
 } from "lucide-react"
 import { SubmitAssignmentModal } from "@/components/assignments/submit-assignment-modal"
 import { ViewAssignmentModal } from "@/components/assignments/view-assignment-modal"
@@ -98,6 +103,7 @@ export default function StudentDashboard() {
   const router = useRouter()
   const { data: session, status } = useSession()
   const [activeTab, setActiveTab] = useState("dashboard")
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [classes, setClasses] = useState<ClassInfo[]>([])
   const [assignments, setAssignments] = useState<Assignment[]>([])
   const [loading, setLoading] = useState(true)
@@ -183,8 +189,9 @@ export default function StudentDashboard() {
 
   useEffect(() => {
     if (status === "unauthenticated") {
-      redirect("/login")
+      router.push("/login")
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status])
 
   useEffect(() => {
@@ -192,12 +199,26 @@ export default function StudentDashboard() {
       fetchStudentData()
       fetchSubmissions()
     }
-  }, [session])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.user?.email])
 
   if (status === "loading") {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">Loading student dashboard...</div>
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white">
+        <div className="animate-pulse">
+          <img
+            src="https://res.cloudinary.com/dolpat4s3/image/upload/v1766249987/Black_Green_Letter_G_Logo_wafmuu.svg"
+            alt="Gradex Logo"
+            width={64}
+            height={64}
+            className="h-16 w-16"
+          />
+        </div>
+        <div className="mt-6 flex items-center gap-1.5">
+          <div className="h-2 w-2 rounded-full bg-violet-600 animate-bounce" style={{ animationDelay: "0ms" }} />
+          <div className="h-2 w-2 rounded-full bg-violet-600 animate-bounce" style={{ animationDelay: "150ms" }} />
+          <div className="h-2 w-2 rounded-full bg-violet-600 animate-bounce" style={{ animationDelay: "300ms" }} />
+        </div>
       </div>
     )
   }
@@ -318,73 +339,106 @@ export default function StudentDashboard() {
     }
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="w-full px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-1">
-             
-              <img
-                src="https://res.cloudinary.com/dolpat4s3/image/upload/v1766249987/Black_Green_Letter_G_Logo_wafmuu.svg"
-                alt="Gradex Logo"
-                onClick={() => router.push('/')}
-                className="h-16 w-auto cursor-pointer"
-              />
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                <User className="h-4 w-4 text-white" />
-              </div>
-              <div className="text-sm">
-                <div className="font-medium text-gray-900">{session.user?.name || "Student"}</div>
-                <div className="text-gray-500">Student</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
+  const sidebarNavItems = [
+    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { id: "assignments", label: "Assignments", icon: BookOpen },
+    { id: "join", label: "Join Class", icon: Plus },
+    { id: "results", label: "Results", icon: Award },
+  ]
 
-      {/* Navigation Tabs */}
-      <div className="bg-white border-b">
-        <div className="w-full px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-6">
-            {[
-              { id: "dashboard", label: "Dashboard", icon: TrendingUp },
-              { id: "assignments", label: "Assignments", icon: BookOpen },
-              { id: "join", label: "Class Assignment", icon: Plus },
-              { id: "results", label: "View Results", icon: Award }
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center space-x-2 py-4 border-b-2 font-medium text-sm transition-all ${
-                  activeTab === tab.id
-                    ? "border-violet-600 text-violet-600"
-                    : "border-transparent text-gray-600 hover:text-violet-600 hover:border-violet-300"
-                }`}
-              >
-                <tab.icon className={`h-4 w-4 ${activeTab === tab.id ? "text-violet-600" : "text-black"}`} />
-                <span>{tab.label}</span>
-              </button>
-            ))}
+  return (
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* Sidebar */}
+      <aside className={`fixed inset-y-0 left-0 z-30 flex flex-col bg-white border-r border-gray-200 transition-all duration-300 ${sidebarCollapsed ? 'w-[72px]' : 'w-60'}`}>
+        {/* Logo */}
+        <div className="flex items-center justify-between h-16 px-4 border-b border-gray-100">
+          <div className="flex items-center cursor-pointer" onClick={() => router.push('/')}>
+            <img
+              src="https://res.cloudinary.com/dolpat4s3/image/upload/v1766249987/Black_Green_Letter_G_Logo_wafmuu.svg"
+              alt="Gradex Logo"
+              className="h-10 w-auto"
+            />
+            {!sidebarCollapsed && <span className="ml-1 text-lg font-bold text-gray-900">Gradex</span>}
           </div>
+          <button
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+          >
+            {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          </button>
         </div>
-      </div>
+
+        {/* Navigation */}
+        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+          {sidebarNavItems.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => setActiveTab(item.id)}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer ${
+                activeTab === item.id
+                  ? 'bg-violet-50 text-violet-700 border border-violet-200'
+                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+              } ${sidebarCollapsed ? 'justify-center' : ''}`}
+              title={sidebarCollapsed ? item.label : undefined}
+            >
+              <item.icon className={`h-5 w-5 shrink-0 ${activeTab === item.id ? 'text-violet-600' : 'text-gray-400'}`} />
+              {!sidebarCollapsed && <span>{item.label}</span>}
+            </button>
+          ))}
+        </nav>
+
+        {/* User section */}
+        <div className="border-t border-gray-100 p-3">
+          <div className={`flex items-center gap-3 px-3 py-2.5 rounded-lg ${sidebarCollapsed ? 'justify-center' : ''}`}>
+            <div className="w-8 h-8 bg-violet-600 rounded-full flex items-center justify-center shrink-0">
+              <User className="h-4 w-4 text-white" />
+            </div>
+            {!sidebarCollapsed && (
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium text-gray-900 truncate">{session.user?.name || "Student"}</div>
+                <div className="text-xs text-gray-500">Student</div>
+              </div>
+            )}
+          </div>
+          <button
+            onClick={() => signOut({ callbackUrl: '/login' })}
+            className={`w-full flex items-center gap-3 px-3 py-2 mt-1 rounded-lg text-sm text-gray-500 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer ${sidebarCollapsed ? 'justify-center' : ''}`}
+            title={sidebarCollapsed ? 'Log out' : undefined}
+          >
+            <LogOut className="h-4 w-4 shrink-0" />
+            {!sidebarCollapsed && <span>Log out</span>}
+          </button>
+        </div>
+      </aside>
 
       {/* Main Content */}
-      <main className="w-full px-4 sm:px-6 lg:px-8 py-8">
+      <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'ml-[72px]' : 'ml-60'}`}>
+        {/* Top Bar */}
+        <header className="sticky top-0 z-20 bg-white border-b border-gray-200 h-16 flex items-center justify-between px-6">
+          <h1 className="text-lg font-semibold text-gray-900 capitalize">
+            {activeTab === "join" ? "Join Class" : activeTab}
+          </h1>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-violet-600 rounded-full flex items-center justify-center">
+              <User className="h-4 w-4 text-white" />
+            </div>
+            <div className="text-sm hidden sm:block">
+              <div className="font-medium text-gray-900">{session.user?.name || "Student"}</div>
+            </div>
+          </div>
+        </header>
+
+        <main className="px-6 py-8">
         {/* Dashboard Tab */}
         {activeTab === "dashboard" && (
           <div className="space-y-6">
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+              <Card className="bg-white border border-violet-200 shadow-sm hover:shadow-md transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium text-gray-600">Total Assignments</CardTitle>
                   <div className="w-10 h-10 bg-violet-100 rounded-full flex items-center justify-center">
-                    <BookOpen className="h-5 w-5 text-violet-600" />
+                    <BookOpen className="h-5 w-5 text-black" />
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -395,11 +449,11 @@ export default function StudentDashboard() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+              <Card className="bg-white border border-violet-200 shadow-sm hover:shadow-md transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium text-gray-600">Submitted</CardTitle>
-                  <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                    <CheckCircle2 className="h-5 w-5 text-green-600" />
+                  <div className="w-10 h-10 bg-violet-100 rounded-full flex items-center justify-center">
+                    <CheckCircle2 className="h-5 w-5 text-black" />
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -410,11 +464,11 @@ export default function StudentDashboard() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+              <Card className="bg-white border border-violet-200 shadow-sm hover:shadow-md transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium text-gray-600">Pending</CardTitle>
-                  <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                    <Clock className="h-5 w-5 text-orange-600" />
+                  <div className="w-10 h-10 bg-violet-100 rounded-full flex items-center justify-center">
+                    <Clock className="h-5 w-5 text-black" />
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -425,11 +479,11 @@ export default function StudentDashboard() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+              <Card className="bg-white border border-violet-200 shadow-sm hover:shadow-md transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium text-gray-600">Overdue</CardTitle>
-                  <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-                    <AlertCircle className="h-5 w-5 text-red-600" />
+                  <div className="w-10 h-10 bg-violet-100 rounded-full flex items-center justify-center">
+                    <AlertCircle className="h-5 w-5 text-black" />
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -1029,7 +1083,8 @@ export default function StudentDashboard() {
             )}
           </div>
         )}
-      </main>
+        </main>
+      </div>
 
       {/* Submit Assignment Modal */}
       <SubmitAssignmentModal

@@ -34,6 +34,7 @@ interface ClassInfo {
   name: string
   classCode: string
   studentCount?: number
+  isActive?: boolean
 }
 
 export function CreateAssignmentModal({ isOpen, onClose, onSuccess }: CreateAssignmentModalProps) {
@@ -71,7 +72,7 @@ export function CreateAssignmentModal({ isOpen, onClose, onSuccess }: CreateAssi
       const response = await fetch('/api/classes')
       if (response.ok) {
         const data = await response.json()
-        setClasses(data.classes || [])
+        setClasses((data.classes || []).filter((c: ClassInfo) => c.isActive !== false))
       } else {
         console.error('Failed to fetch classes')
       }

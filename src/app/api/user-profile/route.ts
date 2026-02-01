@@ -21,22 +21,10 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
 
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
-      )
-    }
-
-    // Find the user by email
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
-    })
-
-    if (!user) {
-      return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
       )
     }
 
@@ -69,7 +57,7 @@ export async function POST(request: NextRequest) {
     // Create or update user profile
     const userProfile = await prisma.userProfile.upsert({
       where: {
-        userId: user.id
+        userId: session.user.id
       },
       update: {
         role,
@@ -84,7 +72,7 @@ export async function POST(request: NextRequest) {
         updatedAt: new Date(),
       },
       create: {
-        userId: user.id,
+        userId: session.user.id,
         role,
         institutionType,
         institutionName,
@@ -127,16 +115,15 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
 
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
       )
     }
 
-    // Find the user by email
     const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
+      where: { id: session.user.id },
       include: {
         profile: true
       }

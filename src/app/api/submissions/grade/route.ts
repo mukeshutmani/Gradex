@@ -17,22 +17,10 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
 
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
-      )
-    }
-
-    // Find the user by email
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
-    })
-
-    if (!user) {
-      return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
       )
     }
 
@@ -78,7 +66,7 @@ export async function POST(request: NextRequest) {
 
     // Verify the submission belongs to the current user (students can only grade their own)
     // or user is a teacher/admin (for teacher grading feature)
-    if (submission.studentId !== user.id && user.role !== "client" && user.role !== "TEACHER" && user.role !== "ADMIN") {
+    if (submission.studentId !== session.user.id && session.user.role !== "client" && session.user.role !== "TEACHER" && session.user.role !== "ADMIN") {
       return NextResponse.json(
         { error: "You don't have permission to grade this submission" },
         { status: 403 }

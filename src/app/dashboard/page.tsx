@@ -17,7 +17,6 @@ import {
   TrendingUp,
   Calendar,
   Settings,
-  Bell,
   Award,
   PlayCircle,
   FileCheck,
@@ -28,12 +27,16 @@ import {
   LayoutDashboard,
   Sparkles,
   DollarSign,
-  HelpCircle
+  HelpCircle,
+  ChevronDown
 } from "lucide-react"
+import { useRef } from "react"
 
 export default function DashboardPage() {
   const router = useRouter()
   const { data: session, status } = useSession()
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
+  const profileMenuRef = useRef<HTMLDivElement>(null)
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false)
   const [showLoginAsTeacherModal, setShowLoginAsTeacherModal] = useState(false)
   const [showContactModal, setShowContactModal] = useState(false)
@@ -141,8 +144,21 @@ export default function DashboardPage() {
 
   if (status === "loading") {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">Loading...</div>
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white">
+        <div className="animate-pulse">
+          <img
+            src="https://res.cloudinary.com/dolpat4s3/image/upload/v1766249987/Black_Green_Letter_G_Logo_wafmuu.svg"
+            alt="Gradex Logo"
+            width={64}
+            height={64}
+            className="h-16 w-16"
+          />
+        </div>
+        <div className="mt-6 flex items-center gap-1.5">
+          <div className="h-2 w-2 rounded-full bg-violet-600 animate-bounce" style={{ animationDelay: "0ms" }} />
+          <div className="h-2 w-2 rounded-full bg-violet-600 animate-bounce" style={{ animationDelay: "150ms" }} />
+          <div className="h-2 w-2 rounded-full bg-violet-600 animate-bounce" style={{ animationDelay: "300ms" }} />
+        </div>
       </div>
     )
   }
@@ -152,7 +168,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="bg-white shadow-sm border-b sticky top-0 z-50">
         <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
@@ -171,72 +187,113 @@ export default function DashboardPage() {
                 onClick={() => {
                   window.scrollTo({ top: 0, behavior: 'smooth' })
                 }}
-                className="group flex items-center space-x-2 text-sm font-medium text-gray-700 hover:text-violet-600 transition-colors cursor-pointer"
+                className="text-sm font-medium text-gray-700 hover:text-violet-600 transition-colors cursor-pointer"
               >
-                <LayoutDashboard className="h-4 w-4 text-black group-hover:text-violet-600 transition-colors" />
-                <span>Dashboard</span>
+                Dashboard
               </button>
               <button
                 onClick={() => {
                   document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })
                 }}
-                className="group flex items-center space-x-2 text-sm font-medium text-gray-700 hover:text-violet-600 transition-colors cursor-pointer"
+                className="text-sm font-medium text-gray-700 hover:text-violet-600 transition-colors cursor-pointer"
               >
-                <Sparkles className="h-4 w-4 text-black group-hover:text-violet-600 transition-colors" />
-                <span>Features</span>
+                Features
               </button>
               <button
                 onClick={() => {
                   document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })
                 }}
-                className="group flex items-center space-x-2 text-sm font-medium text-gray-700 hover:text-violet-600 transition-colors cursor-pointer"
+                className="text-sm font-medium text-gray-700 hover:text-violet-600 transition-colors cursor-pointer"
               >
-                <DollarSign className="h-4 w-4 text-black group-hover:text-violet-600 transition-colors" />
-                <span>Pricing</span>
+                Pricing
               </button>
               <button
                 onClick={() => {
                   document.getElementById('support')?.scrollIntoView({ behavior: 'smooth' })
                 }}
-                className="group flex items-center space-x-2 text-sm font-medium text-gray-700 hover:text-violet-600 transition-colors cursor-pointer"
+                className="text-sm font-medium text-gray-700 hover:text-violet-600 transition-colors cursor-pointer"
               >
-                <HelpCircle className="h-4 w-4 text-black group-hover:text-violet-600 transition-colors" />
-                <span>Support</span>
+                Support
               </button>
             </nav>
 
             <div className="flex items-center space-x-4">
               {session ? (
-                <>
-                  <Button variant="ghost" size="icon">
-                    <Bell className="h-5 w-5" />
-                  </Button>
-                  <Button variant="ghost" size="icon">
-                    <Settings className="h-5 w-5" />
-                  </Button>
-                  <div className="flex items-center space-x-3">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
-                        <User className="h-5 w-5 text-black" />
-                      </div>
-                      <button
-                        onClick={() => router.push(`/admin/${session?.user?.username}`)}
-                        className="text-sm hover:underline cursor-pointer transition-colors"
-                      >
-                        <span className="text-black font-semibold">Welcome,</span>{" "}
-                        <span className="text-gray-700">{session?.user?.name || session?.user?.email}</span>
-                      </button>
+                <div className="relative" ref={profileMenuRef}>
+                  <button
+                    onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+                    className="flex items-center space-x-2 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-violet-100 flex items-center justify-center">
+                      <User className="h-4 w-4 text-violet-600" />
                     </div>
-                    <Button
-                      size="sm"
-                      onClick={() => signOut({ callbackUrl: '/login' })}
-                      className="bg-black text-white hover:bg-black/90"
-                    >
-                      <LogOut className="h-4 w-4 mr-1" />
-                      Sign Out
-                    </Button>
-                  </div>
-                </>
+                    <span className="text-sm font-semibold text-gray-900 hidden sm:block">
+                      {session?.user?.name || session?.user?.email}
+                    </span>
+                    <ChevronDown className={`h-4 w-4 text-gray-500 transition-transform ${isProfileMenuOpen ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {isProfileMenuOpen && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => setIsProfileMenuOpen(false)}
+                      />
+                      <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg border border-gray-200 shadow-lg z-50 py-1">
+                        <div className="px-4 py-3 border-b border-gray-100">
+                          <p className="text-sm font-semibold text-gray-900">{session?.user?.name || session?.user?.email}</p>
+                          <p className="text-xs text-gray-500 truncate">{session?.user?.email}</p>
+                        </div>
+
+                        <button
+                          onClick={() => {
+                            setIsProfileMenuOpen(false)
+                            router.push(`/admin/${session?.user?.username}`)
+                          }}
+                          className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+                        >
+                          <LayoutDashboard className="h-4 w-4 mr-3 text-gray-600" />
+                          <span className="font-medium text-gray-900">Admin Panel</span>
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            setIsProfileMenuOpen(false)
+                            router.push(`/admin/${session?.user?.username}`)
+                          }}
+                          className="w-full flex items-center px-4 py-2.5 text-sm hover:bg-gray-50 transition-colors cursor-pointer"
+                        >
+                          <Settings className="h-4 w-4 mr-3 text-gray-600" />
+                          <span className="font-medium text-gray-900">Settings</span>
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            setIsProfileMenuOpen(false)
+                            document.getElementById('support')?.scrollIntoView({ behavior: 'smooth' })
+                          }}
+                          className="w-full flex items-center px-4 py-2.5 text-sm hover:bg-gray-50 transition-colors cursor-pointer"
+                        >
+                          <HelpCircle className="h-4 w-4 mr-3 text-gray-600" />
+                          <span className="font-medium text-gray-900">Help & Support</span>
+                        </button>
+
+                        <div className="border-t border-gray-100 my-1" />
+
+                        <button
+                          onClick={() => {
+                            setIsProfileMenuOpen(false)
+                            signOut({ callbackUrl: '/login' })
+                          }}
+                          className="w-full flex items-center px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                        >
+                          <LogOut className="h-4 w-4 mr-3" />
+                          Sign Out
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
               ) : (
                 <>
                   <Button variant="ghost" onClick={() => router.push("/login")}>
@@ -252,32 +309,38 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="w-full px-4 sm:px-6 lg:px-8 py-8">
-        {/* Welcome Section */}
-        <div className="mb-8 text-center relative py-12 bg-gradient-to-br from-violet-50 to-white rounded-lg">
-          {/* Dotted Background Pattern */}
-          <div
-            className="absolute inset-0 -z-10"
-            style={{
-              backgroundImage: 'radial-gradient(circle, #7C3AED 3px, transparent 3px)',
-              backgroundSize: '30px 30px',
-              opacity: 0.15
-            }}
-          ></div>
+      {/* Hero Section - Full Width Grid Background */}
+      <div className="relative w-full bg-gradient-to-br from-violet-50 to-white overflow-hidden">
+        {/* Grid Line Background */}
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage:
+              'linear-gradient(to right, #C4B5FD 1px, transparent 1px), linear-gradient(to bottom, #C4B5FD 1px, transparent 1px)',
+            backgroundSize: '40px 40px',
+            opacity: 0.4
+          }}
+        ></div>
+        {/* Center Radial Blur/Fade */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: 'radial-gradient(ellipse at center, rgba(245,243,255,0.95) 25%, rgba(245,243,255,0.6) 50%, transparent 75%)'
+          }}
+        ></div>
 
-          <h1 className="text-3xl font-bold text-black mb-2 flex items-center justify-center gap-2">
-            Welcome to Gradex!
-            <ClipboardCheck className="h-8 w-8 text-black" />
+        <div className="relative text-center py-28 px-4 sm:px-6 lg:px-8 flex flex-col items-center justify-center">
+          <h1 className="text-5xl font-bold text-black mb-4">
+            Welcome to <span className="text-violet-600">Gradex!</span>
           </h1>
-          <p className="text-lg text-gray-600 mb-6 max-w-4xl mx-auto">
+          <p className="text-xl text-gray-600 mb-8 max-w-4xl mx-auto">
             Gradex is an innovative platform that helps teachers with automatic assignment checking and grading.
             We provide AI-powered solutions to streamline the evaluation process for colleges, schools, and universities.
           </p>
 
           {/* Start Your Plan Button - Only for clients */}
           {session?.user?.role === "client" && (
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center justify-center space-x-4">
               <Button size="lg" className="px-8" onClick={handleStartAutoGrading}>
                 <PlayCircle className="mr-2 h-5 w-5" />
                 Start Auto-Grading
@@ -288,145 +351,111 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Main Content */}
+      <main className="w-full px-4 sm:px-6 lg:px-8 py-8">
 
         {/* Platform Services */}
-        <div id="features" className="mb-8 scroll-mt-20">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4">Our Services</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="bg-gradient-to-br from-violet-50 to-violet-100 border-violet-200 hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Bot className="mr-2 h-5 w-5 text-violet-600" />
-                  AI-Powered Grading
-                </CardTitle>
-                <CardDescription>
-                  Automated assignment checking with intelligent evaluation
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-700">
-                  Advanced AI algorithms that automatically grade assignments, essays, and tests with detailed feedback for students.
-                </p>
-              </CardContent>
-            </Card>
+        {/* Our Services */}
+        <div id="features" className="mb-16 mt-8 scroll-mt-20">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl font-bold text-gray-900">Our Services</h2>
+            <p className="mt-2 text-gray-500 max-w-2xl mx-auto">Everything you need to automate grading and manage your classroom efficiently</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="group relative bg-white border border-violet-200 rounded-2xl p-8 text-center hover:shadow-xl hover:border-violet-400 transition-all duration-300">
+              <div className="mx-auto w-14 h-14 rounded-xl bg-violet-100 flex items-center justify-center mb-5 group-hover:bg-violet-600 group-hover:scale-110 transition-all duration-300">
+                <Bot className="h-7 w-7 text-black group-hover:text-white transition-colors duration-300" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">AI-Powered Grading</h3>
+              <p className="text-sm text-gray-500 leading-relaxed">
+                Advanced AI algorithms that automatically grade assignments, essays, and tests with detailed feedback for students.
+              </p>
+            </div>
 
-            <Card className="bg-gradient-to-br from-violet-50 to-violet-100 border-violet-200 hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <FileCheck className="mr-2 h-5 w-5 text-violet-600" />
-                  Assignment Management
-                </CardTitle>
-                <CardDescription>
-                  Streamlined workflow for assignment distribution and collection
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-700">
-                  Upload, distribute, and collect assignments seamlessly. Track submission status and manage deadlines efficiently.
-                </p>
-              </CardContent>
-            </Card>
+            <div className="group relative bg-white border border-violet-200 rounded-2xl p-8 text-center hover:shadow-xl hover:border-violet-400 transition-all duration-300">
+              <div className="mx-auto w-14 h-14 rounded-xl bg-violet-100 flex items-center justify-center mb-5 group-hover:bg-violet-600 group-hover:scale-110 transition-all duration-300">
+                <FileCheck className="h-7 w-7 text-black group-hover:text-white transition-colors duration-300" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Assignment Management</h3>
+              <p className="text-sm text-gray-500 leading-relaxed">
+                Upload, distribute, and collect assignments seamlessly. Track submission status and manage deadlines efficiently.
+              </p>
+            </div>
 
-            <Card className="bg-gradient-to-br from-violet-50 to-violet-100 border-violet-200 hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <CheckCircle2 className="mr-2 h-5 w-5 text-violet-600" />
-                  Plagiarism Detection
-                </CardTitle>
-                <CardDescription>
-                  Advanced plagiarism checking and originality verification
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-700">
-                  Comprehensive plagiarism detection that ensures academic integrity and provides detailed similarity reports.
-                </p>
-              </CardContent>
-            </Card>
+            <div className="group relative bg-white border border-violet-200 rounded-2xl p-8 text-center hover:shadow-xl hover:border-violet-400 transition-all duration-300">
+              <div className="mx-auto w-14 h-14 rounded-xl bg-violet-100 flex items-center justify-center mb-5 group-hover:bg-violet-600 group-hover:scale-110 transition-all duration-300">
+                <CheckCircle2 className="h-7 w-7 text-black group-hover:text-white transition-colors duration-300" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Plagiarism Detection</h3>
+              <p className="text-sm text-gray-500 leading-relaxed">
+                Comprehensive plagiarism detection that ensures academic integrity and provides detailed similarity reports.
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* Dashboard Features - Teacher */}
+        {/* Teacher Dashboard Features */}
         {session?.user?.role === "client" && (
-          <div className="mb-8">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">Teacher Dashboard Features</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card className="bg-gradient-to-br from-violet-50 to-violet-100 border-violet-200 hover:shadow-xl hover:scale-105 transition-all duration-300">
-              <CardHeader>
-                <CardTitle className="flex items-center text-lg">
-                  <TrendingUp className="mr-2 h-5 w-5 text-violet-600" />
-                  Grading Analytics
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-700">
+          <div className="mb-16">
+            <div className="text-center mb-10">
+              <h2 className="text-3xl font-bold text-gray-900">Teacher Dashboard</h2>
+              <p className="mt-2 text-gray-500 max-w-2xl mx-auto">Powerful tools to manage your classes, track progress, and generate reports</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="group bg-white border border-violet-200 rounded-2xl p-6 hover:shadow-xl hover:border-violet-400 transition-all duration-300 flex flex-col">
+                <div className="w-12 h-12 rounded-xl bg-violet-100 flex items-center justify-center mb-4 group-hover:bg-violet-600 group-hover:scale-110 transition-all duration-300">
+                  <TrendingUp className="h-6 w-6 text-violet-600 group-hover:text-white transition-colors duration-300" />
+                </div>
+                <h3 className="text-base font-bold text-gray-900 mb-1">Grading Analytics</h3>
+                <p className="text-sm text-gray-500 leading-relaxed mb-4 flex-1">
                   Monitor grading progress and view detailed analytics for your classes
                 </p>
-              </CardContent>
-              <CardFooter>
-                <Button variant="outline" size="sm" className="w-full border-violet-300 text-violet-700 hover:bg-violet-100">
+                <Button variant="outline" size="sm" className="w-full border-violet-200 text-violet-700 hover:bg-violet-50 cursor-pointer">
                   View Analytics
                 </Button>
-              </CardFooter>
-            </Card>
+              </div>
 
-            <Card className="bg-gradient-to-br from-violet-50 to-violet-100 border-violet-200 hover:shadow-xl hover:scale-105 transition-all duration-300">
-              <CardHeader>
-                <CardTitle className="flex items-center text-lg">
-                  <Calendar className="mr-2 h-5 w-5 text-violet-600" />
-                  Assignment Scheduler
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-700">
+              <div className="group bg-white border border-violet-200 rounded-2xl p-6 hover:shadow-xl hover:border-violet-400 transition-all duration-300 flex flex-col">
+                <div className="w-12 h-12 rounded-xl bg-violet-100 flex items-center justify-center mb-4 group-hover:bg-violet-600 group-hover:scale-110 transition-all duration-300">
+                  <Calendar className="h-6 w-6 text-violet-600 group-hover:text-white transition-colors duration-300" />
+                </div>
+                <h3 className="text-base font-bold text-gray-900 mb-1">Assignment Scheduler</h3>
+                <p className="text-sm text-gray-500 leading-relaxed mb-4 flex-1">
                   Schedule assignments, set deadlines, and manage submission dates
                 </p>
-              </CardContent>
-              <CardFooter>
-                <Button variant="outline" size="sm" className="w-full border-violet-300 text-violet-700 hover:bg-violet-100">
+                <Button variant="outline" size="sm" className="w-full border-violet-200 text-violet-700 hover:bg-violet-50 cursor-pointer">
                   Manage Schedule
                 </Button>
-              </CardFooter>
-            </Card>
+              </div>
 
-            <Card className="bg-gradient-to-br from-violet-50 to-violet-100 border-violet-200 hover:shadow-xl hover:scale-105 transition-all duration-300">
-              <CardHeader>
-                <CardTitle className="flex items-center text-lg">
-                  <Award className="mr-2 h-5 w-5 text-violet-600" />
-                  Grade Reports
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-700">
+              <div className="group bg-white border border-violet-200 rounded-2xl p-6 hover:shadow-xl hover:border-violet-400 transition-all duration-300 flex flex-col">
+                <div className="w-12 h-12 rounded-xl bg-violet-100 flex items-center justify-center mb-4 group-hover:bg-violet-600 group-hover:scale-110 transition-all duration-300">
+                  <Award className="h-6 w-6 text-violet-600 group-hover:text-white transition-colors duration-300" />
+                </div>
+                <h3 className="text-base font-bold text-gray-900 mb-1">Grade Reports</h3>
+                <p className="text-sm text-gray-500 leading-relaxed mb-4 flex-1">
                   Generate comprehensive grade reports and student performance summaries
                 </p>
-              </CardContent>
-              <CardFooter>
-                <Button variant="outline" size="sm" className="w-full border-violet-300 text-violet-700 hover:bg-violet-100">
+                <Button variant="outline" size="sm" className="w-full border-violet-200 text-violet-700 hover:bg-violet-50 cursor-pointer">
                   Generate Reports
                 </Button>
-              </CardFooter>
-            </Card>
+              </div>
 
-            <Card className="bg-gradient-to-br from-violet-50 to-violet-100 border-violet-200 hover:shadow-xl hover:scale-105 transition-all duration-300">
-              <CardHeader>
-                <CardTitle className="flex items-center text-lg">
-                  <Users className="mr-2 h-5 w-5 text-violet-600" />
-                  Class Management
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-700">
+              <div className="group bg-white border border-violet-200 rounded-2xl p-6 hover:shadow-xl hover:border-violet-400 transition-all duration-300 flex flex-col">
+                <div className="w-12 h-12 rounded-xl bg-violet-100 flex items-center justify-center mb-4 group-hover:bg-violet-600 group-hover:scale-110 transition-all duration-300">
+                  <Users className="h-6 w-6 text-violet-600 group-hover:text-white transition-colors duration-300" />
+                </div>
+                <h3 className="text-base font-bold text-gray-900 mb-1">Class Management</h3>
+                <p className="text-sm text-gray-500 leading-relaxed mb-4 flex-1">
                   Manage student enrollment, view submissions, and track class progress
                 </p>
-              </CardContent>
-              <CardFooter>
-                <Button variant="outline" size="sm" className="w-full border-violet-300 text-violet-700 hover:bg-violet-100">
+                <Button variant="outline" size="sm" className="w-full border-violet-200 text-violet-700 hover:bg-violet-50 cursor-pointer">
                   Manage Classes
                 </Button>
-              </CardFooter>
-            </Card>
-          </div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -539,22 +568,6 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Getting Started Section */}
-        {/* Auto-Grading CTA - Only for clients */}
-        {session?.user?.role === "client" && (
-          <div className="mt-8 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg p-6 border border-gray-200">
-            <div className="text-center">
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Ready to Start Auto-Grading?</h3>
-              <p className="text-gray-600 mb-4">
-                Upload your first assignment and experience the power of AI-driven automatic grading and feedback generation.
-              </p>
-              <Button size="lg" className="px-8" onClick={handleStartAutoGrading}>
-                <PlayCircle className="mr-2 h-5 w-5" />
-                Start Auto-Grading Now
-              </Button>
-            </div>
-          </div>
-        )}
 
         {/* Pricing Section */}
         <div id="pricing" className="mt-16 scroll-mt-20">
@@ -694,7 +707,7 @@ export default function DashboardPage() {
             <Card className="bg-gradient-to-br from-violet-50 to-violet-100 border-violet-200 hover:shadow-xl hover:scale-105 transition-all duration-300">
               <CardHeader>
                 <CardTitle className="flex items-center text-lg">
-                  <Bell className="mr-2 h-5 w-5 text-violet-600" />
+                  <HelpCircle className="mr-2 h-5 w-5 text-violet-600" />
                   Help Center
                 </CardTitle>
               </CardHeader>

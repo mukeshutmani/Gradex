@@ -109,9 +109,17 @@ export function LoginForm({ className }: LoginFormProps) {
         </div>
 
         <div className="space-y-2">
-          <label htmlFor="password" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-            Password
-          </label>
+          <div className="flex items-center justify-between">
+            <label htmlFor="password" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              Password
+            </label>
+            <Link
+              href="/forgot-password"
+              className="text-xs text-violet-600 hover:text-violet-700 hover:underline"
+            >
+              Forgot password?
+            </Link>
+          </div>
           <div className="relative">
             <Input
               id="password"

@@ -8,29 +8,19 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
 
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
       )
     }
 
-    // Find the user by email
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
-    })
-
-    if (!user) {
-      return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
-      )
-    }
+    const userId = session.user.id
 
     // Fetch student's enrolled classes
     const enrollments = await prisma.classEnrollment.findMany({
       where: {
-        studentId: user.id,
+        studentId: userId,
         status: "active"
       },
       include: {
@@ -48,7 +38,7 @@ export async function GET(request: NextRequest) {
               include: {
                 submissions: {
                   where: {
-                    studentId: user.id
+                    studentId: userId
                   },
                   select: {
                     id: true,
@@ -128,7 +118,7 @@ export async function GET(request: NextRequest) {
     // Also fetch assignments from direct teacher-student relationships
     const teacherStudentRelations = await prisma.studentTeacher.findMany({
       where: {
-        studentId: user.id,
+        studentId: userId,
         status: "active"
       },
       include: {
@@ -141,7 +131,7 @@ export async function GET(request: NextRequest) {
               include: {
                 submissions: {
                   where: {
-                    studentId: user.id
+                    studentId: userId
                   },
                   select: {
                     id: true,

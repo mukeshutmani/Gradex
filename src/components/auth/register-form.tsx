@@ -160,9 +160,9 @@ export function RegisterForm({ className }: RegisterFormProps) {
   }
 
   return (
-    <div className={cn("grid gap-6", className)}>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
+    <div className={cn("grid gap-2", className)}>
+      <form onSubmit={handleSubmit} className="space-y-2">
+        <div className="space-y-1">
           <label htmlFor="username" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
             Username
           </label>
@@ -181,7 +181,7 @@ export function RegisterForm({ className }: RegisterFormProps) {
           )}
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-1">
           <label htmlFor="email" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
             Email
           </label>
@@ -200,7 +200,7 @@ export function RegisterForm({ className }: RegisterFormProps) {
           )}
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-1">
           <label className="text-sm font-medium leading-none">
             Account Type
           </label>
@@ -242,7 +242,7 @@ export function RegisterForm({ className }: RegisterFormProps) {
           </div>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-1">
           <label htmlFor="password" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
             Password
           </label>
@@ -277,7 +277,7 @@ export function RegisterForm({ className }: RegisterFormProps) {
           )}
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-1">
           <label htmlFor="confirmPassword" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
             Confirm Password
           </label>

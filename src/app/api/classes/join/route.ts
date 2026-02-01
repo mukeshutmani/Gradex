@@ -14,24 +14,14 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
 
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
       )
     }
 
-    // Find the user by email
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
-    })
-
-    if (!user) {
-      return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
-      )
-    }
+    const userId = session.user.id
 
     const body = await request.json()
     const validationResult = joinClassSchema.safeParse(body)
@@ -81,7 +71,7 @@ export async function POST(request: NextRequest) {
       where: {
         classId_studentId: {
           classId: classToJoin.id,
-          studentId: user.id
+          studentId: userId
         }
       }
     })
@@ -97,7 +87,7 @@ export async function POST(request: NextRequest) {
     const enrollment = await prisma.classEnrollment.create({
       data: {
         classId: classToJoin.id,
-        studentId: user.id,
+        studentId: userId,
       },
       include: {
         class: {
@@ -119,7 +109,7 @@ export async function POST(request: NextRequest) {
       where: {
         teacherId_studentId: {
           teacherId: classToJoin.teacherId,
-          studentId: user.id
+          studentId: userId
         }
       }
     })
@@ -128,7 +118,7 @@ export async function POST(request: NextRequest) {
       await prisma.studentTeacher.create({
         data: {
           teacherId: classToJoin.teacherId,
-          studentId: user.id,
+          studentId: userId,
         }
       })
     }

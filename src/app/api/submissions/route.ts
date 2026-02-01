@@ -103,24 +103,14 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
 
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
       )
     }
 
-    // Find the user by email
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
-    })
-
-    if (!user) {
-      return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
-      )
-    }
+    const userId = session.user.id
 
     const formData = await request.formData()
     const assignmentId = formData.get('assignmentId') as string
@@ -171,7 +161,7 @@ export async function POST(request: NextRequest) {
       where: {
         assignmentId_studentId: {
           assignmentId: assignment.id,
-          studentId: user.id
+          studentId: userId
         }
       }
     })
@@ -263,7 +253,7 @@ export async function POST(request: NextRequest) {
     const submission = await prisma.submission.create({
       data: {
         assignmentId: assignment.id,
-        studentId: user.id,
+        studentId: userId,
         content: content || null,
         fileUrl: fileUrl,
         marks: null,
@@ -312,29 +302,17 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
 
-    if (!session?.user?.email) {
+    if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
       )
     }
 
-    // Find the user by email
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
-    })
-
-    if (!user) {
-      return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
-      )
-    }
-
     // Fetch user's submissions
     const submissions = await prisma.submission.findMany({
       where: {
-        studentId: user.id
+        studentId: session.user.id
       },
       include: {
         assignment: {
