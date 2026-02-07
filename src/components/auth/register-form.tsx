@@ -142,7 +142,7 @@ export function RegisterForm({ className }: RegisterFormProps) {
         toast.error("Registration successful, but login failed. Please try logging in manually.")
         router.push("/login")
       } else {
-        router.replace("/dashboard")
+        router.replace("/")
         router.refresh()
       }
     } catch {
@@ -337,7 +337,7 @@ export function RegisterForm({ className }: RegisterFormProps) {
         type="button"
         variant="outline"
         className="w-full"
-        onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+        onClick={() => signIn("google", { callbackUrl: "/" })}
         disabled={isLoading}
       >
         <GoogleIcon className="mr-2 h-4 w-4" />

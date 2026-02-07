@@ -68,8 +68,8 @@ export function LoginForm({ className }: LoginFormProps) {
       if (result?.error) {
         toast.error("Invalid email or password")
       } else {
-        // Redirect to dashboard after successful login
-        router.replace("/dashboard")
+        // Redirect to home after successful login
+        router.replace("/")
         router.refresh()
       }
     } catch {
@@ -176,7 +176,7 @@ export function LoginForm({ className }: LoginFormProps) {
         type="button"
         variant="outline"
         className="w-full"
-        onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+        onClick={() => signIn("google", { callbackUrl: "/" })}
         disabled={isLoading}
       >
         <GoogleIcon className="mr-2 h-4 w-4" />

@@ -122,3 +122,31 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Hero Image Floating Animation */
+@keyframes float {
+  0%, 100% {
+    transform: perspective(1000px) rotateY(-8deg) rotateX(4deg) translateY(0px);
+  }
+  50% {
+    transform: perspective(1000px) rotateY(-8deg) rotateX(4deg) translateY(-12px);
+  }
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+/* Marquee Animation for Trusted By Section */
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 25s linear infinite;
+}

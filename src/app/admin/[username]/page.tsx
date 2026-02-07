@@ -459,7 +459,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
       <aside className={`fixed inset-y-0 left-0 z-30 flex flex-col bg-violet-50 border-r border-violet-200 transition-all duration-300 ${sidebarCollapsed ? 'w-[72px]' : 'w-60'}`}>
         {/* Logo */}
         <div className="flex items-center justify-between h-16 px-4 border-b border-violet-200">
-          <Link href="/dashboard" className="flex items-center cursor-pointer">
+          <Link href="/" className="flex items-center cursor-pointer">
             <img
               src="https://res.cloudinary.com/dolpat4s3/image/upload/v1766249987/Black_Green_Letter_G_Logo_wafmuu.svg"
               alt="Gradex Logo"

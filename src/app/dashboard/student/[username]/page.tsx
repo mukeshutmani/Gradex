@@ -34,7 +34,8 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
-  Settings
+  Settings,
+  X
 } from "lucide-react"
 import { SubmitAssignmentModal } from "@/components/assignments/submit-assignment-modal"
 import { ViewAssignmentModal } from "@/components/assignments/view-assignment-modal"
@@ -120,6 +121,7 @@ export default function StudentDashboard() {
   const [selectedAssignmentForView, setSelectedAssignmentForView] = useState<Assignment | null>(null)
   const [isDescriptionModalOpen, setIsDescriptionModalOpen] = useState(false)
   const [selectedDescription, setSelectedDescription] = useState<{ title: string; description: string } | null>(null)
+  const [showProfilePopup, setShowProfilePopup] = useState(false)
 
   // Fetch student's enrolled classes and assignments
   const fetchStudentData = async () => {
@@ -349,9 +351,9 @@ export default function StudentDashboard() {
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-30 flex flex-col bg-white border-r border-gray-200 transition-all duration-300 ${sidebarCollapsed ? 'w-[72px]' : 'w-60'}`}>
+      <aside className={`fixed inset-y-0 left-0 z-30 flex flex-col bg-violet-50 border-r border-violet-200 transition-all duration-300 ${sidebarCollapsed ? 'w-[72px]' : 'w-60'}`}>
         {/* Logo */}
-        <div className="flex items-center justify-between h-16 px-4 border-b border-gray-100">
+        <div className="flex items-center justify-between h-16 px-4 border-b border-violet-200">
           <div className="flex items-center cursor-pointer" onClick={() => router.push('/')}>
             <img
               src="https://res.cloudinary.com/dolpat4s3/image/upload/v1766249987/Black_Green_Letter_G_Logo_wafmuu.svg"
@@ -362,7 +364,7 @@ export default function StudentDashboard() {
           </div>
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-violet-400 hover:text-violet-600 hover:bg-violet-100 transition-colors cursor-pointer"
           >
             {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
           </button>
@@ -374,32 +376,36 @@ export default function StudentDashboard() {
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer ${
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-none text-sm font-medium transition-all cursor-pointer ${
                 activeTab === item.id
-                  ? 'bg-violet-50 text-violet-700 border border-violet-200'
-                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  ? 'bg-violet-200 text-black border-l-4 border-violet-600'
+                  : 'text-black hover:bg-violet-100'
               } ${sidebarCollapsed ? 'justify-center' : ''}`}
               title={sidebarCollapsed ? item.label : undefined}
             >
-              <item.icon className={`h-5 w-5 shrink-0 ${activeTab === item.id ? 'text-violet-600' : 'text-gray-400'}`} />
+              <item.icon className={`h-5 w-5 shrink-0 ${activeTab === item.id ? 'text-violet-600' : 'text-black'}`} />
               {!sidebarCollapsed && <span>{item.label}</span>}
             </button>
           ))}
         </nav>
 
         {/* User section */}
-        <div className="border-t border-gray-100 p-3">
-          <div className={`flex items-center gap-3 px-3 py-2.5 rounded-lg ${sidebarCollapsed ? 'justify-center' : ''}`}>
+        <div className="border-t border-violet-200 p-3">
+          <button
+            onClick={() => setShowProfilePopup(true)}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-violet-100 transition-colors cursor-pointer ${sidebarCollapsed ? 'justify-center' : ''}`}
+            title={sidebarCollapsed ? session.user?.name || 'Profile' : undefined}
+          >
             <div className="w-8 h-8 bg-violet-600 rounded-full flex items-center justify-center shrink-0">
               <User className="h-4 w-4 text-white" />
             </div>
             {!sidebarCollapsed && (
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 text-left">
                 <div className="text-sm font-medium text-gray-900 truncate">{session.user?.name || "Student"}</div>
                 <div className="text-xs text-gray-500">Student</div>
               </div>
             )}
-          </div>
+          </button>
           <button
             onClick={() => signOut({ callbackUrl: '/login' })}
             className={`w-full flex items-center gap-3 px-3 py-2 mt-1 rounded-lg text-sm text-gray-500 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer ${sidebarCollapsed ? 'justify-center' : ''}`}
@@ -1147,6 +1153,65 @@ export default function StudentDashboard() {
                 className="bg-violet-600 hover:bg-violet-700"
               >
                 Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Profile Popup */}
+      {showProfilePopup && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowProfilePopup(false)}>
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-start mb-6">
+              <h3 className="text-xl font-bold text-gray-900">Profile</h3>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowProfilePopup(false)}
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+
+            <div className="flex flex-col items-center mb-6">
+              <div className="w-16 h-16 bg-violet-600 rounded-full flex items-center justify-center mb-3">
+                <User className="h-8 w-8 text-white" />
+              </div>
+              <h4 className="text-lg font-semibold text-gray-900">{session.user?.name || "Student"}</h4>
+              <p className="text-sm text-gray-500">{session.user?.email}</p>
+              <Badge className="mt-2 bg-violet-100 text-violet-700 border-violet-200">Student</Badge>
+            </div>
+
+            <div className="space-y-3 border-t border-gray-200 pt-4">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Classes Enrolled</span>
+                <span className="text-gray-900 font-medium">{classes.length}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Assignments</span>
+                <span className="text-gray-900 font-medium">{assignments.length}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Submitted</span>
+                <span className="text-gray-900 font-medium">{submissions.length}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Average Score</span>
+                <span className="text-gray-900 font-medium">{averagePercentage.toFixed(1)}%</span>
+              </div>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-gray-200">
+              <Button
+                className="w-full bg-violet-600 hover:bg-violet-700 cursor-pointer"
+                onClick={() => {
+                  setShowProfilePopup(false)
+                  setActiveTab("results")
+                }}
+              >
+                <Award className="h-4 w-4 mr-2" />
+                View Results
               </Button>
             </div>
           </div>

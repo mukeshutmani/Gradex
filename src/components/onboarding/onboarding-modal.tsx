@@ -176,22 +176,22 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
 
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-900 rounded-lg shadow-xl w-full max-w-2xl h-[600px] flex flex-col border border-gray-700 relative">
+    <div className="fixed inset-0 flex items-center justify-center z-50 p-4 bg-black/50">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl h-[600px] flex flex-col border border-gray-200 relative">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-700 flex-shrink-0">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
           <div>
-            <h2 className="text-2xl font-bold text-white">Start Auto-Grading</h2>
-            <p className="text-gray-300">Step {currentStep} of {totalSteps}</p>
+            <h2 className="text-2xl font-bold text-black">Start Auto-Grading</h2>
+            <p className="text-gray-500">Step {currentStep} of {totalSteps}</p>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose} className="bg-white hover:bg-gray-200 text-black">
+          <Button variant="ghost" size="icon" onClick={onClose} className="hover:bg-gray-100 text-black">
             <X className="h-5 w-5" />
           </Button>
         </div>
 
         {/* Progress Bar */}
         <div className="px-6 py-2 flex-shrink-0">
-          <div className="w-full bg-gray-700 rounded-full h-2">
+          <div className="w-full bg-gray-200 rounded-full h-2">
             <div
               className="bg-violet-500 h-2 rounded-full transition-all duration-300"
               style={{ width: `${(currentStep / totalSteps) * 100}%` }}
@@ -200,18 +200,18 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
         </div>
 
         {/* Step Content */}
-        <div className="flex-1 p-6 text-white overflow-y-auto">
+        <div className="flex-1 p-6 text-black overflow-y-auto">
           {/* Step 1: User Information */}
           {currentStep === 1 && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-xl font-semibold mb-4 text-white">Basic Information</h3>
+                <h3 className="text-xl font-semibold mb-4 text-black">Basic Information</h3>
 
                 {/* Role Selection */}
                 <div className="space-y-2 mb-4">
-                  <label className="text-sm font-medium text-gray-300">Your Role</label>
+                  <label className="text-sm font-medium text-gray-700">Your Role</label>
                   <Select value={formData.role} onValueChange={(value) => updateFormData("role", value)}>
-                    <SelectTrigger className="w-full bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-violet-500 focus:border-violet-500">
+                    <SelectTrigger className="w-full bg-white border-gray-300 text-black placeholder-gray-400 focus:ring-violet-500 focus:border-violet-500">
                       <SelectValue placeholder="Select your role" />
                     </SelectTrigger>
                     <SelectContent className="z-[60]">
@@ -225,14 +225,14 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
 
                 {/* Name */}
                 <div className="space-y-2 mb-4">
-                  <label className="text-sm font-medium text-gray-300">Username</label>
+                  <label className="text-sm font-medium text-gray-600">Username</label>
                   <Input
                     type="text"
                     placeholder="Enter your username"
                     value={formData.username}
                     onChange={(e) => updateFormData("username", e.target.value)}
                     readOnly={!!session?.user?.name}
-                    className={`w-full bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-violet-500 focus:border-violet-500 ${errors.username ? "border-red-500" : ""} ${!!session?.user?.name ? "cursor-not-allowed opacity-75" : ""}`}
+                    className={`w-full bg-white border-gray-300 text-black placeholder-gray-400 focus:ring-violet-500 focus:border-violet-500 ${errors.username ? "border-red-500" : ""} ${!!session?.user?.name ? "cursor-not-allowed opacity-75" : ""}`}
                   />
                   {errors.username && (
                     <p className="text-red-400 text-sm mt-1">{errors.username}</p>
@@ -241,9 +241,9 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
 
                 {/* Institution Type */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-300">Institution Type</label>
+                  <label className="text-sm font-medium text-gray-600">Institution Type</label>
                   <Select value={formData.institutionType} onValueChange={(value) => updateFormData("institutionType", value)}>
-                    <SelectTrigger className={`w-full bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-violet-500 focus:border-violet-500 ${errors.institutionType ? "border-red-500" : ""}`}>
+                    <SelectTrigger className={`w-full bg-white border-gray-300 text-black placeholder-gray-400 focus:ring-violet-500 focus:border-violet-500 ${errors.institutionType ? "border-red-500" : ""}`}>
                       <SelectValue placeholder="Select institution type" />
                     </SelectTrigger>
                     <SelectContent className="z-[60]">
@@ -269,7 +269,7 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
 
                 {/* Institution Name */}
                 <div className="space-y-2 mb-4">
-                  <label className="text-sm font-medium text-gray-300">
+                  <label className="text-sm font-medium text-gray-600">
                     {formData.institutionType === "school" ? "School" :
                      formData.institutionType === "college" ? "College" :
                      formData.institutionType === "university" ? "University" : "Institution"} Name
@@ -279,7 +279,7 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
                     placeholder={`Enter your ${formData.institutionType || 'institution'} name`}
                     value={formData.institutionName}
                     onChange={(e) => updateFormData("institutionName", e.target.value)}
-                    className={`w-full bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-violet-500 focus:border-violet-500 ${errors.institutionName ? "border-red-500" : ""}`}
+                    className={`w-full bg-white border-gray-300 text-black placeholder-gray-400 focus:ring-violet-500 focus:border-violet-500 ${errors.institutionName ? "border-red-500" : ""}`}
                   />
                   {errors.institutionName && (
                     <p className="text-red-400 text-sm mt-1">{errors.institutionName}</p>
@@ -288,9 +288,9 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
 
                 {/* Student Count */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-300">Number of Students</label>
+                  <label className="text-sm font-medium text-gray-600">Number of Students</label>
                   <Select value={formData.studentCount} onValueChange={(value) => updateFormData("studentCount", value)}>
-                    <SelectTrigger className={`w-full bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-violet-500 focus:border-violet-500 ${errors.studentCount ? "border-red-500" : ""}`}>
+                    <SelectTrigger className={`w-full bg-white border-gray-300 text-black placeholder-gray-400 focus:ring-violet-500 focus:border-violet-500 ${errors.studentCount ? "border-red-500" : ""}`}>
                       <SelectValue placeholder="Select student count range" />
                     </SelectTrigger>
                     <SelectContent className="z-[60]">
@@ -313,31 +313,31 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
           {currentStep === 3 && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-xl font-semibold mb-4">Additional Information <span className="text-sm font-normal text-gray-400">(Optional)</span></h3>
+                <h3 className="text-xl font-semibold mb-4">Additional Information <span className="text-sm font-normal text-gray-500">(Optional)</span></h3>
 
                 {/* Subjects */}
                 <div className="space-y-2 mb-4">
-                  <label className="text-sm font-medium text-gray-300">Subjects You Teach <span className="text-xs text-gray-400">(Optional)</span></label>
+                  <label className="text-sm font-medium text-gray-600">Subjects You Teach <span className="text-xs text-gray-500">(Optional)</span></label>
                   <Input
                     type="text"
                     placeholder="Enter subjects you teach (e.g., Mathematics, Science, English)"
                     value={formData.subjects}
                     onChange={(e) => updateFormData("subjects", e.target.value)}
-                    className={`w-full bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-violet-500 focus:border-violet-500 ${errors.subjects ? "border-red-500" : ""}`}
+                    className={`w-full bg-white border-gray-300 text-black placeholder-gray-400 focus:ring-violet-500 focus:border-violet-500 ${errors.subjects ? "border-red-500" : ""}`}
                   />
                   {errors.subjects && (
                     <p className="text-red-400 text-sm mt-1">{errors.subjects}</p>
                   )}
-                  <div className="text-xs text-gray-400 mt-1">
+                  <div className="text-xs text-gray-500 mt-1">
                     You can separate multiple subjects with commas
                   </div>
                 </div>
 
                 {/* Teaching Experience */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-300">Teaching Experience <span className="text-xs text-gray-400">(Optional)</span></label>
+                  <label className="text-sm font-medium text-gray-600">Teaching Experience <span className="text-xs text-gray-500">(Optional)</span></label>
                   <Select value={formData.experience} onValueChange={(value) => updateFormData("experience", value)}>
-                    <SelectTrigger className={`w-full bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-violet-500 focus:border-violet-500 ${errors.experience ? "border-red-500" : ""}`}>
+                    <SelectTrigger className={`w-full bg-white border-gray-300 text-black placeholder-gray-400 focus:ring-violet-500 focus:border-violet-500 ${errors.experience ? "border-red-500" : ""}`}>
                       <SelectValue placeholder="Select your experience level" />
                     </SelectTrigger>
                     <SelectContent className="z-[60]">
@@ -362,7 +362,7 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
                 <h3 className="text-xl font-semibold mb-4">Choose Your Plan</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {/* Free Plan */}
-                  <Card className={`cursor-pointer transition-all bg-gray-800 border-gray-600 text-white ${formData.plan === "free" ? "ring-2 ring-violet-500 bg-gray-700" : ""}`}
+                  <Card className={`cursor-pointer transition-all bg-white border-gray-200 text-black ${formData.plan === "free" ? "ring-2 ring-violet-500 bg-violet-50" : ""}`}
                         onClick={() => updateFormData("plan", "free")}>
                     <CardHeader>
                       <CardTitle className="flex items-center">
@@ -383,7 +383,7 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
                   </Card>
 
                   {/* Standard Plan */}
-                  <Card className={`cursor-pointer transition-all bg-gray-800 border-gray-600 text-white ${formData.plan === "standard" ? "ring-2 ring-violet-500 bg-gray-700" : ""}`}
+                  <Card className={`cursor-pointer transition-all bg-white border-gray-200 text-black ${formData.plan === "standard" ? "ring-2 ring-violet-500 bg-violet-50" : ""}`}
                         onClick={() => updateFormData("plan", "standard")}>
                     <CardHeader>
                       <CardTitle className="flex items-center">
@@ -405,7 +405,7 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
                   </Card>
 
                   {/* Premium Plan */}
-                  <Card className={`cursor-pointer transition-all bg-gray-800 border-gray-600 text-white ${formData.plan === "premium" ? "ring-2 ring-violet-500 bg-gray-700" : ""}`}
+                  <Card className={`cursor-pointer transition-all bg-white border-gray-200 text-black ${formData.plan === "premium" ? "ring-2 ring-violet-500 bg-violet-50" : ""}`}
                         onClick={() => updateFormData("plan", "premium")}>
                     <CardHeader>
                       <CardTitle className="flex items-center">
@@ -440,61 +440,61 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
 
                 <div className="space-y-4">
                   {/* Selected Plan Summary */}
-                  <div className="bg-gray-700 p-4 rounded-lg">
-                    <h4 className="font-medium mb-2 text-white">Selected Plan: {formData.plan?.charAt(0).toUpperCase() + formData.plan?.slice(1)}</h4>
-                    <p className="text-lg font-bold text-white">
+                  <div className="bg-gray-100 p-4 rounded-lg">
+                    <h4 className="font-medium mb-2 text-black">Selected Plan: {formData.plan?.charAt(0).toUpperCase() + formData.plan?.slice(1)}</h4>
+                    <p className="text-lg font-bold text-black">
                       {formData.plan === "standard" ? "₹999" : "₹2499"}/month
                     </p>
                   </div>
 
                   {/* Payment Methods */}
                   <div className="space-y-3">
-                    <label className="text-sm font-medium text-gray-300">Select Payment Method</label>
+                    <label className="text-sm font-medium text-gray-600">Select Payment Method</label>
 
                     <div className="space-y-2">
-                      <Card className={`cursor-pointer transition-all p-4 bg-gray-800 border-gray-600 text-white ${formData.paymentMethod === "easypaisa" ? "ring-2 ring-violet-500 bg-gray-700" : ""}`}
+                      <Card className={`cursor-pointer transition-all p-4 bg-white border-gray-200 text-black ${formData.paymentMethod === "easypaisa" ? "ring-2 ring-violet-500 bg-violet-50" : ""}`}
                             onClick={() => updateFormData("paymentMethod", "easypaisa")}>
                         <div className="flex items-center">
                           <Smartphone className="h-5 w-5 mr-3" />
                           <div>
                             <div className="font-medium">Easypaisa</div>
-                            <div className="text-sm text-gray-400">Mobile wallet payment</div>
+                            <div className="text-sm text-gray-500">Mobile wallet payment</div>
                           </div>
                           {formData.paymentMethod === "easypaisa" && <Check className="ml-auto h-5 w-5 text-violet-500" />}
                         </div>
                       </Card>
 
-                      <Card className={`cursor-pointer transition-all p-4 bg-gray-800 border-gray-600 text-white ${formData.paymentMethod === "jazzcash" ? "ring-2 ring-violet-500 bg-gray-700" : ""}`}
+                      <Card className={`cursor-pointer transition-all p-4 bg-white border-gray-200 text-black ${formData.paymentMethod === "jazzcash" ? "ring-2 ring-violet-500 bg-violet-50" : ""}`}
                             onClick={() => updateFormData("paymentMethod", "jazzcash")}>
                         <div className="flex items-center">
                           <Smartphone className="h-5 w-5 mr-3" />
                           <div>
                             <div className="font-medium">JazzCash</div>
-                            <div className="text-sm text-gray-400">Mobile wallet payment</div>
+                            <div className="text-sm text-gray-500">Mobile wallet payment</div>
                           </div>
                           {formData.paymentMethod === "jazzcash" && <Check className="ml-auto h-5 w-5 text-violet-500" />}
                         </div>
                       </Card>
 
-                      <Card className={`cursor-pointer transition-all p-4 bg-gray-800 border-gray-600 text-white ${formData.paymentMethod === "bank-transfer" ? "ring-2 ring-violet-500 bg-gray-700" : ""}`}
+                      <Card className={`cursor-pointer transition-all p-4 bg-white border-gray-200 text-black ${formData.paymentMethod === "bank-transfer" ? "ring-2 ring-violet-500 bg-violet-50" : ""}`}
                             onClick={() => updateFormData("paymentMethod", "bank-transfer")}>
                         <div className="flex items-center">
                           <CreditCard className="h-5 w-5 mr-3" />
                           <div>
                             <div className="font-medium">Bank Transfer</div>
-                            <div className="text-sm text-gray-400">Direct bank transfer</div>
+                            <div className="text-sm text-gray-500">Direct bank transfer</div>
                           </div>
                           {formData.paymentMethod === "bank-transfer" && <Check className="ml-auto h-5 w-5 text-violet-500" />}
                         </div>
                       </Card>
 
-                      <Card className={`cursor-pointer transition-all p-4 bg-gray-800 border-gray-600 text-white ${formData.paymentMethod === "credit-card" ? "ring-2 ring-violet-500 bg-gray-700" : ""}`}
+                      <Card className={`cursor-pointer transition-all p-4 bg-white border-gray-200 text-black ${formData.paymentMethod === "credit-card" ? "ring-2 ring-violet-500 bg-violet-50" : ""}`}
                             onClick={() => updateFormData("paymentMethod", "credit-card")}>
                         <div className="flex items-center">
                           <CreditCard className="h-5 w-5 mr-3" />
                           <div>
                             <div className="font-medium">Credit/Debit Card</div>
-                            <div className="text-sm text-gray-400">Visa, Mastercard</div>
+                            <div className="text-sm text-gray-500">Visa, Mastercard</div>
                           </div>
                           {formData.paymentMethod === "credit-card" && <Check className="ml-auto h-5 w-5 text-violet-500" />}
                         </div>
@@ -517,12 +517,12 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
                   <Check className="h-8 w-8 text-green-600" />
                 </div>
                 <h3 className="text-xl font-semibold mb-2">Welcome to Gradex!</h3>
-                <p className="text-gray-300 mb-4">
+                <p className="text-gray-600 mb-4">
                   Your free account has been set up successfully. You can start using Gradex right away with your free plan.
                 </p>
-                <div className="bg-gray-700 p-4 rounded-lg">
-                  <h4 className="font-medium mb-2 text-white">Your Free Plan Includes:</h4>
-                  <ul className="text-sm space-y-1 text-gray-300">
+                <div className="bg-gray-100 p-4 rounded-lg">
+                  <h4 className="font-medium mb-2 text-black">Your Free Plan Includes:</h4>
+                  <ul className="text-sm space-y-1 text-gray-600">
                     <li>✓ 10 assignments per month</li>
                     <li>✓ Basic auto-grading</li>
                     <li>✓ Email support</li>
@@ -534,7 +534,7 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between p-6 border-t border-gray-700 bg-gray-800 flex-shrink-0">
+        <div className="flex items-center justify-between p-6 border-t border-gray-200 bg-gray-50 flex-shrink-0">
           <Button
             variant="outline"
             onClick={handlePrevious}

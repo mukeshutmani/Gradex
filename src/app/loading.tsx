@@ -10,7 +10,7 @@ export default function Loading() {
           className="h-16 w-16"
         />
       </div>
-      <div className="mt-6 flex items-center gap-1.5">
+      <div className="mt-1 flex items-center gap-1.5">
         <div
           className="h-2 w-2 rounded-full bg-violet-600 animate-bounce"
           style={{ animationDelay: "0ms" }}

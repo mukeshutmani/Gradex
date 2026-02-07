@@ -11,17 +11,16 @@ export function Footer() {
           {/* Company Info */}
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center mb-3">
-              <ClipboardCheck className="h-6 w-6 text-violet-400" />
-              <span className="ml-2 text-lg font-bold text-white">Gradex</span>
+              <img
+                src="https://res.cloudinary.com/dolpat4s3/image/upload/v1766249987/Black_Green_Letter_G_Logo_wafmuu.svg"
+                alt="Gradex Logo"
+                className="h-10 w-auto brightness-0 invert"
+              />
             </div>
             <p className="text-sm mb-3 text-gray-400">
               AI-powered assignment grading platform helping teachers automate evaluation processes for educational institutions across Pakistan.
             </p>
             <div className="space-y-3">
-              <div className="flex items-center text-sm">
-                <MapPin className="h-4 w-4 mr-2 text-violet-400" />
-                <span>Hyderabad, Sindh, Pakistan</span>
-              </div>
               <div>
                 <p className="text-sm font-medium text-white mb-2">Follow Us</p>
                 <div className="flex space-x-3">
@@ -46,8 +45,8 @@ export function Footer() {
             <h3 className="text-white font-semibold mb-3">Quick Links</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/dashboard" className="hover:text-violet-400 transition-colors cursor-pointer">
-                  Dashboard
+                <Link href="/" className="hover:text-violet-400 transition-colors cursor-pointer">
+                  Home
                 </Link>
               </li>
               <li>
@@ -96,30 +95,11 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Team Section */}
-        <div className="border-t border-gray-700 mt-6 pt-6">
-          <div className="text-center mb-4">
-            <h3 className="text-white font-semibold mb-2">Gradex Team</h3>
-            <p className="text-sm text-gray-400">
-              Passionate educators and technologists working to revolutionize academic assessment in Pakistan
-            </p>
-          </div>
-        </div>
-
         {/* Bottom Bar */}
-        {/* Bottom Bar */}
-        <div className="border-t border-gray-700 mt-8 pt-8">
+        <div className="mt-8 pt-8">
           <div className="flex flex-col items-center justify-center text-center space-y-4">
-            <div className="flex flex-col md:flex-row items-center justify-center space-y-2 md:space-y-0 md:space-x-2 text-sm text-gray-400">
+            <div className="text-sm text-gray-400">
               <span>&copy; {currentYear} Gradex. All rights reserved.</span>
-              <span className="hidden md:inline">•</span>
-              <div className="flex items-center space-x-1">
-                <span>Made with</span>
-                <span className="text-red-500 animate-pulse">❤️</span>
-                <span>and</span>
-                <span className="text-violet-500 text-lg">🤖</span>
-                <span>in Pakistan</span>
-              </div>
             </div>
 
             <p className="text-gray-500 text-sm italic">

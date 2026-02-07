@@ -62,6 +62,8 @@ export function SubmitAssignmentModal({
   const [dragOver, setDragOver] = useState(false)
   const [isGradingModalOpen, setIsGradingModalOpen] = useState(false)
   const [submissionId, setSubmissionId] = useState<string | null>(null)
+  // Store assignment data for grading modal (persists after parent closes)
+  const [gradingAssignment, setGradingAssignment] = useState<{ title: string; totalMarks: number } | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -90,8 +92,12 @@ export function SubmitAssignmentModal({
       const data = await response.json()
 
       if (response.ok) {
-        // Store submission ID for grading update
+        // Store submission ID and assignment data for grading modal
         setSubmissionId(data.submission?.id || null)
+        setGradingAssignment({
+          title: assignment.title,
+          totalMarks: assignment.totalMarks
+        })
 
         // Close submission modal and show grading modal
         setSubmissionData({ content: "", file: null })
@@ -111,6 +117,7 @@ export function SubmitAssignmentModal({
   const handleGradingModalClose = () => {
     setIsGradingModalOpen(false)
     setSubmissionId(null)
+    setGradingAssignment(null)
     // Trigger data refresh callback
     onSuccess?.()
   }
@@ -160,14 +167,17 @@ export function SubmitAssignmentModal({
     onClose()
   }
 
-  if (!assignment) return null
+  // Only return null if no assignment AND no grading in progress
+  if (!assignment && !gradingAssignment) return null
 
-  const isOverdue = new Date(assignment.dueDate) < new Date()
-  const timeLeft = new Date(assignment.dueDate).getTime() - new Date().getTime()
+  const isOverdue = assignment ? new Date(assignment.dueDate) < new Date() : false
+  const timeLeft = assignment ? new Date(assignment.dueDate).getTime() - new Date().getTime() : 0
   const daysLeft = Math.ceil(timeLeft / (1000 * 60 * 60 * 24))
 
   return (
     <>
+    {/* Only show Dialog if assignment exists */}
+    {assignment && (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -326,14 +336,15 @@ export function SubmitAssignmentModal({
         </form>
       </DialogContent>
     </Dialog>
+    )}
 
     {/* AI Grading Modal */}
-    {submissionId && (
+    {submissionId && gradingAssignment && (
       <AIGradingModal
         isOpen={isGradingModalOpen}
         onClose={handleGradingModalClose}
-        assignmentTitle={assignment?.title || ""}
-        totalMarks={assignment?.totalMarks || 100}
+        assignmentTitle={gradingAssignment.title}
+        totalMarks={gradingAssignment.totalMarks}
         submissionId={submissionId}
       />
     )}

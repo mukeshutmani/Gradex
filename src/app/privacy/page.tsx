@@ -15,11 +15,11 @@ export default function PrivacyPage() {
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <Link href="/dashboard" className="flex items-center gap-3 hover:opacity-80 transition">
+            <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition">
               <ClipboardCheck className="h-8 w-8 text-black" />
               <span className="text-2xl font-bold text-black">Gradex</span>
             </Link>
-            <Link href="/dashboard" className="flex items-center gap-2 text-gray-700 hover:text-black transition">
+            <Link href="/" className="flex items-center gap-2 text-gray-700 hover:text-black transition">
               <ArrowLeft className="h-4 w-4" />
               Back to Home
             </Link>
