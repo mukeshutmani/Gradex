@@ -13,8 +13,10 @@ import {
   Image,
   Clock,
   User,
-  X
+  X,
+  ExternalLink
 } from "lucide-react"
+import { PDFViewer } from "@/components/pdf-viewer"
 
 interface Assignment {
   id: string
@@ -143,24 +145,40 @@ export function ViewAssignmentModal({ isOpen, onClose, assignment }: ViewAssignm
 
               {assignment.imageUrl && (
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Image</label>
+                  <label className="text-sm font-medium text-gray-500">Attached File</label>
                   <div className="mt-1">
-                    <div className="border rounded-md p-2 bg-gray-50">
-                      <img
-                        src={assignment.imageUrl}
-                        alt="Assignment content"
-                        className="max-w-full h-auto rounded"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none'
-                          e.currentTarget.nextElementSibling?.removeAttribute('hidden')
-                        }}
-                      />
-                      <div hidden className="text-center py-8 text-gray-500">
-                        <Image className="h-12 w-12 mx-auto mb-2" />
-                        <p>Image could not be loaded</p>
-                        <p className="text-sm mt-1">URL: {assignment.imageUrl}</p>
+                    {assignment.imageUrl.toLowerCase().includes("pdf") ? (
+                      <div className="space-y-3">
+                        <PDFViewer fileUrl={assignment.imageUrl} />
+                        <div className="flex justify-center">
+                          <a
+                            href={assignment.imageUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center px-4 py-2 bg-violet-50 border border-violet-200 rounded-lg text-violet-700 hover:bg-violet-100 hover:border-violet-300 transition-colors text-sm"
+                          >
+                            <ExternalLink className="h-4 w-4 mr-2" />
+                            View Assignment in New Tab
+                          </a>
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="border rounded-md p-2 bg-gray-50">
+                        <img
+                          src={assignment.imageUrl}
+                          alt="Assignment content"
+                          className="max-w-full h-auto rounded"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none'
+                            e.currentTarget.nextElementSibling?.removeAttribute('hidden')
+                          }}
+                        />
+                        <div hidden className="text-center py-8 text-gray-500">
+                          <Image className="h-12 w-12 mx-auto mb-2" />
+                          <p>Image could not be loaded</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

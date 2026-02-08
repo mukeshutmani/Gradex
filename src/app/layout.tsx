@@ -17,6 +17,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Gradex",
   description: "AI-Powered Educational Grading Platform",
+  icons: {
+    icon: { url: "/favicon.svg", type: "image/svg+xml" },
+    apple: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({

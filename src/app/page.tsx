@@ -28,7 +28,9 @@ import {
   Sparkles,
   DollarSign,
   HelpCircle,
-  ChevronDown
+  ChevronDown,
+  Menu,
+  X
 } from "lucide-react"
 import { useRef } from "react"
 
@@ -50,6 +52,7 @@ export default function HomePage() {
   const [userProfile, setUserProfile] = useState<any>(null)
   const [profileLoading, setProfileLoading] = useState(true)
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false)
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
 
   // Handle authentication check for auto-grading buttons
   const handleStartAutoGrading = () => {
@@ -217,7 +220,14 @@ export default function HomePage() {
               </button>
             </nav>
 
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              {/* Mobile hamburger */}
+              <button
+                onClick={() => setMobileNavOpen(!mobileNavOpen)}
+                className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 md:hidden cursor-pointer"
+              >
+                {mobileNavOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </button>
               {session ? (
                 <div className="relative" ref={profileMenuRef}>
                   <button
@@ -319,6 +329,38 @@ export default function HomePage() {
         </div>
       </header>
 
+      {/* Mobile Navigation Menu */}
+      {mobileNavOpen && (
+        <div className="md:hidden bg-white border-b border-gray-200 shadow-lg sticky top-16 z-40">
+          <nav className="flex flex-col px-4 py-3 space-y-1">
+            <button
+              onClick={() => { window.scrollTo({ top: 0, behavior: 'smooth' }); setMobileNavOpen(false) }}
+              className="text-left text-sm font-medium text-gray-700 hover:text-violet-600 hover:bg-violet-50 px-3 py-2.5 rounded-lg transition-colors cursor-pointer"
+            >
+              Home
+            </button>
+            <button
+              onClick={() => { document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' }); setMobileNavOpen(false) }}
+              className="text-left text-sm font-medium text-gray-700 hover:text-violet-600 hover:bg-violet-50 px-3 py-2.5 rounded-lg transition-colors cursor-pointer"
+            >
+              Features
+            </button>
+            <button
+              onClick={() => { document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' }); setMobileNavOpen(false) }}
+              className="text-left text-sm font-medium text-gray-700 hover:text-violet-600 hover:bg-violet-50 px-3 py-2.5 rounded-lg transition-colors cursor-pointer"
+            >
+              Pricing
+            </button>
+            <button
+              onClick={() => { document.getElementById('support')?.scrollIntoView({ behavior: 'smooth' }); setMobileNavOpen(false) }}
+              className="text-left text-sm font-medium text-gray-700 hover:text-violet-600 hover:bg-violet-50 px-3 py-2.5 rounded-lg transition-colors cursor-pointer"
+            >
+              Support
+            </button>
+          </nav>
+        </div>
+      )}
+
       {/* Hero Section - Full Width Grid Background */}
       <div className="relative w-full bg-gradient-to-br from-violet-50 to-white overflow-hidden">
         {/* Grid Line Background */}
@@ -343,19 +385,19 @@ export default function HomePage() {
           <div className="max-w-7xl mx-auto">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
               {/* Left Side - Text Content */}
-              <div className="text-left">
-                <h1 className="text-4xl lg:text-6xl font-medium mb-6 leading-tight">
+              <div className="text-center lg:text-left">
+                <h1 className="text-3xl sm:text-4xl lg:text-6xl font-medium mb-6 leading-tight">
                   <span className="text-black">Grade in seconds</span>
                   <br />
                   <span className="text-violet-600">Scale to thousands</span>
                 </h1>
-                <p className="text-lg lg:text-xl text-gray-600 mb-8 max-w-lg">
+                <p className="text-lg lg:text-xl text-gray-600 mb-8 max-w-lg mx-auto lg:mx-0">
                   Gradex is the AI-powered grading platform. Upload assignments, get instant AI feedback,
                   plagiarism detection, and detailed analytics for your classroom.
                 </p>
 
                 {session?.user?.role !== "student" && (
-                  <div className="flex flex-wrap items-center gap-4">
+                  <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4">
                     <Button size="lg" className="px-8" onClick={handleStartAutoGrading}>
                       <PlayCircle className="mr-2 h-5 w-5" />
                       Start Auto-Grading
@@ -382,7 +424,7 @@ export default function HomePage() {
                   <img
                     src="https://res.cloudinary.com/dolpat4s3/image/upload/q_100,f_png/v1770284005/gradex/ai-grading-modal.png"
                     alt="AI Grading in Progress"
-                    className="rounded-2xl border border-violet-200 max-w-full h-auto w-80 lg:w-96 xl:w-[420px] bg-white"
+                    className="rounded-2xl border border-violet-200 max-w-full h-auto w-64 sm:w-80 lg:w-96 xl:w-[420px] bg-white"
                   />
                 </div>
               </div>
@@ -403,8 +445,24 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="group relative bg-white border border-gray-200 rounded-2xl p-8 text-center hover:shadow-xl hover:border-gray-400 transition-all duration-300">
               <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-8 h-8 rounded-full bg-black text-white flex items-center justify-center font-bold text-sm">1</div>
-              <div className="mx-auto w-14 h-14 rounded-xl bg-gray-100 flex items-center justify-center mb-5 mt-2">
-                <FileCheck className="h-7 w-7 text-black" />
+              <div className="mx-auto w-44 h-36 flex items-center justify-center mb-5 mt-2">
+                <svg viewBox="0 0 200 160" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+                  <rect x="50" y="20" width="100" height="130" rx="8" fill="#F5F3FF" stroke="#7C3AED" strokeWidth="2"/>
+                  <rect x="65" y="60" width="50" height="4" rx="2" fill="#C4B5FD"/>
+                  <rect x="65" y="72" width="70" height="4" rx="2" fill="#C4B5FD"/>
+                  <rect x="65" y="84" width="40" height="4" rx="2" fill="#C4B5FD"/>
+                  <rect x="65" y="100" width="60" height="4" rx="2" fill="#DDD6FE"/>
+                  <rect x="65" y="112" width="70" height="4" rx="2" fill="#DDD6FE"/>
+                  <rect x="65" y="124" width="35" height="4" rx="2" fill="#DDD6FE"/>
+                  <circle cx="100" cy="36" r="18" fill="#7C3AED"/>
+                  <path d="M100 28L100 44" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
+                  <path d="M93 35L100 28L107 35" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <circle cx="155" cy="130" r="16" fill="#EDE9FE"/>
+                  <path d="M155 123L155 137" stroke="#7C3AED" strokeWidth="2" strokeLinecap="round"/>
+                  <path d="M149 130L155 123L161 130" stroke="#7C3AED" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <rect x="28" y="55" width="12" height="12" rx="3" fill="#EDE9FE" stroke="#C4B5FD" strokeWidth="1"/>
+                  <rect x="22" y="90" width="8" height="8" rx="2" fill="#DDD6FE"/>
+                </svg>
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-2">Upload Assignments</h3>
               <p className="text-sm text-gray-500 leading-relaxed">
@@ -414,8 +472,35 @@ export default function HomePage() {
 
             <div className="group relative bg-white border border-gray-200 rounded-2xl p-8 text-center hover:shadow-xl hover:border-gray-400 transition-all duration-300">
               <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-8 h-8 rounded-full bg-black text-white flex items-center justify-center font-bold text-sm">2</div>
-              <div className="mx-auto w-14 h-14 rounded-xl bg-gray-100 flex items-center justify-center mb-5 mt-2">
-                <Bot className="h-7 w-7 text-black" />
+              <div className="mx-auto w-44 h-36 flex items-center justify-center mb-5 mt-2">
+                <svg viewBox="0 0 200 160" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+                  <rect x="40" y="30" width="120" height="100" rx="10" fill="#F5F3FF" stroke="#7C3AED" strokeWidth="2"/>
+                  <circle cx="100" cy="72" r="28" fill="#7C3AED"/>
+                  <path d="M88 72C88 65.4 93.4 60 100 60C106.6 60 112 65.4 112 72" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
+                  <circle cx="100" cy="72" r="4" fill="white"/>
+                  <path d="M100 68V60" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+                  <path d="M108 66L112 60" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+                  <path d="M92 66L88 60" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+                  <circle cx="92" cy="80" r="1.5" fill="white"/>
+                  <circle cx="100" cy="82" r="1.5" fill="white"/>
+                  <circle cx="108" cy="80" r="1.5" fill="white"/>
+                  <rect x="60" y="108" width="16" height="4" rx="2" fill="#C4B5FD"/>
+                  <rect x="82" y="108" width="36" height="4" rx="2" fill="#C4B5FD"/>
+                  <rect x="60" y="118" width="28" height="4" rx="2" fill="#DDD6FE"/>
+                  <rect x="94" y="118" width="20" height="4" rx="2" fill="#DDD6FE"/>
+                  <circle cx="30" cy="50" r="6" fill="#EDE9FE"/>
+                  <path d="M28 50L30 52L33 48" stroke="#7C3AED" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <circle cx="170" cy="50" r="6" fill="#EDE9FE"/>
+                  <path d="M168 50L170 52L173 48" stroke="#7C3AED" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <circle cx="30" cy="110" r="6" fill="#EDE9FE"/>
+                  <path d="M28 110L30 112L33 108" stroke="#7C3AED" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <circle cx="170" cy="110" r="6" fill="#EDE9FE"/>
+                  <path d="M168 110L170 112L173 108" stroke="#7C3AED" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M24 70L16 70" stroke="#DDD6FE" strokeWidth="2" strokeLinecap="round"/>
+                  <path d="M24 80L12 80" stroke="#DDD6FE" strokeWidth="2" strokeLinecap="round"/>
+                  <path d="M176 70L184 70" stroke="#DDD6FE" strokeWidth="2" strokeLinecap="round"/>
+                  <path d="M176 80L188 80" stroke="#DDD6FE" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-2">AI Grades Instantly</h3>
               <p className="text-sm text-gray-500 leading-relaxed">
@@ -425,8 +510,27 @@ export default function HomePage() {
 
             <div className="group relative bg-white border border-gray-200 rounded-2xl p-8 text-center hover:shadow-xl hover:border-gray-400 transition-all duration-300">
               <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-8 h-8 rounded-full bg-black text-white flex items-center justify-center font-bold text-sm">3</div>
-              <div className="mx-auto w-14 h-14 rounded-xl bg-gray-100 flex items-center justify-center mb-5 mt-2">
-                <TrendingUp className="h-7 w-7 text-black" />
+              <div className="mx-auto w-44 h-36 flex items-center justify-center mb-5 mt-2">
+                <svg viewBox="0 0 200 160" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+                  <rect x="30" y="20" width="140" height="110" rx="10" fill="#F5F3FF" stroke="#7C3AED" strokeWidth="2"/>
+                  <rect x="45" y="35" width="30" height="80" rx="4" fill="#EDE9FE"/>
+                  <rect x="45" y="65" width="30" height="50" rx="4" fill="#7C3AED"/>
+                  <rect x="85" y="35" width="30" height="80" rx="4" fill="#EDE9FE"/>
+                  <rect x="85" y="50" width="30" height="65" rx="4" fill="#A78BFA"/>
+                  <rect x="125" y="35" width="30" height="80" rx="4" fill="#EDE9FE"/>
+                  <rect x="125" y="75" width="30" height="40" rx="4" fill="#C4B5FD"/>
+                  <circle cx="60" cy="58" r="4" fill="white" stroke="#7C3AED" strokeWidth="1.5"/>
+                  <circle cx="100" cy="44" r="4" fill="white" stroke="#7C3AED" strokeWidth="1.5"/>
+                  <circle cx="140" cy="68" r="4" fill="white" stroke="#7C3AED" strokeWidth="1.5"/>
+                  <path d="M60 58L100 44L140 68" stroke="#7C3AED" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="4 3"/>
+                  <rect x="48" y="138" width="24" height="4" rx="2" fill="#C4B5FD"/>
+                  <rect x="88" y="138" width="24" height="4" rx="2" fill="#C4B5FD"/>
+                  <rect x="128" y="138" width="24" height="4" rx="2" fill="#C4B5FD"/>
+                  <circle cx="178" cy="30" r="8" fill="#EDE9FE"/>
+                  <path d="M175 30L177 32L181 28" stroke="#7C3AED" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <rect x="12" y="45" width="10" height="10" rx="3" fill="#EDE9FE" stroke="#C4B5FD" strokeWidth="1"/>
+                  <rect x="14" y="70" width="6" height="6" rx="2" fill="#DDD6FE"/>
+                </svg>
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-2">Review & Track</h3>
               <p className="text-sm text-gray-500 leading-relaxed">

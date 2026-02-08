@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import React, { useEffect, useState } from "react"
 import { useSession, signOut } from "next-auth/react"
 import { redirect, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -35,7 +35,13 @@ import {
   ChevronLeft,
   ChevronRight,
   Settings,
-  X
+  X,
+  Menu,
+  ChevronDown,
+  ChevronUp,
+  MessageSquare,
+  MoreVertical,
+  ExternalLink
 } from "lucide-react"
 import { SubmitAssignmentModal } from "@/components/assignments/submit-assignment-modal"
 import { ViewAssignmentModal } from "@/components/assignments/view-assignment-modal"
@@ -100,9 +106,10 @@ interface ClassInfo {
   assignments: Assignment[]
 }
 
-export default function StudentDashboard() {
+export default function StudentDashboard({ params }: { params: Promise<{ username: string }> }) {
   const router = useRouter()
   const { data: session, status } = useSession()
+  const [resolvedParams, setResolvedParams] = useState<{ username: string } | null>(null)
   const [activeTab, setActiveTab] = useState("dashboard")
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [classes, setClasses] = useState<ClassInfo[]>([])
@@ -113,15 +120,19 @@ export default function StudentDashboard() {
   const [isSubmissionModalOpen, setIsSubmissionModalOpen] = useState(false)
   const [selectedAssignmentForSubmission, setSelectedAssignmentForSubmission] = useState<Assignment | null>(null)
   const [submissions, setSubmissions] = useState<Submission[]>([])
-  const [resultsActiveTab, setResultsActiveTab] = useState("submissions")
+
   const [searchQuery, setSearchQuery] = useState("")
-  const [sortBy, setSortBy] = useState<"title" | "dueDate" | "subject" | "status">("dueDate")
+  const [sortBy, setSortBy] = useState<"title" | "dueDate" | "subject" | "status" | "submittedDate">("submittedDate")
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc")
   const [isViewModalOpen, setIsViewModalOpen] = useState(false)
   const [selectedAssignmentForView, setSelectedAssignmentForView] = useState<Assignment | null>(null)
   const [isDescriptionModalOpen, setIsDescriptionModalOpen] = useState(false)
-  const [selectedDescription, setSelectedDescription] = useState<{ title: string; description: string } | null>(null)
+  const [selectedDescription, setSelectedDescription] = useState<{ title: string; description: string; imageUrl?: string } | null>(null)
   const [showProfilePopup, setShowProfilePopup] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [expandedFeedbackId, setExpandedFeedbackId] = useState<string | null>(null)
+  const [openActionMenuId, setOpenActionMenuId] = useState<string | null>(null)
+  const [actionMenuPos, setActionMenuPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 })
 
   // Fetch student's enrolled classes and assignments
   const fetchStudentData = async () => {
@@ -189,12 +200,38 @@ export default function StudentDashboard() {
     }
   }
 
+  // Resolve async params (Next.js 15)
   useEffect(() => {
+    params.then(setResolvedParams)
+  }, [params])
+
+  // Auth & authorization check
+  useEffect(() => {
+    if (status === "loading" || !resolvedParams) return
+
     if (status === "unauthenticated") {
       router.push("/login")
+      return
+    }
+
+    if (session?.user) {
+      const loggedInUsername = session.user.username || session.user.email
+      const urlUsername = resolvedParams.username
+
+      // If user is not a student, redirect to their correct dashboard
+      if (session.user.role !== "student") {
+        router.replace(`/dashboard`)
+        return
+      }
+
+      // If URL username doesn't match logged-in user, redirect to their own dashboard
+      if (loggedInUsername !== urlUsername) {
+        router.replace(`/dashboard/student/${loggedInUsername}`)
+        return
+      }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status])
+  }, [status, session, resolvedParams])
 
   useEffect(() => {
     if (session?.user?.email) {
@@ -204,7 +241,7 @@ export default function StudentDashboard() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.user?.email])
 
-  if (status === "loading") {
+  if (status === "loading" || !resolvedParams) {
     return (
       <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white">
         <div className="animate-pulse">
@@ -303,15 +340,18 @@ export default function StudentDashboard() {
           comparison = a.subject.localeCompare(b.subject)
           break
         case "dueDate":
-          // First prioritize by submission date (recently submitted first)
+          comparison = new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+          break
+        case "submittedDate":
+          // Submitted assignments first, then unsubmitted. asc = oldest first, desc = latest first
           if (a.submission?.submittedAt && b.submission?.submittedAt) {
-            comparison = new Date(b.submission.submittedAt).getTime() - new Date(a.submission.submittedAt).getTime()
+            comparison = new Date(a.submission.submittedAt).getTime() - new Date(b.submission.submittedAt).getTime()
           } else if (a.submission?.submittedAt) {
-            comparison = -1 // a has submission, put it first
+            // a has submission, b doesn't — a should come first in desc (return positive so -comparison = negative)
+            comparison = 1
           } else if (b.submission?.submittedAt) {
-            comparison = 1 // b has submission, put it first
+            comparison = -1
           } else {
-            // Neither has submission, sort by due date
             comparison = new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
           }
           break
@@ -332,7 +372,7 @@ export default function StudentDashboard() {
     return filtered
   }
 
-  const handleSort = (column: "title" | "dueDate" | "subject" | "status") => {
+  const handleSort = (column: "title" | "dueDate" | "subject" | "status" | "submittedDate") => {
     if (sortBy === column) {
       setSortOrder(sortOrder === "asc" ? "desc" : "asc")
     } else {
@@ -350,8 +390,18 @@ export default function StudentDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
+      {/* Mobile Sidebar Overlay */}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-30 flex flex-col bg-violet-50 border-r border-violet-200 transition-all duration-300 ${sidebarCollapsed ? 'w-[72px]' : 'w-60'}`}>
+      <aside className={`fixed inset-y-0 left-0 z-50 flex flex-col bg-violet-50 border-r border-violet-200 transition-all duration-300 ${
+        mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+      } lg:translate-x-0 ${sidebarCollapsed ? 'lg:w-[72px]' : 'lg:w-60'} w-60`}>
         {/* Logo */}
         <div className="flex items-center justify-between h-16 px-4 border-b border-violet-200">
           <div className="flex items-center cursor-pointer" onClick={() => router.push('/')}>
@@ -360,11 +410,19 @@ export default function StudentDashboard() {
               alt="Gradex Logo"
               className="h-10 w-auto"
             />
-            {!sidebarCollapsed && <span className="ml-1 text-lg font-bold text-gray-900">Gradex</span>}
+            {(!sidebarCollapsed || mobileMenuOpen) && <span className="ml-1 text-lg font-bold text-gray-900">Gradex</span>}
           </div>
+          {/* Close button on mobile */}
+          <button
+            onClick={() => setMobileMenuOpen(false)}
+            className="p-1.5 rounded-lg text-violet-400 hover:text-violet-600 hover:bg-violet-100 transition-colors cursor-pointer lg:hidden"
+          >
+            <X className="h-5 w-5" />
+          </button>
+          {/* Collapse button on desktop */}
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="p-1.5 rounded-lg text-violet-400 hover:text-violet-600 hover:bg-violet-100 transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-violet-400 hover:text-violet-600 hover:bg-violet-100 transition-colors cursor-pointer hidden lg:block"
           >
             {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
           </button>
@@ -375,16 +433,19 @@ export default function StudentDashboard() {
           {sidebarNavItems.map((item) => (
             <button
               key={item.id}
-              onClick={() => setActiveTab(item.id)}
+              onClick={() => {
+                setActiveTab(item.id)
+                setMobileMenuOpen(false)
+              }}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-none text-sm font-medium transition-all cursor-pointer ${
                 activeTab === item.id
                   ? 'bg-violet-200 text-black border-l-4 border-violet-600'
                   : 'text-black hover:bg-violet-100'
-              } ${sidebarCollapsed ? 'justify-center' : ''}`}
+              } ${sidebarCollapsed && !mobileMenuOpen ? 'lg:justify-center' : ''}`}
               title={sidebarCollapsed ? item.label : undefined}
             >
               <item.icon className={`h-5 w-5 shrink-0 ${activeTab === item.id ? 'text-violet-600' : 'text-black'}`} />
-              {!sidebarCollapsed && <span>{item.label}</span>}
+              {(!sidebarCollapsed || mobileMenuOpen) && <span>{item.label}</span>}
             </button>
           ))}
         </nav>
@@ -392,14 +453,17 @@ export default function StudentDashboard() {
         {/* User section */}
         <div className="border-t border-violet-200 p-3">
           <button
-            onClick={() => setShowProfilePopup(true)}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-violet-100 transition-colors cursor-pointer ${sidebarCollapsed ? 'justify-center' : ''}`}
+            onClick={() => {
+              setShowProfilePopup(true)
+              setMobileMenuOpen(false)
+            }}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-violet-100 transition-colors cursor-pointer ${sidebarCollapsed && !mobileMenuOpen ? 'lg:justify-center' : ''}`}
             title={sidebarCollapsed ? session.user?.name || 'Profile' : undefined}
           >
             <div className="w-8 h-8 bg-violet-600 rounded-full flex items-center justify-center shrink-0">
               <User className="h-4 w-4 text-white" />
             </div>
-            {!sidebarCollapsed && (
+            {(!sidebarCollapsed || mobileMenuOpen) && (
               <div className="flex-1 min-w-0 text-left">
                 <div className="text-sm font-medium text-gray-900 truncate">{session.user?.name || "Student"}</div>
                 <div className="text-xs text-gray-500">Student</div>
@@ -408,101 +472,291 @@ export default function StudentDashboard() {
           </button>
           <button
             onClick={() => signOut({ callbackUrl: '/login' })}
-            className={`w-full flex items-center gap-3 px-3 py-2 mt-1 rounded-lg text-sm text-gray-500 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer ${sidebarCollapsed ? 'justify-center' : ''}`}
+            className={`w-full flex items-center gap-3 px-3 py-2 mt-1 rounded-lg text-sm text-gray-500 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer ${sidebarCollapsed && !mobileMenuOpen ? 'lg:justify-center' : ''}`}
             title={sidebarCollapsed ? 'Log out' : undefined}
           >
             <LogOut className="h-4 w-4 shrink-0" />
-            {!sidebarCollapsed && <span>Log out</span>}
+            {(!sidebarCollapsed || mobileMenuOpen) && <span>Log out</span>}
           </button>
         </div>
       </aside>
 
       {/* Main Content */}
-      <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'ml-[72px]' : 'ml-60'}`}>
+      <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-60'}`}>
         {/* Top Bar */}
-        <header className="sticky top-0 z-20 bg-white border-b border-gray-200 h-16 flex items-center justify-between px-6">
-          <h1 className="text-lg font-semibold text-gray-900 capitalize">
-            {activeTab === "join" ? "Join Class" : activeTab}
-          </h1>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-violet-600 rounded-full flex items-center justify-center">
-              <User className="h-4 w-4 text-white" />
-            </div>
-            <div className="text-sm hidden sm:block">
-              <div className="font-medium text-gray-900">{session.user?.name || "Student"}</div>
-            </div>
+        <header className="sticky top-0 z-20 bg-white border-b border-gray-200 h-16 flex items-center justify-between px-4 sm:px-6">
+          <div className="flex items-center gap-3">
+            {/* Mobile hamburger */}
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 lg:hidden cursor-pointer"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+            <h1 className="text-lg font-semibold text-gray-900 capitalize">
+              {activeTab === "join" ? "Join Class" : activeTab}
+            </h1>
           </div>
         </header>
 
-        <main className="px-6 py-8">
+        <main className="px-4 sm:px-6 py-6 sm:py-8">
         {/* Dashboard Tab */}
         {activeTab === "dashboard" && (
           <div className="space-y-6">
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card className="bg-white border border-violet-200 shadow-sm hover:shadow-md transition-shadow">
+            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+              {/* Total Assignments Card - Vertical Bar Chart */}
+              <Card className="bg-white border-violet-200">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">Total Assignments</CardTitle>
-                  <div className="w-10 h-10 bg-violet-100 rounded-full flex items-center justify-center">
-                    <BookOpen className="h-5 w-5 text-black" />
-                  </div>
+                  <CardTitle className="text-sm font-medium text-gray-900">Total Assignments</CardTitle>
+                  <BookOpen className="h-4 w-4 text-violet-500" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-gray-900">{totalAssignments}</div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Across all classes
-                  </p>
+                  {(() => {
+                    const maxVal = Math.max(totalAssignments, submittedAssignments, pendingAssignments, overdueAssignments, 1)
+                    const bars = [
+                      { label: "Total", value: totalAssignments, color: "#7c3aed" },
+                      { label: "Submitted", value: submittedAssignments, color: "#22c55e" },
+                      { label: "Pending", value: pendingAssignments, color: "#f97316" },
+                      { label: "Overdue", value: overdueAssignments, color: "#ef4444" },
+                    ]
+                    return (
+                      <div className="flex flex-col items-center">
+                      <div className="text-2xl font-bold text-gray-900 mb-2">{totalAssignments}</div>
+                      <div className="flex items-end justify-center gap-4 h-24">
+                        {bars.map((bar) => (
+                          <div key={bar.label} className="flex flex-col items-center h-full">
+                            <span className="text-[10px] font-semibold text-gray-600 mb-1">{bar.value}</span>
+                            <div className="flex-1 w-5 bg-gray-100 rounded-sm relative flex flex-col justify-end overflow-hidden">
+                              <div
+                                className="w-full rounded-sm transition-all duration-500"
+                                style={{ height: `${(bar.value / maxVal) * 100}%`, minHeight: bar.value > 0 ? '6px' : '0', backgroundColor: bar.color }}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 mt-2">
+                        {bars.map((bar) => (
+                          <div key={bar.label} className="flex items-center gap-1">
+                            <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: bar.color }} />
+                            <span className="text-[9px] text-gray-500">{bar.label} ({bar.value})</span>
+                          </div>
+                        ))}
+                      </div>
+                      </div>
+                    )
+                  })()}
                 </CardContent>
               </Card>
 
-              <Card className="bg-white border border-violet-200 shadow-sm hover:shadow-md transition-shadow">
+              {/* Submission Status Card - Pie Donut Chart */}
+              <Card className="bg-white border-violet-200">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">Submitted</CardTitle>
-                  <div className="w-10 h-10 bg-violet-100 rounded-full flex items-center justify-center">
-                    <CheckCircle2 className="h-5 w-5 text-black" />
-                  </div>
+                  <CardTitle className="text-sm font-medium text-gray-900">Submission Status</CardTitle>
+                  <CheckCircle2 className="h-4 w-4 text-green-500" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-gray-900">{submittedAssignments}</div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Completed assignments
-                  </p>
+                  {(() => {
+                    const totalSubs = submittedAssignments + pendingAssignments
+                    const submittedPct = totalSubs > 0 ? Math.round((submittedAssignments / totalSubs) * 100) : 0
+                    const pendingPct = totalSubs > 0 ? Math.round((pendingAssignments / totalSubs) * 100) : 100
+                    const outerR = 50
+                    const innerR = 25
+
+                    const getArcPath = (startAngle: number, endAngle: number, outer: number, inner: number) => {
+                      const startRad = (startAngle - 90) * (Math.PI / 180)
+                      const endRad = (endAngle - 90) * (Math.PI / 180)
+                      const x1 = 60 + outer * Math.cos(startRad)
+                      const y1 = 60 + outer * Math.sin(startRad)
+                      const x2 = 60 + outer * Math.cos(endRad)
+                      const y2 = 60 + outer * Math.sin(endRad)
+                      const x3 = 60 + inner * Math.cos(endRad)
+                      const y3 = 60 + inner * Math.sin(endRad)
+                      const x4 = 60 + inner * Math.cos(startRad)
+                      const y4 = 60 + inner * Math.sin(startRad)
+                      const largeArc = endAngle - startAngle > 180 ? 1 : 0
+                      return `M ${x1} ${y1} A ${outer} ${outer} 0 ${largeArc} 1 ${x2} ${y2} L ${x3} ${y3} A ${inner} ${inner} 0 ${largeArc} 0 ${x4} ${y4} Z`
+                    }
+
+                    const getLabelPos = (startAngle: number, endAngle: number, r: number) => {
+                      const midAngle = ((startAngle + endAngle) / 2 - 90) * (Math.PI / 180)
+                      return { x: 60 + r * Math.cos(midAngle), y: 60 + r * Math.sin(midAngle) }
+                    }
+
+                    const segments = [
+                      { label: `${submittedPct}%`, value: submittedAssignments, color: "#22c55e", name: "Submitted" },
+                      { label: `${pendingPct}%`, value: pendingAssignments, color: "#f97316", name: "Pending" },
+                    ]
+
+                    let currentAngle = 0
+                    const midR = (outerR + innerR) / 2
+
+                    return (
+                      <div className="flex flex-col items-center">
+                        <div className="relative">
+                          <svg width="140" height="140" viewBox="0 0 120 120">
+                            <circle cx="60" cy="60" r={outerR} fill="#f3f4f6" />
+                            <circle cx="60" cy="60" r={innerR} fill="white" />
+                            {totalSubs > 0 ? (() => {
+                              const fullSegment = segments.find(s => s.value === totalSubs)
+                              if (fullSegment) {
+                                return (
+                                  <g>
+                                    <circle cx="60" cy="60" r={outerR} fill={fullSegment.color} />
+                                    <circle cx="60" cy="60" r={innerR} fill="white" />
+                                    <text x="60" y="60" textAnchor="middle" dominantBaseline="middle" fill="white" fontSize="9" fontWeight="bold">
+                                      100%
+                                    </text>
+                                  </g>
+                                )
+                              }
+                              return segments.map((seg) => {
+                                if (seg.value === 0) return null
+                                const angle = (seg.value / totalSubs) * 360
+                                const startAngle = currentAngle
+                                const endAngle = currentAngle + angle
+                                currentAngle = endAngle
+                                const path = getArcPath(startAngle, endAngle, outerR, innerR)
+                                const labelPos = getLabelPos(startAngle, endAngle, midR)
+                                const showLabel = angle > 20
+
+                                return (
+                                  <g key={seg.name}>
+                                    <path d={path} fill={seg.color} />
+                                    {showLabel && (
+                                      <text x={labelPos.x} y={labelPos.y} textAnchor="middle" dominantBaseline="middle" fill="white" fontSize="9" fontWeight="bold">
+                                        {seg.label}
+                                      </text>
+                                    )}
+                                  </g>
+                                )
+                              })
+                            })() : (
+                              <circle cx="60" cy="60" r={outerR} fill="#e5e7eb" />
+                            )}
+                            <circle cx="60" cy="60" r={innerR} fill="white" />
+                          </svg>
+                          <div className="absolute inset-0 flex flex-col items-center justify-center">
+                            <span className="text-lg font-bold text-gray-900">{totalSubs}</span>
+                            <span className="text-[9px] text-gray-400">Total</span>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 mt-2">
+                          {segments.map((seg) => (
+                            <div key={seg.name} className="flex items-center gap-1">
+                              <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: seg.color }} />
+                              <span className="text-[9px] text-gray-500">{seg.name} ({seg.value})</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  })()}
                 </CardContent>
               </Card>
 
-              <Card className="bg-white border border-violet-200 shadow-sm hover:shadow-md transition-shadow">
+              {/* Average Grade Card - Semi-circle Gauge */}
+              <Card className="bg-white border-violet-200">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">Pending</CardTitle>
-                  <div className="w-10 h-10 bg-violet-100 rounded-full flex items-center justify-center">
-                    <Clock className="h-5 w-5 text-black" />
-                  </div>
+                  <CardTitle className="text-sm font-medium text-gray-900">Average Grade</CardTitle>
+                  <TrendingUp className="h-4 w-4 text-green-500" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-gray-900">{pendingAssignments}</div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Need to submit
-                  </p>
+                  {(() => {
+                    const gradeColor = averagePercentage >= 80 ? "#22c55e" : averagePercentage >= 60 ? "#7c3aed" : averagePercentage >= 40 ? "#f97316" : "#ef4444"
+                    const gradeLetter = averagePercentage >= 90 ? "A+" : averagePercentage >= 80 ? "A" : averagePercentage >= 70 ? "B" : averagePercentage >= 60 ? "C" : "D"
+                    const radius = 45
+                    const strokeW = 8
+                    const halfCircumference = Math.PI * radius
+                    const filledArc = (averagePercentage / 100) * halfCircumference
+
+                    return (
+                      <div className="flex flex-col items-center">
+                        <div className="relative" style={{ width: '140px', height: '85px' }}>
+                          <svg width="140" height="85" viewBox="0 0 120 70" overflow="visible">
+                            <path
+                              d={`M ${60 - radius} 60 A ${radius} ${radius} 0 0 1 ${60 + radius} 60`}
+                              fill="none"
+                              stroke="#f3f4f6"
+                              strokeWidth={strokeW}
+                              strokeLinecap="round"
+                            />
+                            <path
+                              d={`M ${60 - radius} 60 A ${radius} ${radius} 0 0 1 ${60 + radius} 60`}
+                              fill="none"
+                              stroke={gradeColor}
+                              strokeWidth={strokeW}
+                              strokeLinecap="round"
+                              strokeDasharray={`${filledArc} ${halfCircumference}`}
+                            />
+                          </svg>
+                          <div className="absolute bottom-0 left-0 right-0 flex flex-col items-center">
+                            <span className="text-2xl font-bold text-gray-900">{averagePercentage.toFixed(1)}%</span>
+                            <span className="text-[10px] text-gray-400">Average Grade</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between w-full mt-4 pt-3 border-t border-gray-100">
+                          <div className="flex-1 border-l-2 pl-2" style={{ borderColor: gradeColor }}>
+                            <div className="text-lg font-bold text-gray-900">{gradeLetter}</div>
+                            <div className="text-[10px] text-gray-400">Grade Letter</div>
+                          </div>
+                          <div className="flex-1 border-l-2 border-gray-300 pl-2 text-right">
+                            <div className="text-lg font-bold text-gray-900">{gradedSubmissions.length}</div>
+                            <div className="text-[10px] text-gray-400">Graded</div>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })()}
                 </CardContent>
               </Card>
 
-              <Card className="bg-white border border-violet-200 shadow-sm hover:shadow-md transition-shadow">
+              {/* Best Grade & Classes Card */}
+              <Card className="bg-white border-violet-200">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">Overdue</CardTitle>
-                  <div className="w-10 h-10 bg-violet-100 rounded-full flex items-center justify-center">
-                    <AlertCircle className="h-5 w-5 text-black" />
-                  </div>
+                  <CardTitle className="text-sm font-medium text-gray-900">Performance</CardTitle>
+                  <Star className="h-4 w-4 text-violet-500" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-gray-900">{overdueAssignments}</div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Past due date
-                  </p>
+                  {(() => {
+                    const bestColor = bestGrade >= 80 ? "#22c55e" : bestGrade >= 60 ? "#7c3aed" : bestGrade >= 40 ? "#f97316" : "#ef4444"
+                    const radius = 40
+                    const strokeWidth = 10
+                    const circumference = 2 * Math.PI * radius
+                    const filled = (bestGrade / 100) * circumference
+
+                    return (
+                      <div className="flex flex-col items-center">
+                        <div className="relative">
+                          <svg width="100" height="100" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r={radius} fill="none" stroke="#f3f4f6" strokeWidth={strokeWidth} />
+                            <circle cx="50" cy="50" r={radius} fill="none" stroke={bestColor} strokeWidth={strokeWidth} strokeLinecap="round" strokeDasharray={`${filled} ${circumference}`} strokeDashoffset={circumference / 4} transform="rotate(-90 50 50)" />
+                          </svg>
+                          <div className="absolute inset-0 flex flex-col items-center justify-center">
+                            <span className="text-lg font-bold text-gray-900">{bestGrade.toFixed(0)}%</span>
+                            <span className="text-[9px] text-gray-400">Best</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between w-full mt-2 pt-3 border-t border-gray-100">
+                          <div className="flex-1 border-l-2 border-violet-400 pl-2">
+                            <div className="text-lg font-bold text-gray-900">{classes.length}</div>
+                            <div className="text-[10px] text-gray-400">Classes</div>
+                          </div>
+                          <div className="flex-1 border-l-2 border-gray-300 pl-2 text-right">
+                            <div className="text-lg font-bold text-gray-900">{overdueAssignments}</div>
+                            <div className="text-[10px] text-gray-400">Overdue</div>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })()}
                 </CardContent>
               </Card>
             </div>
 
             {/* Recent Assignments and Classes */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               <Card className="bg-white border-gray-200 shadow-sm">
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">
@@ -629,7 +883,7 @@ export default function StudentDashboard() {
                 placeholder="Search assignments..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 w-64"
+                className="pl-10 w-full sm:w-64"
               />
             </div>
 
@@ -644,16 +898,155 @@ export default function StudentDashboard() {
                 </CardContent>
               </Card>
             ) : (
-              <Card className="bg-white border-gray-200 shadow-sm">
+              <>
+              {/* Mobile Card View */}
+              <div className="space-y-3 md:hidden">
+                {getFilteredAndSortedAssignments().map((assignment) => {
+                  const hasSubmission = assignment.submission
+                  const isGraded = hasSubmission?.status === "graded"
+                  const isOverdue = new Date(assignment.dueDate) < new Date() && !hasSubmission
+
+                  return (
+                    <Card key={assignment.id} className="bg-white border-gray-200 shadow-sm">
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex-1 min-w-0 mr-3">
+                            <h3 className="font-semibold text-gray-900 truncate">{assignment.title}</h3>
+                            <p className="text-xs text-gray-500 mt-0.5">{assignment.class?.name || "N/A"} &middot; {assignment.class?.teacher.name || "N/A"}</p>
+                          </div>
+                          {isGraded ? (
+                            <Badge className="bg-green-100 text-green-800 border-green-300 shrink-0">Graded</Badge>
+                          ) : hasSubmission ? (
+                            <Badge className="bg-violet-100 text-violet-800 border-violet-300 shrink-0">Submitted</Badge>
+                          ) : (
+                            <Badge variant={isOverdue ? "destructive" : "secondary"} className="shrink-0">
+                              {isOverdue ? "Overdue" : "Pending"}
+                            </Badge>
+                          )}
+                        </div>
+
+                        <div className="flex items-center justify-between text-sm mb-3">
+                          <div className="flex items-center gap-4">
+                            <span className={`${isOverdue ? 'text-red-600 font-semibold' : 'text-gray-600'}`}>
+                              Due: {new Date(assignment.dueDate).toLocaleDateString()}
+                            </span>
+                            <span className="text-gray-600">
+                              Submitted: {hasSubmission ? new Date(assignment.submission!.submittedAt).toLocaleDateString() : "—"}
+                            </span>
+                            <span className="text-gray-600">Marks: {assignment.totalMarks}</span>
+                          </div>
+                          {isGraded && (
+                            <div className={`font-bold ${
+                              ((assignment.submission?.marks || 0) / assignment.totalMarks * 100) >= 80
+                                ? 'text-green-600'
+                                : ((assignment.submission?.marks || 0) / assignment.totalMarks * 100) >= 60
+                                  ? 'text-violet-600'
+                                  : 'text-red-600'
+                            }`}>
+                              {assignment.submission?.marks}/{assignment.totalMarks} ({((assignment.submission?.marks || 0) / assignment.totalMarks * 100).toFixed(0)}%)
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          {(assignment.description || assignment.imageUrl) && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedDescription({
+                                  title: assignment.title,
+                                  description: assignment.description || "",
+                                  imageUrl: assignment.imageUrl
+                                })
+                                setIsDescriptionModalOpen(true)
+                              }}
+                              className="text-violet-600 border-violet-200 text-xs"
+                            >
+                              <Eye className="h-3 w-3 mr-1" />
+                              Details
+                            </Button>
+                          )}
+                          {!hasSubmission ? (
+                            isOverdue ? (
+                              <Button size="sm" variant="outline" disabled className="border-red-200 text-red-500 cursor-not-allowed opacity-70 text-xs">
+                                <AlertCircle className="h-3 w-3 mr-1" />
+                                Expired
+                              </Button>
+                            ) : (
+                              <Button
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedAssignmentForSubmission(assignment)
+                                  setIsSubmissionModalOpen(true)
+                                }}
+                                className="bg-white hover:bg-gray-100 text-black border border-gray-300 text-xs"
+                              >
+                                <FileText className="h-3 w-3 mr-1" />
+                                Submit
+                              </Button>
+                            )
+                          ) : isGraded ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-gray-300 text-black hover:bg-gray-100 text-xs px-2 py-1 h-7"
+                              onClick={() => {
+                                setSelectedDescription({
+                                  title: `AI Feedback`,
+                                  description: assignment.submission?.feedback || "No feedback provided yet."
+                                })
+                                setIsDescriptionModalOpen(true)
+                              }}
+                            >
+                              <Eye className="h-3 w-3 mr-1" />
+                              Feedback
+                            </Button>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-red-200 text-red-600 hover:bg-red-50 text-xs"
+                              onClick={async () => {
+                                if (!assignment.submission) return
+                                try {
+                                  await fetch(`/api/submissions/${assignment.submission.id}`, { method: "DELETE" })
+                                  fetchStudentData()
+                                  fetchSubmissions()
+                                } catch (e) {
+                                  console.error("Failed to delete submission:", e)
+                                }
+                              }}
+                            >
+                              <AlertCircle className="h-3 w-3 mr-1" />
+                              Retry
+                            </Button>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                })}
+                {getFilteredAndSortedAssignments().length === 0 && (
+                  <div className="text-center py-12">
+                    <Search className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No assignments found</h3>
+                    <p className="text-gray-500">Try adjusting your search query.</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Desktop Table View */}
+              <Card className="bg-white border-gray-200 shadow-sm hidden md:block">
                 <CardContent className="p-0">
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-gray-50">
-                        <TableHead className="w-[250px]">
+                        <TableHead className="w-[240px]">
                           <Button
                             variant="ghost"
                             onClick={() => handleSort("title")}
-                            className="h-auto p-0 hover:bg-transparent font-semibold"
+                            className="h-auto p-0 hover:bg-transparent font-semibold text-sm"
                           >
                             Title
                             {sortBy === "title" && (
@@ -662,10 +1055,9 @@ export default function StudentDashboard() {
                             {sortBy !== "title" && <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />}
                           </Button>
                         </TableHead>
-                        <TableHead className="text-center w-[100px]">Description</TableHead>
+                        <TableHead className="text-center w-[40px] px-1">Desc</TableHead>
                         <TableHead>Class</TableHead>
                         <TableHead>Teacher</TableHead>
-                        <TableHead className="text-center">Total Marks</TableHead>
                         <TableHead>
                           <Button
                             variant="ghost"
@@ -677,6 +1069,19 @@ export default function StudentDashboard() {
                               sortOrder === "asc" ? <ArrowUp className="ml-2 h-4 w-4" /> : <ArrowDown className="ml-2 h-4 w-4" />
                             )}
                             {sortBy !== "dueDate" && <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />}
+                          </Button>
+                        </TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            onClick={() => handleSort("submittedDate")}
+                            className="h-auto p-0 hover:bg-transparent font-semibold"
+                          >
+                            Submitted
+                            {sortBy === "submittedDate" && (
+                              sortOrder === "asc" ? <ArrowUp className="ml-2 h-4 w-4" /> : <ArrowDown className="ml-2 h-4 w-4" />
+                            )}
+                            {sortBy !== "submittedDate" && <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />}
                           </Button>
                         </TableHead>
                         <TableHead className="text-center">
@@ -692,13 +1097,10 @@ export default function StudentDashboard() {
                             {sortBy !== "status" && <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />}
                           </Button>
                         </TableHead>
-                        <TableHead className="text-center">
-                          <div className="flex flex-col items-center">
-                            <span>Your Score</span>
-                            <span className="text-xs font-normal text-gray-400">(Marks / Total)</span>
-                          </div>
-                        </TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
+                        <TableHead className="text-center px-2">Marks</TableHead>
+                        <TableHead className="text-center px-2">Score</TableHead>
+                        <TableHead className="text-center px-2">%</TableHead>
+                        <TableHead className="text-center px-2 w-[50px]">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -707,24 +1109,47 @@ export default function StudentDashboard() {
                         const isGraded = hasSubmission?.status === "graded"
                         const isOverdue = new Date(assignment.dueDate) < new Date() && !hasSubmission
 
+                        const matchedSubmission = submissions.find(s => s.assignment.id === assignment.id)
+
                         return (
                           <TableRow key={assignment.id} className="hover:bg-gray-50">
                             <TableCell className="font-medium">
-                              <div className="font-semibold text-gray-900">{assignment.title}</div>
+                              <div className="font-semibold text-gray-900 text-sm">
+                                {assignment.title.length > 30 ? (
+                                  <>
+                                    {assignment.title.slice(0, 30)}...
+                                    <button
+                                      onClick={() => {
+                                        setSelectedDescription({
+                                          title: "Assignment Title",
+                                          description: assignment.title
+                                        })
+                                        setIsDescriptionModalOpen(true)
+                                      }}
+                                      className="text-violet-600 hover:text-violet-700 text-xs font-normal ml-1"
+                                    >
+                                      see more
+                                    </button>
+                                  </>
+                                ) : (
+                                  assignment.title
+                                )}
+                              </div>
                             </TableCell>
-                            <TableCell className="text-center">
-                              {assignment.description ? (
+                            <TableCell className="text-center px-1">
+                              {assignment.description || assignment.imageUrl ? (
                                 <Button
                                   variant="ghost"
-                                  size="sm"
+                                  size="icon"
                                   onClick={() => {
                                     setSelectedDescription({
                                       title: assignment.title,
-                                      description: assignment.description || ""
+                                      description: assignment.description || "",
+                                      imageUrl: assignment.imageUrl
                                     })
                                     setIsDescriptionModalOpen(true)
                                   }}
-                                  className="text-violet-600 hover:text-violet-700 hover:bg-violet-50"
+                                  className="text-violet-600 hover:text-violet-700 hover:bg-violet-50 h-7 w-7"
                                 >
                                   <Eye className="h-4 w-4" />
                                 </Button>
@@ -736,116 +1161,113 @@ export default function StudentDashboard() {
                             </TableCell>
                             <TableCell className="text-sm text-gray-600">{assignment.class?.name || "N/A"}</TableCell>
                             <TableCell className="text-sm text-gray-600">{assignment.class?.teacher.name || "N/A"}</TableCell>
-                            <TableCell className="text-center font-semibold">{assignment.totalMarks}</TableCell>
                             <TableCell>
-                              <div className={`text-sm ${isOverdue ? 'text-red-600 font-semibold' : 'text-gray-900'}`}>
+                              <div className={`text-sm whitespace-nowrap ${isOverdue ? 'text-red-600 font-semibold' : 'text-gray-900'}`}>
                                 {new Date(assignment.dueDate).toLocaleDateString()}
                               </div>
                             </TableCell>
+                            <TableCell>
+                              {hasSubmission ? (
+                                <div className="text-sm text-gray-900 whitespace-nowrap">
+                                  {new Date(assignment.submission!.submittedAt).toLocaleDateString()}
+                                </div>
+                              ) : (
+                                <span className="text-sm text-gray-400">—</span>
+                              )}
+                            </TableCell>
                             <TableCell className="text-center">
                               {isGraded ? (
-                                <Badge className="bg-green-100 text-green-800 border-green-300">
+                                <Badge className="bg-green-100 text-green-800 border-green-300 text-xs">
                                   Graded
                                 </Badge>
                               ) : hasSubmission ? (
-                                <Badge className="bg-violet-100 text-violet-800 border-violet-300">
-                                  Submitted
+                                <Badge className="bg-orange-100 text-orange-800 border-orange-300 text-xs">
+                                  Not Graded
                                 </Badge>
                               ) : (
-                                <Badge variant={isOverdue ? "destructive" : "secondary"}>
+                                <Badge variant={isOverdue ? "destructive" : "secondary"} className="text-xs">
                                   {isOverdue ? "Overdue" : "Pending"}
                                 </Badge>
                               )}
                             </TableCell>
+                            <TableCell className="text-center text-sm font-semibold">{assignment.totalMarks}</TableCell>
                             <TableCell className="text-center">
                               {isGraded ? (
-                                <div className="flex flex-col items-center">
-                                  <div className={`font-bold text-lg ${
-                                    ((assignment.submission?.marks || 0) / assignment.totalMarks * 100) >= 80
-                                      ? 'text-green-600'
-                                      : ((assignment.submission?.marks || 0) / assignment.totalMarks * 100) >= 60
-                                        ? 'text-violet-600'
-                                        : ((assignment.submission?.marks || 0) / assignment.totalMarks * 100) >= 40
-                                          ? 'text-orange-600'
-                                          : 'text-red-600'
-                                  }`}>
-                                    {assignment.submission?.marks}/{assignment.totalMarks}
-                                  </div>
-                                  <Badge variant="outline" className={`text-xs mt-1 ${
-                                    ((assignment.submission?.marks || 0) / assignment.totalMarks * 100) >= 80
-                                      ? 'bg-green-50 text-green-700 border-green-300'
-                                      : ((assignment.submission?.marks || 0) / assignment.totalMarks * 100) >= 60
-                                        ? 'bg-violet-50 text-violet-700 border-violet-300'
-                                        : ((assignment.submission?.marks || 0) / assignment.totalMarks * 100) >= 40
-                                          ? 'bg-orange-50 text-orange-700 border-orange-300'
-                                          : 'bg-red-50 text-red-700 border-red-300'
-                                  }`}>
-                                    {((assignment.submission?.marks || 0) / assignment.totalMarks * 100).toFixed(0)}%
-                                  </Badge>
-                                </div>
+                                <span className={`font-bold text-sm ${
+                                  ((assignment.submission?.marks || 0) / assignment.totalMarks * 100) >= 80
+                                    ? 'text-green-600'
+                                    : ((assignment.submission?.marks || 0) / assignment.totalMarks * 100) >= 60
+                                      ? 'text-violet-600'
+                                      : ((assignment.submission?.marks || 0) / assignment.totalMarks * 100) >= 40
+                                        ? 'text-orange-600'
+                                        : 'text-red-600'
+                                }`}>
+                                  {assignment.submission?.marks}
+                                </span>
                               ) : hasSubmission ? (
-                                <div className="flex flex-col items-center">
-                                  <Clock className="h-4 w-4 text-violet-500 mb-1" />
-                                  <span className="text-xs text-violet-600 font-medium">Awaiting</span>
-                                  <span className="text-xs text-gray-400">Grade</span>
-                                </div>
+                                <span className="text-sm text-orange-600 font-medium">—</span>
                               ) : (
-                                <div className="flex flex-col items-center">
-                                  <span className="text-xs text-gray-400 font-medium">Not</span>
-                                  <span className="text-xs text-gray-400">Submitted</span>
-                                </div>
+                                <span className="text-sm text-gray-400">—</span>
                               )}
                             </TableCell>
-                            <TableCell className="text-right">
+                            <TableCell className="text-center">
+                              {isGraded ? (
+                                <Badge variant="outline" className={`text-xs ${
+                                  ((assignment.submission?.marks || 0) / assignment.totalMarks * 100) >= 80
+                                    ? 'bg-green-50 text-green-700 border-green-300'
+                                    : ((assignment.submission?.marks || 0) / assignment.totalMarks * 100) >= 60
+                                      ? 'bg-violet-50 text-violet-700 border-violet-300'
+                                      : ((assignment.submission?.marks || 0) / assignment.totalMarks * 100) >= 40
+                                        ? 'bg-orange-50 text-orange-700 border-orange-300'
+                                        : 'bg-red-50 text-red-700 border-red-300'
+                                }`}>
+                                  {((assignment.submission?.marks || 0) / assignment.totalMarks * 100).toFixed(0)}%
+                                </Badge>
+                              ) : (
+                                <span className="text-sm text-gray-400">—</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-center px-2 relative">
                               {!hasSubmission ? (
                                 isOverdue ? (
                                   <Button
-                                    size="sm"
+                                    size="icon"
                                     variant="outline"
                                     disabled
-                                    className="border-red-200 text-red-500 cursor-not-allowed opacity-70"
+                                    className="border-red-200 text-red-500 cursor-not-allowed opacity-70 h-7 w-7"
+                                    title="Expired"
                                   >
-                                    <AlertCircle className="h-3 w-3 mr-1" />
-                                    Expired
+                                    <AlertCircle className="h-3.5 w-3.5" />
                                   </Button>
                                 ) : (
                                   <Button
-                                    size="sm"
+                                    size="icon"
                                     onClick={() => {
                                       setSelectedAssignmentForSubmission(assignment)
                                       setIsSubmissionModalOpen(true)
                                     }}
-                                    className="bg-violet-600 hover:bg-violet-700"
+                                    className="bg-white hover:bg-gray-100 text-black border border-gray-300 h-7 w-7"
+                                    title="Submit"
                                   >
-                                    <FileText className="h-3 w-3 mr-1" />
-                                    Submit
+                                    <FileText className="h-3.5 w-3.5" />
                                   </Button>
                                 )
-                              ) : isGraded ? (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="border-green-200 text-green-700 hover:bg-green-50"
-                                  onClick={() => {
-                                    setSelectedDescription({
-                                      title: `Feedback: ${assignment.title}`,
-                                      description: assignment.submission?.feedback || "No feedback provided yet."
-                                    })
-                                    setIsDescriptionModalOpen(true)
-                                  }}
-                                >
-                                  <Eye className="h-3 w-3 mr-1" />
-                                  View Feedback
-                                </Button>
                               ) : (
                                 <Button
-                                  size="sm"
-                                  variant="outline"
-                                  disabled
-                                  className="border-violet-200 text-violet-600 cursor-not-allowed opacity-70"
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-7 w-7 text-gray-600 hover:bg-gray-100"
+                                  onClick={(e) => {
+                                    if (openActionMenuId === assignment.id) {
+                                      setOpenActionMenuId(null)
+                                    } else {
+                                      const rect = e.currentTarget.getBoundingClientRect()
+                                      setActionMenuPos({ top: rect.bottom + 4, left: rect.right - 160 })
+                                      setOpenActionMenuId(assignment.id)
+                                    }
+                                  }}
                                 >
-                                  <CheckCircle2 className="h-3 w-3 mr-1" />
-                                  Submitted
+                                  <MoreVertical className="h-4 w-4" />
                                 </Button>
                               )}
                             </TableCell>
@@ -863,6 +1285,51 @@ export default function StudentDashboard() {
                   )}
                 </CardContent>
               </Card>
+
+              {/* Action menu portal - rendered outside table to avoid scrollbar */}
+              {openActionMenuId && (() => {
+                const assignment = getFilteredAndSortedAssignments().find(a => a.id === openActionMenuId)
+                const matchedSub = submissions.find(s => s.assignment.id === openActionMenuId)
+                if (!assignment) return null
+                return (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setOpenActionMenuId(null)} />
+                    <div
+                      className="fixed z-50 bg-white border border-gray-200 rounded-md shadow-lg py-1 min-w-[160px]"
+                      style={{ top: actionMenuPos.top, left: actionMenuPos.left }}
+                    >
+                      <button
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        onClick={() => {
+                          setSelectedDescription({
+                            title: `AI Feedback`,
+                            description: assignment.submission?.feedback || "No feedback provided yet."
+                          })
+                          setIsDescriptionModalOpen(true)
+                          setOpenActionMenuId(null)
+                        }}
+                      >
+                        <MessageSquare className="h-4 w-4 text-violet-600" />
+                        View Feedback
+                      </button>
+                      {matchedSub?.fileUrl && (
+                        <button
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                          onClick={() => {
+                            window.open(matchedSub.fileUrl, "_blank")
+                            setOpenActionMenuId(null)
+                          }}
+                        >
+                          <ExternalLink className="h-4 w-4 text-violet-600" />
+                          View Assignment
+                        </button>
+                      )}
+                    </div>
+                  </>
+                )
+              })()}
+
+              </>
             )}
           </div>
         )}
@@ -870,29 +1337,6 @@ export default function StudentDashboard() {
         {/* Results Tab */}
         {activeTab === "results" && (
           <div className="space-y-6">
-            {/* Results Sub-Tabs */}
-            <div className="flex space-x-4 border-b">
-              {[
-                { id: "submissions", label: "All Submissions", icon: FileText, color: "text-green-500" },
-                { id: "subjects", label: "By Subject", icon: BookOpen, color: "text-violet-500" }
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setResultsActiveTab(tab.id)}
-                  className={`flex items-center space-x-2 py-3 px-4 border-b-2 font-medium text-sm transition-all duration-300 ${
-                    resultsActiveTab === tab.id
-                      ? "border-primary text-primary"
-                      : "border-transparent text-gray-500 hover:text-gray-700"
-                  }`}
-                >
-                  <div className={`${resultsActiveTab === tab.id ? 'bg-primary/10 p-1.5 rounded-lg' : ''}`}>
-                    <tab.icon className={`h-4 w-4 ${tab.color} ${resultsActiveTab === tab.id ? 'animate-pulse' : ''}`} />
-                  </div>
-                  <span>{tab.label}</span>
-                </button>
-              ))}
-            </div>
-
             {submissions.length === 0 ? (
               <Card className="bg-white border-gray-200 shadow-sm">
                 <CardContent className="pt-6">
@@ -905,186 +1349,214 @@ export default function StudentDashboard() {
               </Card>
             ) : (
               <>
-                {/* All Submissions Sub-Tab */}
-                {resultsActiveTab === "submissions" && (
-                  <Card className="bg-white border-gray-200 shadow-sm">
-                    <CardHeader>
-                      <CardTitle className="flex items-center space-x-2">
-                        <FileText className="h-5 w-5 text-green-500" />
-                        <span>All Submissions</span>
-                      </CardTitle>
-                      <CardDescription>
-                        Your assignment submissions and grades
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        {submissions.map((submission) => {
-                          const percentage = submission.marks
-                            ? (submission.marks / submission.assignment.totalMarks) * 100
-                            : 0
-                          const isGraded = submission.status === "graded"
+                    {/* Mobile Card View */}
+                    <div className="space-y-3 md:hidden">
+                      {submissions.map((submission) => {
+                        const percentage = submission.marks
+                          ? (submission.marks / submission.assignment.totalMarks) * 100
+                          : 0
+                        const isGraded = submission.status === "graded"
+                        const isFailing = percentage < 50
 
-                          return (
-                            <div key={submission.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                              <div className="flex justify-between items-start">
-                                <div className="flex-1">
-                                  <div className="flex items-center space-x-2 mb-2">
-                                    <h3 className="font-semibold text-gray-900">{submission.assignment.title}</h3>
-                                    <Badge variant="outline" className="bg-violet-50 text-violet-700">
-                                      {submission.assignment.subject}
-                                    </Badge>
-                                  </div>
-
-                                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm text-gray-600">
-                                    <div>
-                                      <span className="font-medium">Teacher:</span>
-                                      <p>{submission.assignment.teacher.name}</p>
-                                    </div>
-                                    <div>
-                                      <span className="font-medium">Submitted:</span>
-                                      <p className="text-violet-600 font-semibold">{new Date(submission.submittedAt).toLocaleDateString()}</p>
-                                    </div>
-                                    <div>
-                                      <span className="font-medium">Status:</span>
-                                      <Badge
-                                        variant={isGraded ? "default" : "secondary"}
-                                        className={`ml-1 ${isGraded ? 'bg-green-100 text-green-800 border-green-300' : 'bg-violet-100 text-violet-800 border-violet-300'}`}
-                                      >
-                                        {isGraded ? "Graded" : "Submitted"}
-                                      </Badge>
-                                    </div>
-                                  </div>
+                        return (
+                          <Card key={submission.id} className="bg-white border-gray-200 shadow-sm">
+                            <CardContent className="p-4">
+                              <div className="flex items-start justify-between mb-3">
+                                <div className="flex-1 min-w-0 mr-3">
+                                  <h3 className="font-semibold text-gray-900 truncate">{submission.assignment.title}</h3>
+                                  <p className="text-xs text-gray-500 mt-0.5">{submission.assignment.subject} &middot; {submission.assignment.teacher.name}</p>
                                 </div>
+                                {isGraded ? (
+                                  <Badge className="bg-green-100 text-green-800 border-green-300 shrink-0">Graded</Badge>
+                                ) : (
+                                  <Badge className="bg-violet-100 text-violet-800 border-violet-300 shrink-0">Pending</Badge>
+                                )}
+                              </div>
 
-                                <div className="ml-4 text-right">
-                                  {isGraded ? (
-                                    <div className="space-y-2">
-                                      <div className={`px-3 py-1 rounded-lg border font-bold text-lg ${getGradeColor(percentage)}`}>
-                                        {submission.marks}/{submission.assignment.totalMarks}
-                                      </div>
-                                      <div className="text-sm text-gray-500">
-                                        {percentage.toFixed(1)}% ({getGradeLetter(percentage)})
-                                      </div>
-                                    </div>
-                                  ) : (
-                                    <div className="space-y-2">
-                                      <Badge className="bg-violet-100 text-violet-800">
-                                        <Clock className="h-3 w-3 mr-1" />
-                                        Pending
-                                      </Badge>
-                                    </div>
-                                  )}
-                                </div>
+                              <div className="flex items-center justify-between text-sm mb-3">
+                                <span className="text-gray-500">Submitted: {new Date(submission.submittedAt).toLocaleDateString()}</span>
+                                {isGraded && (
+                                  <div className="text-right">
+                                    <span className={`font-bold text-lg ${isFailing ? 'text-red-600' : 'text-gray-900'}`}>
+                                      {submission.marks}/{submission.assignment.totalMarks}
+                                    </span>
+                                    <span className={`ml-1.5 text-xs font-medium ${isFailing ? 'text-red-500' : 'text-gray-500'}`}>
+                                      {percentage.toFixed(0)}% ({getGradeLetter(percentage)})
+                                    </span>
+                                  </div>
+                                )}
                               </div>
 
                               {isGraded && submission.feedback && (
-                                <div className="mt-4 p-4 bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 rounded-xl border-2 border-purple-200 shadow-sm hover:shadow-md transition-shadow">
-                                  <div className="flex items-center space-x-2 mb-3">
-                                    <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                                      <Award className="h-5 w-5 text-white" />
+                                <button
+                                  onClick={() => setExpandedFeedbackId(expandedFeedbackId === submission.id ? null : submission.id)}
+                                  className="w-full flex items-center justify-between text-xs text-violet-600 font-medium py-2 border-t border-gray-100 cursor-pointer"
+                                >
+                                  <span className="flex items-center gap-1.5">
+                                    <MessageSquare className="h-3.5 w-3.5" />
+                                    AI Feedback
+                                  </span>
+                                  {expandedFeedbackId === submission.id ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                                </button>
+                              )}
+                              {expandedFeedbackId === submission.id && submission.feedback && (
+                                <div className="mt-2 space-y-1.5">
+                                  {submission.feedback.split("\n\n").map((section: string, i: number) => (
+                                    <div key={i} className={`p-2.5 rounded-lg text-xs leading-relaxed ${
+                                      section.startsWith("🚨")
+                                        ? "bg-red-50 border border-red-300 text-red-800"
+                                        : section.startsWith("✅")
+                                        ? "bg-green-50 border border-green-200 text-green-800"
+                                        : section.startsWith("⚠️")
+                                        ? "bg-orange-50 border border-orange-200 text-orange-800"
+                                        : "bg-violet-50 border border-violet-200 text-gray-700"
+                                    }`}>
+                                      {section}
                                     </div>
-                                    <h4 className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 text-base">
-                                      AI Feedback
-                                    </h4>
-                                  </div>
-                                  <p className="text-gray-800 text-sm whitespace-pre-line leading-relaxed pl-10">{submission.feedback}</p>
+                                  ))}
                                 </div>
                               )}
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* By Subject Sub-Tab */}
-                {resultsActiveTab === "subjects" && (
-                  <div className="space-y-6">
-                    {(() => {
-                      // Group submissions by subject
-                      const subjectGroups = submissions.reduce((acc, submission) => {
-                        const subject = submission.assignment.subject
-                        if (!acc[subject]) {
-                          acc[subject] = []
-                        }
-                        acc[subject].push(submission)
-                        return acc
-                      }, {} as Record<string, Submission[]>)
-
-                      return Object.entries(subjectGroups).map(([subject, subjectSubmissions]) => {
-                        const gradedInSubject = subjectSubmissions.filter(s => s.status === "graded" && s.marks !== null)
-                        const subjectTotal = gradedInSubject.reduce((sum, s) => sum + (s.marks || 0), 0)
-                        const subjectPossible = gradedInSubject.reduce((sum, s) => sum + s.assignment.totalMarks, 0)
-                        const subjectAverage = subjectPossible > 0 ? (subjectTotal / subjectPossible) * 100 : 0
-
-                        return (
-                          <Card key={subject} className="bg-white border-gray-200 shadow-sm">
-                            <CardHeader>
-                              <div className="flex items-center justify-between">
-                                <CardTitle className="flex items-center space-x-2">
-                                  <BookOpen className="h-5 w-5 text-violet-500" />
-                                  <span>{subject}</span>
-                                </CardTitle>
-                                <div className="text-right">
-                                  <div className="text-2xl font-bold text-primary">
-                                    {subjectAverage.toFixed(1)}%
-                                  </div>
-                                  <div className="text-sm text-gray-500">
-                                    Grade: {getGradeLetter(subjectAverage)}
-                                  </div>
-                                </div>
-                              </div>
-                              <CardDescription>
-                                {gradedInSubject.length} graded out of {subjectSubmissions.length} submissions
-                              </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                              <div className="space-y-3">
-                                {subjectSubmissions.map((submission) => {
-                                  const percentage = submission.marks
-                                    ? (submission.marks / submission.assignment.totalMarks) * 100
-                                    : 0
-                                  const isGraded = submission.status === "graded"
-
-                                  return (
-                                    <div key={submission.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                      <div className="flex-1">
-                                        <h4 className="font-medium text-gray-900 mb-1">{submission.assignment.title}</h4>
-                                        <div className="flex items-center space-x-4 text-xs text-gray-500">
-                                          <span>Teacher: {submission.assignment.teacher.name}</span>
-                                          <span>Submitted: {new Date(submission.submittedAt).toLocaleDateString()}</span>
-                                        </div>
-                                      </div>
-                                      <div className="text-right ml-4">
-                                        {isGraded ? (
-                                          <div className="space-y-1">
-                                            <div className={`px-3 py-1 rounded-lg border font-bold ${getGradeColor(percentage)}`}>
-                                              {submission.marks}/{submission.assignment.totalMarks}
-                                            </div>
-                                            <div className="text-xs text-gray-500">
-                                              {percentage.toFixed(1)}% ({getGradeLetter(percentage)})
-                                            </div>
-                                          </div>
-                                        ) : (
-                                          <Badge className="bg-violet-100 text-violet-800">
-                                            <Clock className="h-3 w-3 mr-1" />
-                                            Pending
-                                          </Badge>
-                                        )}
-                                      </div>
-                                    </div>
-                                  )
-                                })}
-                              </div>
                             </CardContent>
                           </Card>
                         )
-                      })
-                    })()}
-                  </div>
-                )}
+                      })}
+                    </div>
+
+                    {/* Desktop Table View */}
+                    <Card className="bg-white border-gray-200 shadow-sm hidden md:block">
+                      <CardContent className="p-0">
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="bg-gray-50">
+                              <TableHead className="font-semibold text-gray-700">Assignment</TableHead>
+                              <TableHead className="font-semibold text-gray-700">Subject</TableHead>
+                              <TableHead className="font-semibold text-gray-700">Teacher</TableHead>
+                              <TableHead className="font-semibold text-gray-700">Submitted</TableHead>
+                              <TableHead className="text-center font-semibold text-gray-700">Status</TableHead>
+                              <TableHead className="text-center font-semibold text-gray-700">
+                                <div className="flex flex-col items-center">
+                                  <span>Score</span>
+                                  <span className="text-xs font-normal text-gray-400">(Marks / Total)</span>
+                                </div>
+                              </TableHead>
+                              <TableHead className="text-center font-semibold text-gray-700">Grade</TableHead>
+                              <TableHead className="text-center font-semibold text-gray-700">Feedback</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {submissions.map((submission) => {
+                              const percentage = submission.marks
+                                ? (submission.marks / submission.assignment.totalMarks) * 100
+                                : 0
+                              const isGraded = submission.status === "graded"
+                              const isFailing = percentage < 50
+                              const isExpanded = expandedFeedbackId === submission.id
+
+                              return (
+                                <React.Fragment key={submission.id}>
+                                  <TableRow className={`hover:bg-gray-50 transition-colors ${isExpanded ? 'bg-violet-50/30' : ''}`}>
+                                    <TableCell>
+                                      <div className="font-semibold text-gray-900">{submission.assignment.title}</div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <Badge variant="outline" className="bg-violet-50 text-violet-700 border-violet-200">
+                                        {submission.assignment.subject}
+                                      </Badge>
+                                    </TableCell>
+                                    <TableCell className="text-sm text-gray-600">{submission.assignment.teacher.name}</TableCell>
+                                    <TableCell className="text-sm text-violet-600 font-medium">
+                                      {new Date(submission.submittedAt).toLocaleDateString()}
+                                    </TableCell>
+                                    <TableCell className="text-center">
+                                      {isGraded ? (
+                                        <Badge className="bg-green-100 text-green-800 border-green-300">
+                                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                                          Graded
+                                        </Badge>
+                                      ) : (
+                                        <Badge className="bg-violet-100 text-violet-800 border-violet-300">
+                                          <Clock className="h-3 w-3 mr-1" />
+                                          Pending
+                                        </Badge>
+                                      )}
+                                    </TableCell>
+                                    <TableCell className="text-center">
+                                      {isGraded ? (
+                                        <span className={`font-bold text-lg ${isFailing ? 'text-red-600' : 'text-gray-900'}`}>
+                                          {submission.marks}/{submission.assignment.totalMarks}
+                                        </span>
+                                      ) : (
+                                        <span className="text-gray-400">&mdash;</span>
+                                      )}
+                                    </TableCell>
+                                    <TableCell className="text-center">
+                                      {isGraded ? (
+                                        <div className="flex flex-col items-center gap-0.5">
+                                          <span className={`text-sm font-semibold ${isFailing ? 'text-red-600' : 'text-gray-900'}`}>
+                                            {getGradeLetter(percentage)}
+                                          </span>
+                                          <span className={`text-xs ${isFailing ? 'text-red-500' : 'text-gray-500'}`}>
+                                            {percentage.toFixed(1)}%
+                                          </span>
+                                        </div>
+                                      ) : (
+                                        <span className="text-gray-400">&mdash;</span>
+                                      )}
+                                    </TableCell>
+                                    <TableCell className="text-center">
+                                      {isGraded && submission.feedback ? (
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => setExpandedFeedbackId(isExpanded ? null : submission.id)}
+                                          className={`text-violet-600 hover:text-violet-700 hover:bg-violet-50 ${isExpanded ? 'bg-violet-100' : ''}`}
+                                        >
+                                          <MessageSquare className="h-4 w-4 mr-1" />
+                                          {isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                                        </Button>
+                                      ) : (
+                                        <span className="text-gray-300">
+                                          <MessageSquare className="h-4 w-4 inline" />
+                                        </span>
+                                      )}
+                                    </TableCell>
+                                  </TableRow>
+                                  {/* Expandable Feedback Row */}
+                                  {isExpanded && submission.feedback && (
+                                    <TableRow>
+                                      <TableCell colSpan={8} className="py-2 px-6">
+                                        <div className="grid grid-cols-2 gap-2 max-w-3xl">
+                                          {submission.feedback.split("\n\n").filter(Boolean).map((section: string, i: number) => (
+                                            <div key={i} className={`p-2.5 rounded-lg text-xs leading-relaxed ${
+                                              section.startsWith("🚨")
+                                                ? "bg-red-50 border border-red-300 text-red-800 col-span-2"
+                                                : section.startsWith("✅")
+                                                ? "bg-green-50 border border-green-100 text-green-800"
+                                                : section.startsWith("⚠️")
+                                                ? "bg-orange-50 border border-orange-100 text-orange-800"
+                                                : "bg-violet-50 border border-violet-100 text-gray-700"
+                                            }`}>
+                                              {section}
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </TableCell>
+                                    </TableRow>
+                                  )}
+                                </React.Fragment>
+                              )
+                            })}
+                          </TableBody>
+                        </Table>
+                        {submissions.length === 0 && (
+                          <div className="text-center py-12">
+                            <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                            <h3 className="text-lg font-medium text-gray-900 mb-2">No submissions yet</h3>
+                            <p className="text-gray-500">Submit some assignments to see your results here.</p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
               </>
             )}
           </div>
@@ -1097,11 +1569,10 @@ export default function StudentDashboard() {
         isOpen={isSubmissionModalOpen}
         onClose={() => {
           setIsSubmissionModalOpen(false)
-          setSelectedAssignmentForSubmission(null)
         }}
         assignment={selectedAssignmentForSubmission}
         onSuccess={() => {
-          // Refresh both assignments and submissions data after grading
+          setSelectedAssignmentForSubmission(null)
           fetchStudentData()
           fetchSubmissions()
         }}
@@ -1117,44 +1588,54 @@ export default function StudentDashboard() {
         assignment={selectedAssignmentForView}
       />
 
-      {/* Description Modal */}
+      {/* Description / Feedback Modal */}
       {isDescriptionModalOpen && selectedDescription && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 max-w-lg w-full shadow-xl">
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <h3 className="text-lg font-bold text-gray-900">Assignment Description</h3>
-                <p className="text-sm text-violet-600 font-medium mt-1">{selectedDescription.title}</p>
-              </div>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => { setIsDescriptionModalOpen(false); setSelectedDescription(null) }}>
+          <div className="bg-white rounded-xl p-5 max-w-md w-full shadow-xl max-h-[70vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="text-base font-bold text-gray-900">{selectedDescription.title}</h3>
               <Button
                 variant="ghost"
-                size="sm"
+                size="icon"
                 onClick={() => {
                   setIsDescriptionModalOpen(false)
                   setSelectedDescription(null)
                 }}
-                className="text-gray-500 hover:text-gray-700"
+                className="text-gray-400 hover:text-gray-600 h-7 w-7"
               >
-                <span className="sr-only">Close</span>
-                ✕
+                <X className="h-4 w-4" />
               </Button>
             </div>
-            <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-              <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
-                {selectedDescription.description}
-              </p>
-            </div>
-            <div className="flex justify-end mt-4">
-              <Button
-                onClick={() => {
-                  setIsDescriptionModalOpen(false)
-                  setSelectedDescription(null)
-                }}
-                className="bg-violet-600 hover:bg-violet-700"
-              >
-                Close
-              </Button>
-            </div>
+            {selectedDescription.description && (
+              <div className="space-y-2">
+                {selectedDescription.description.split("\n\n").map((section: string, i: number) => (
+                  <div key={i} className={`p-3 rounded-lg text-sm leading-relaxed ${
+                    section.startsWith("🚨")
+                      ? "bg-red-50 border border-red-300 text-red-800"
+                      : section.startsWith("✅")
+                      ? "bg-green-50 border border-green-100 text-green-800"
+                      : section.startsWith("⚠️")
+                      ? "bg-orange-50 border border-orange-100 text-orange-800"
+                      : "bg-gray-50 border border-gray-100 text-gray-700"
+                  }`}>
+                    {section}
+                  </div>
+                ))}
+              </div>
+            )}
+            {selectedDescription.imageUrl && (
+              <div className="mt-3">
+                <a
+                  href={selectedDescription.imageUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center px-4 py-2 bg-violet-50 border border-violet-200 rounded-lg text-violet-700 hover:bg-violet-100 hover:border-violet-300 transition-colors text-sm"
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  View Assignment File
+                </a>
+              </div>
+            )}
           </div>
         </div>
       )}

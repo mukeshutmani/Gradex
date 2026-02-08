@@ -46,6 +46,8 @@ export function CreateAssignmentModal({ isOpen, onClose, onSuccess }: CreateAssi
   const [classes, setClasses] = useState<ClassInfo[]>([])
   const [loadingClasses, setLoadingClasses] = useState(true)
 
+  const [assignmentFile, setAssignmentFile] = useState<File | null>(null)
+
   // Form data
   const [formData, setFormData] = useState({
     title: "",
@@ -137,21 +139,19 @@ export function CreateAssignmentModal({ isOpen, onClose, onSuccess }: CreateAssi
     try {
       const dueDateTime = new Date(`${formData.dueDate}T${formData.dueTime}`)
 
+      const body = new FormData()
+      body.append("title", formData.title.trim())
+      body.append("subject", formData.subject.trim() || "General")
+      if (formData.description.trim()) body.append("description", formData.description.trim())
+      if (formData.textContent.trim()) body.append("textContent", formData.textContent.trim())
+      body.append("totalMarks", formData.totalMarks)
+      body.append("dueDate", dueDateTime.toISOString())
+      body.append("classId", formData.classId)
+      if (assignmentFile) body.append("file", assignmentFile)
+
       const response = await fetch("/api/assignments", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          title: formData.title.trim(),
-          subject: formData.subject.trim() || "General",
-          description: formData.description.trim() || undefined,
-          textContent: formData.textContent.trim() || undefined,
-          imageUrl: formData.imageUrl.trim() || undefined,
-          totalMarks: parseInt(formData.totalMarks),
-          dueDate: dueDateTime.toISOString(),
-          classId: formData.classId,
-        }),
+        body,
       })
 
       if (!response.ok) {
@@ -175,6 +175,7 @@ export function CreateAssignmentModal({ isOpen, onClose, onSuccess }: CreateAssi
         dueTime: "23:59",
         classId: ""
       })
+      setAssignmentFile(null)
 
       // Close modal after a short delay
       setTimeout(() => {
@@ -316,6 +317,55 @@ export function CreateAssignmentModal({ isOpen, onClose, onSuccess }: CreateAssi
                   rows={2}
                   disabled={loading}
                 />
+              </div>
+
+              {/* Assignment File Upload */}
+              <div className="space-y-2">
+                <Label>Assignment File (Optional)</Label>
+                <p className="text-xs text-gray-500">Upload a PDF or image with assignment questions/instructions for students to see.</p>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-violet-400 transition-colors">
+                  {assignmentFile ? (
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <FileText className="h-5 w-5 text-violet-500" />
+                        <span className="text-sm font-medium text-gray-700">{assignmentFile.name}</span>
+                        <span className="text-xs text-gray-500">({(assignmentFile.size / 1024).toFixed(0)} KB)</span>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setAssignmentFile(null)}
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center cursor-pointer">
+                      <Upload className="h-8 w-8 text-gray-400 mb-2" />
+                      <span className="text-sm text-gray-600">Click to upload PDF or Image</span>
+                      <span className="text-xs text-gray-400 mt-1">PDF, JPG, PNG (max 5MB)</span>
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        disabled={loading}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0]
+                          if (file) {
+                            if (file.size > 5 * 1024 * 1024) {
+                              setError("File size must be less than 5MB")
+                              return
+                            }
+                            setAssignmentFile(file)
+                            setError("")
+                          }
+                        }}
+                      />
+                    </label>
+                  )}
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">

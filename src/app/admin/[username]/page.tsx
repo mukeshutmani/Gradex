@@ -45,7 +45,15 @@ import {
   LayoutDashboard,
   LogOut,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Menu,
+  Copy,
+  Check,
+  MoreHorizontal,
+  FileSpreadsheet,
+  Filter,
+  ExternalLink,
+  FileText
 } from "lucide-react"
 
 // Remove mock data - will use real data from database
@@ -62,6 +70,8 @@ interface Assignment {
   createdAt: string
   updatedAt: string
   teacherId: string
+  classId?: string
+  class?: { id: string; name: string }
   submissions?: Submission[]
 }
 
@@ -114,9 +124,13 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
   const [allStudents, setAllStudents] = useState<any[]>([])
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [showProfilePopup, setShowProfilePopup] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [copiedCode, setCopiedCode] = useState<string | null>(null)
+  const [openActionMenu, setOpenActionMenu] = useState<string | null>(null)
   const [isViewClassModalOpen, setIsViewClassModalOpen] = useState(false)
   const [isEditClassModalOpen, setIsEditClassModalOpen] = useState(false)
   const [submissionSearchQuery, setSubmissionSearchQuery] = useState("")
+  const [submissionClassFilter, setSubmissionClassFilter] = useState("all")
   const [selectedSubmission, setSelectedSubmission] = useState<any | null>(null)
   const [isViewSubmissionModalOpen, setIsViewSubmissionModalOpen] = useState(false)
   const [isEditSubmissionModalOpen, setIsEditSubmissionModalOpen] = useState(false)
@@ -146,7 +160,9 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                 ...submission,
                 assignmentTitle: assignment.title,
                 assignmentSubject: assignment.subject,
-                assignmentTotalMarks: assignment.totalMarks
+                assignmentTotalMarks: assignment.totalMarks,
+                classId: assignment.classId || null,
+                className: assignment.class?.name || "Unassigned"
               })
             })
           }
@@ -455,8 +471,18 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
+      {/* Mobile Sidebar Overlay */}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-30 flex flex-col bg-violet-50 border-r border-violet-200 transition-all duration-300 ${sidebarCollapsed ? 'w-[72px]' : 'w-60'}`}>
+      <aside className={`fixed inset-y-0 left-0 z-50 flex flex-col bg-violet-50 border-r border-violet-200 transition-all duration-300 ${
+        mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+      } lg:translate-x-0 ${sidebarCollapsed ? 'lg:w-[72px]' : 'lg:w-60'} w-60`}>
         {/* Logo */}
         <div className="flex items-center justify-between h-16 px-4 border-b border-violet-200">
           <Link href="/" className="flex items-center cursor-pointer">
@@ -465,11 +491,17 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
               alt="Gradex Logo"
               className="h-10 w-auto"
             />
-            {!sidebarCollapsed && <span className="ml-0 text-lg font-bold text-gray-900">Gradex</span>}
+            {(!sidebarCollapsed || mobileMenuOpen) && <span className="ml-0 text-lg font-bold text-gray-900">Gradex</span>}
           </Link>
           <button
+            onClick={() => setMobileMenuOpen(false)}
+            className="p-1.5 rounded-lg text-violet-400 hover:text-violet-600 hover:bg-violet-100 transition-colors cursor-pointer lg:hidden"
+          >
+            <X className="h-5 w-5" />
+          </button>
+          <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="p-1.5 rounded-lg text-violet-400 hover:text-violet-600 hover:bg-violet-100 transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-violet-400 hover:text-violet-600 hover:bg-violet-100 transition-colors cursor-pointer hidden lg:block"
           >
             {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
           </button>
@@ -480,16 +512,19 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
           {sidebarNavItems.map((item) => (
             <button
               key={item.id}
-              onClick={() => setActiveTab(item.id)}
+              onClick={() => {
+                setActiveTab(item.id)
+                setMobileMenuOpen(false)
+              }}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-none text-sm font-medium transition-all cursor-pointer ${
                 activeTab === item.id
                   ? 'bg-violet-200 text-black border-l-4 border-violet-600'
                   : 'text-black hover:bg-violet-100'
-              } ${sidebarCollapsed ? 'justify-center' : ''}`}
+              } ${sidebarCollapsed && !mobileMenuOpen ? 'lg:justify-center' : ''}`}
               title={sidebarCollapsed ? item.label : undefined}
             >
               <item.icon className="h-5 w-5 shrink-0 text-black" />
-              {!sidebarCollapsed && <span>{item.label}</span>}
+              {(!sidebarCollapsed || mobileMenuOpen) && <span>{item.label}</span>}
             </button>
           ))}
         </nav>
@@ -497,14 +532,17 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
         {/* User section */}
         <div className="border-t border-violet-200 p-3">
           <button
-            onClick={() => setShowProfilePopup(true)}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-violet-100 transition-colors cursor-pointer ${sidebarCollapsed ? 'justify-center' : ''}`}
+            onClick={() => {
+              setShowProfilePopup(true)
+              setMobileMenuOpen(false)
+            }}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-violet-100 transition-colors cursor-pointer ${sidebarCollapsed && !mobileMenuOpen ? 'lg:justify-center' : ''}`}
             title={sidebarCollapsed ? session.user?.name || 'Profile' : undefined}
           >
             <div className="w-8 h-8 bg-violet-600 rounded-full flex items-center justify-center shrink-0">
               <User className="h-4 w-4 text-white" />
             </div>
-            {!sidebarCollapsed && (
+            {(!sidebarCollapsed || mobileMenuOpen) && (
               <div className="flex-1 min-w-0 text-left">
                 <div className="text-sm font-medium text-gray-900 truncate">{session.user?.name || "Teacher"}</div>
                 <div className="text-xs text-violet-600">Administrator</div>
@@ -513,77 +551,300 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
           </button>
           <button
             onClick={() => signOut({ callbackUrl: '/login' })}
-            className={`w-full flex items-center gap-3 px-3 py-2 mt-1 rounded-lg text-sm text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors cursor-pointer ${sidebarCollapsed ? 'justify-center' : ''}`}
+            className={`w-full flex items-center gap-3 px-3 py-2 mt-1 rounded-lg text-sm text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors cursor-pointer ${sidebarCollapsed && !mobileMenuOpen ? 'lg:justify-center' : ''}`}
             title={sidebarCollapsed ? 'Log out' : undefined}
           >
             <LogOut className="h-4 w-4 shrink-0" />
-            {!sidebarCollapsed && <span>Log out</span>}
+            {(!sidebarCollapsed || mobileMenuOpen) && <span>Log out</span>}
           </button>
         </div>
       </aside>
 
       {/* Main Content */}
-      <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'ml-[72px]' : 'ml-60'}`}>
+      <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-60'}`}>
         {/* Top Bar */}
-        <header className="sticky top-0 z-20 bg-white border-b border-gray-200 h-16 flex items-center px-6">
+        <header className="sticky top-0 z-20 bg-white border-b border-gray-200 h-16 flex items-center px-4 sm:px-6">
+          <button
+            onClick={() => setMobileMenuOpen(true)}
+            className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 lg:hidden cursor-pointer mr-3"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
           <h1 className="text-lg font-semibold text-gray-900 capitalize">{activeTab}</h1>
         </header>
 
-        <main className="px-6 py-8">
+        <main className="px-4 sm:px-6 py-6 sm:py-8">
         {/* Overview Tab */}
         {activeTab === "overview" && (
           <div className="space-y-6">
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+              {/* Total Assignments Card - Vertical Bar Chart */}
               <Card className="bg-white border-violet-200">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium text-gray-900">Total Assignments</CardTitle>
-                  <BookOpen className="h-4 w-4 text-black" />
+                  <BookOpen className="h-4 w-4 text-violet-500" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-gray-900">{totalAssignments}</div>
-                  <p className="text-xs text-gray-600">
-                    Total assignments created
-                  </p>
+                  {(() => {
+                    const maxVal = Math.max(totalAssignments, totalSubmissions, gradedSubmissions, pendingSubmissions, 1)
+                    const bars = [
+                      { label: "Total", value: totalAssignments, color: "#7c3aed" },
+                      { label: "Submitted", value: totalSubmissions, color: "#3b82f6" },
+                      { label: "Graded", value: gradedSubmissions, color: "#22c55e" },
+                      { label: "Pending", value: pendingSubmissions, color: "#f97316" },
+                    ]
+                    return (
+                      <div className="flex flex-col items-center">
+                      <div className="text-2xl font-bold text-gray-900 mb-2">{totalAssignments}</div>
+                      <div className="flex items-end justify-center gap-4 h-24">
+                        {bars.map((bar) => (
+                          <div key={bar.label} className="flex flex-col items-center h-full">
+                            <span className="text-[10px] font-semibold text-gray-600 mb-1">{bar.value}</span>
+                            <div className="flex-1 w-5 bg-gray-100 rounded-sm relative flex flex-col justify-end overflow-hidden">
+                              <div
+                                className="w-full rounded-sm transition-all duration-500"
+                                style={{ height: `${(bar.value / maxVal) * 100}%`, minHeight: bar.value > 0 ? '6px' : '0', backgroundColor: bar.color }}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 mt-2">
+                        {bars.map((bar) => (
+                          <div key={bar.label} className="flex items-center gap-1">
+                            <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: bar.color }} />
+                            <span className="text-[9px] text-gray-500">{bar.label} ({bar.value})</span>
+                          </div>
+                        ))}
+                      </div>
+                      </div>
+                    )
+                  })()}
                 </CardContent>
               </Card>
 
+              {/* Pending Reviews Card - Pie Donut Chart */}
               <Card className="bg-white border-violet-200">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium text-gray-900">Pending Reviews</CardTitle>
-                  <Clock className="h-4 w-4 text-black" />
+                  <Clock className="h-4 w-4 text-orange-500" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-gray-900">{pendingSubmissions}</div>
-                  <p className="text-xs text-gray-600">
-                    Requires your attention
-                  </p>
+                  {(() => {
+                    const totalSubs = pendingSubmissions + gradedSubmissions
+                    const pendingPct = totalSubs > 0 ? Math.round((pendingSubmissions / totalSubs) * 100) : 0
+                    const gradedPct = totalSubs > 0 ? Math.round((gradedSubmissions / totalSubs) * 100) : 100
+                    const outerR = 50
+                    const innerR = 25
+
+                    const getArcPath = (startAngle: number, endAngle: number, outer: number, inner: number) => {
+                      const startRad = (startAngle - 90) * (Math.PI / 180)
+                      const endRad = (endAngle - 90) * (Math.PI / 180)
+                      const x1 = 60 + outer * Math.cos(startRad)
+                      const y1 = 60 + outer * Math.sin(startRad)
+                      const x2 = 60 + outer * Math.cos(endRad)
+                      const y2 = 60 + outer * Math.sin(endRad)
+                      const x3 = 60 + inner * Math.cos(endRad)
+                      const y3 = 60 + inner * Math.sin(endRad)
+                      const x4 = 60 + inner * Math.cos(startRad)
+                      const y4 = 60 + inner * Math.sin(startRad)
+                      const largeArc = endAngle - startAngle > 180 ? 1 : 0
+                      return `M ${x1} ${y1} A ${outer} ${outer} 0 ${largeArc} 1 ${x2} ${y2} L ${x3} ${y3} A ${inner} ${inner} 0 ${largeArc} 0 ${x4} ${y4} Z`
+                    }
+
+                    const getLabelPos = (startAngle: number, endAngle: number, r: number) => {
+                      const midAngle = ((startAngle + endAngle) / 2 - 90) * (Math.PI / 180)
+                      return { x: 60 + r * Math.cos(midAngle), y: 60 + r * Math.sin(midAngle) }
+                    }
+
+                    const segments = [
+                      { label: `${gradedPct}%`, value: gradedSubmissions, color: "#22c55e", name: "Graded" },
+                      { label: `${pendingPct}%`, value: pendingSubmissions, color: "#f97316", name: "Pending" },
+                    ]
+
+                    let currentAngle = 0
+                    const midR = (outerR + innerR) / 2
+
+                    return (
+                      <div className="flex flex-col items-center">
+                        <div className="relative">
+                          <svg width="140" height="140" viewBox="0 0 120 120">
+                            {/* Background circle */}
+                            <circle cx="60" cy="60" r={outerR} fill="#f3f4f6" />
+                            <circle cx="60" cy="60" r={innerR} fill="white" />
+                            {totalSubs > 0 ? (() => {
+                              // If one segment is 100%, render a full circle instead of arc path
+                              const fullSegment = segments.find(s => s.value === totalSubs)
+                              if (fullSegment) {
+                                return (
+                                  <g>
+                                    <circle cx="60" cy="60" r={outerR} fill={fullSegment.color} />
+                                    <circle cx="60" cy="60" r={innerR} fill="white" />
+                                    <text x="60" y="60" textAnchor="middle" dominantBaseline="middle" fill="white" fontSize="9" fontWeight="bold">
+                                      100%
+                                    </text>
+                                  </g>
+                                )
+                              }
+                              return segments.map((seg) => {
+                                if (seg.value === 0) return null
+                                const angle = (seg.value / totalSubs) * 360
+                                const startAngle = currentAngle
+                                const endAngle = currentAngle + angle
+                                currentAngle = endAngle
+                                const path = getArcPath(startAngle, endAngle, outerR, innerR)
+                                const labelPos = getLabelPos(startAngle, endAngle, midR)
+                                const showLabel = angle > 20
+
+                                return (
+                                  <g key={seg.name}>
+                                    <path d={path} fill={seg.color} />
+                                    {showLabel && (
+                                      <text x={labelPos.x} y={labelPos.y} textAnchor="middle" dominantBaseline="middle" fill="white" fontSize="9" fontWeight="bold">
+                                        {seg.label}
+                                      </text>
+                                    )}
+                                  </g>
+                                )
+                              })
+                            })() : (
+                              <circle cx="60" cy="60" r={outerR} fill="#e5e7eb" />
+                            )}
+                            <circle cx="60" cy="60" r={innerR} fill="white" />
+                          </svg>
+                          <div className="absolute inset-0 flex flex-col items-center justify-center">
+                            <span className="text-lg font-bold text-gray-900">{totalSubs}</span>
+                            <span className="text-[9px] text-gray-400">Total</span>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 mt-2">
+                          {segments.map((seg) => (
+                            <div key={seg.name} className="flex items-center gap-1">
+                              <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: seg.color }} />
+                              <span className="text-[9px] text-gray-500">{seg.name} ({seg.value})</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  })()}
                 </CardContent>
               </Card>
 
+              {/* Average Grade Card - Semi-circle Gauge */}
               <Card className="bg-white border-violet-200">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium text-gray-900">Average Grade</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-black" />
+                  <TrendingUp className="h-4 w-4 text-green-500" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-gray-900">{averageGrade.toFixed(1)}%</div>
-                  <p className="text-xs text-gray-600">
-                    Class average grade
-                  </p>
+                  {(() => {
+                    const gradeColor = averageGrade >= 80 ? "#22c55e" : averageGrade >= 60 ? "#7c3aed" : averageGrade >= 40 ? "#f97316" : "#ef4444"
+                    const gradeLetter = averageGrade >= 90 ? "A+" : averageGrade >= 80 ? "A" : averageGrade >= 70 ? "B" : averageGrade >= 60 ? "C" : "D"
+                    const radius = 45
+                    const strokeW = 8
+                    const halfCircumference = Math.PI * radius
+                    const filledArc = (averageGrade / 100) * halfCircumference
+
+                    return (
+                      <div className="flex flex-col items-center">
+                        <div className="relative" style={{ width: '140px', height: '85px' }}>
+                          <svg width="140" height="85" viewBox="0 0 120 70" overflow="visible">
+                            {/* Background arc */}
+                            <path
+                              d={`M ${60 - radius} 60 A ${radius} ${radius} 0 0 1 ${60 + radius} 60`}
+                              fill="none"
+                              stroke="#f3f4f6"
+                              strokeWidth={strokeW}
+                              strokeLinecap="round"
+                            />
+                            {/* Filled arc */}
+                            <path
+                              d={`M ${60 - radius} 60 A ${radius} ${radius} 0 0 1 ${60 + radius} 60`}
+                              fill="none"
+                              stroke={gradeColor}
+                              strokeWidth={strokeW}
+                              strokeLinecap="round"
+                              strokeDasharray={`${filledArc} ${halfCircumference}`}
+                            />
+                          </svg>
+                          <div className="absolute bottom-0 left-0 right-0 flex flex-col items-center">
+                            <span className="text-2xl font-bold text-gray-900">{averageGrade.toFixed(1)}%</span>
+                            <span className="text-[10px] text-gray-400">Average Grade</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between w-full mt-4 pt-3 border-t border-gray-100">
+                          <div className="flex-1 border-l-2 pl-2" style={{ borderColor: gradeColor }}>
+                            <div className="text-lg font-bold text-gray-900">{gradeLetter}</div>
+                            <div className="text-[10px] text-gray-400">Grade Letter</div>
+                          </div>
+                          <div className="flex-1 border-l-2 border-gray-300 pl-2 text-right">
+                            <div className="text-lg font-bold text-gray-900">{gradedSubmissions}</div>
+                            <div className="text-[10px] text-gray-400">Graded</div>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })()}
                 </CardContent>
               </Card>
 
+              {/* Total Students Card - Growth Indicator */}
               <Card className="bg-white border-violet-200">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium text-gray-900">Total Students</CardTitle>
-                  <Users className="h-4 w-4 text-black" />
+                  <Users className="h-4 w-4 text-violet-500" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-gray-900">{totalStudents}</div>
-                  <p className="text-xs text-gray-600">
-                    Active students
-                  </p>
+                  {(() => {
+                    const donutColors = ["#7c3aed", "#22c55e", "#3b82f6", "#f97316", "#ec4899", "#14b8a6", "#eab308", "#6366f1"]
+                    const radius = 40
+                    const strokeWidth = 10
+                    const circumference = 2 * Math.PI * radius
+                    let cumulativeOffset = 0
+
+                    return (
+                      <div className="flex flex-col items-center">
+                        <div className="relative">
+                          <svg width="120" height="120" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r={radius} fill="none" stroke="#f3f4f6" strokeWidth={strokeWidth} />
+                            {totalStudents > 0 && classes.map((cls, i) => {
+                              const count = cls.studentCount || 0
+                              const percentage = count / totalStudents
+                              const dashLength = percentage * circumference
+                              const offset = -cumulativeOffset
+                              cumulativeOffset += dashLength
+                              return (
+                                <circle
+                                  key={cls.id}
+                                  cx="50" cy="50" r={radius} fill="none"
+                                  stroke={donutColors[i % donutColors.length]}
+                                  strokeWidth={strokeWidth}
+                                  strokeDasharray={`${dashLength} ${circumference - dashLength}`}
+                                  strokeDashoffset={offset}
+                                  strokeLinecap="butt"
+                                  transform="rotate(-90 50 50)"
+                                />
+                              )
+                            })}
+                          </svg>
+                          <div className="absolute inset-0 flex flex-col items-center justify-center">
+                            <span className="text-xs text-gray-400">Total</span>
+                            <span className="text-2xl font-bold text-gray-900">{totalStudents}</span>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 mt-2">
+                          {classes.map((cls, i) => (
+                            <div key={cls.id} className="flex items-center gap-1">
+                              <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: donutColors[i % donutColors.length] }} />
+                              <span className="text-[9px] text-gray-500 truncate max-w-[60px]">{cls.name} ({cls.studentCount || 0})</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  })()}
                 </CardContent>
               </Card>
             </div>
@@ -669,9 +930,9 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
         {/* Classes Tab */}
         {activeTab === "classes" && (
           <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h1 className="text-2xl font-bold text-gray-900">Class Management</h1>
-              <Button onClick={() => setIsCreateClassModalOpen(true)} className="bg-violet-600 hover:bg-violet-700">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Class Management</h1>
+              <Button onClick={() => setIsCreateClassModalOpen(true)} className="bg-violet-600 hover:bg-violet-700 w-full sm:w-auto">
                 <Plus className="h-4 w-4 mr-2" />
                 Create Class
               </Button>
@@ -684,6 +945,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                     <div className="text-lg text-gray-500">Loading classes...</div>
                   </div>
                 ) : classes.length > 0 ? (
+                  <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -705,9 +967,26 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                             )}
                           </TableCell>
                           <TableCell>
-                            <Badge variant="outline" className="bg-violet-50 text-violet-700 border-violet-200 font-mono">
-                              {classItem.classCode}
-                            </Badge>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline" className="bg-violet-50 text-violet-700 border-violet-200 font-mono">
+                                {classItem.classCode}
+                              </Badge>
+                              <button
+                                onClick={() => {
+                                  navigator.clipboard.writeText(classItem.classCode)
+                                  setCopiedCode(classItem.classCode)
+                                  setTimeout(() => setCopiedCode(null), 2000)
+                                }}
+                                className="p-1 rounded hover:bg-gray-100 transition-colors cursor-pointer"
+                                title="Copy class code"
+                              >
+                                {copiedCode === classItem.classCode ? (
+                                  <Check className="h-3.5 w-3.5 text-green-600" />
+                                ) : (
+                                  <Copy className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600" />
+                                )}
+                              </button>
+                            </div>
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center space-x-1">
@@ -754,6 +1033,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                       ))}
                     </TableBody>
                   </Table>
+                  </div>
                 ) : (
                   <div className="text-center py-12">
                     <GraduationCap className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -773,9 +1053,9 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
         {/* Assignments Tab */}
         {activeTab === "assignments" && (
           <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h1 className="text-2xl font-bold text-gray-900">Assignment Management</h1>
-              <Button onClick={() => setIsCreateModalOpen(true)}>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Assignment Management</h1>
+              <Button onClick={() => setIsCreateModalOpen(true)} className="w-full sm:w-auto">
                 <Plus className="h-4 w-4 mr-2" />
                 Create Assignment
               </Button>
@@ -788,6 +1068,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                     <div className="text-lg text-gray-500">Loading assignments...</div>
                   </div>
                 ) : assignments.length > 0 ? (
+                  <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -827,34 +1108,62 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                               </Badge>
                             </TableCell>
                             <TableCell className="text-right">
-                              <div className="flex items-center justify-end space-x-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleViewAssignment(assignment)}
-                                  className="border-violet-200 text-violet-700 hover:bg-violet-50 hover:border-violet-300"
+                              <div className="relative inline-block">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setOpenActionMenu(openActionMenu === assignment.id ? null : assignment.id)
+                                  }}
+                                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
                                 >
-                                  <Eye className="h-4 w-4 mr-1" />
-                                  View
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleEditAssignment(assignment)}
-                                  className="border-green-200 text-green-700 hover:bg-green-50 hover:border-green-300"
-                                >
-                                  <Edit className="h-4 w-4 mr-1" />
-                                  Edit
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleDeleteAssignment(assignment)}
-                                  className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300"
-                                >
-                                  <Trash2 className="h-4 w-4 mr-1" />
-                                  Delete
-                                </Button>
+                                  <MoreHorizontal className="h-4 w-4 text-gray-500" />
+                                </button>
+                                {openActionMenu === assignment.id && (
+                                  <>
+                                    <div className="fixed inset-0 z-30" onClick={() => setOpenActionMenu(null)} />
+                                    <div className="fixed z-40 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[140px]" style={{ top: 'auto', right: 'auto', marginTop: '4px' }} ref={(el) => {
+                                      if (el) {
+                                        const btn = el.parentElement?.querySelector('button')
+                                        if (btn) {
+                                          const rect = btn.getBoundingClientRect()
+                                          el.style.top = `${rect.bottom + 4}px`
+                                          el.style.left = `${rect.right - el.offsetWidth}px`
+                                        }
+                                      }
+                                    }}>
+                                      <button
+                                        onClick={() => {
+                                          handleViewAssignment(assignment)
+                                          setOpenActionMenu(null)
+                                        }}
+                                        className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+                                      >
+                                        <Eye className="h-4 w-4 text-violet-600" />
+                                        View
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          handleEditAssignment(assignment)
+                                          setOpenActionMenu(null)
+                                        }}
+                                        className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+                                      >
+                                        <Edit className="h-4 w-4 text-green-600" />
+                                        Edit
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          handleDeleteAssignment(assignment)
+                                          setOpenActionMenu(null)
+                                        }}
+                                        className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                        Delete
+                                      </button>
+                                    </div>
+                                  </>
+                                )}
                               </div>
                             </TableCell>
                           </TableRow>
@@ -862,6 +1171,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                       })}
                     </TableBody>
                   </Table>
+                  </div>
                 ) : (
                   <div className="text-center py-12">
                     <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -893,10 +1203,24 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
               </div>
             </div>
 
-            {/* Search Bar */}
+            {/* Filters & Export */}
             <Card>
               <CardContent className="pt-6">
-                <div className="flex items-center space-x-2">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                  <div className="flex items-center gap-2 sm:w-48">
+                    <Filter className="h-4 w-4 text-gray-400 shrink-0" />
+                    <Select value={submissionClassFilter} onValueChange={setSubmissionClassFilter}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Filter by class" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Classes</SelectItem>
+                        {classes.map((cls: any) => (
+                          <SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <Input
                     type="text"
                     placeholder="Search by student name, assignment, or subject..."
@@ -904,6 +1228,128 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                     onChange={(e) => setSubmissionSearchQuery(e.target.value)}
                     className="flex-1"
                   />
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-gray-300 text-black hover:bg-gray-100"
+                      onClick={() => {
+                        const filtered = allSubmissions
+                          .filter((s) => submissionClassFilter === "all" || s.classId === submissionClassFilter)
+                          .filter((s) => {
+                            const query = submissionSearchQuery.toLowerCase()
+                            return (
+                              (s.student?.name || "").toLowerCase().includes(query) ||
+                              (s.assignmentTitle || "").toLowerCase().includes(query) ||
+                              (s.assignmentSubject || "").toLowerCase().includes(query)
+                            )
+                          })
+                        const headers = ["Student Name", "Student Email", "Assignment", "Class", "Subject", "Marks", "Total Marks", "Percentage", "Status", "Submitted At", "Feedback"]
+                        const rows = filtered.map((s) => [
+                          s.student?.name || s.student?.username || "Unknown",
+                          s.student?.email || "",
+                          s.assignmentTitle || "",
+                          s.className || "Unassigned",
+                          s.assignmentSubject || "N/A",
+                          s.status === "graded" ? s.marks : "",
+                          s.assignmentTotalMarks || "",
+                          s.status === "graded" ? ((s.marks / s.assignmentTotalMarks) * 100).toFixed(1) + "%" : "",
+                          s.status || "",
+                          s.submittedAt ? new Date(s.submittedAt).toLocaleDateString() : "",
+                          s.feedback || ""
+                        ])
+                        const csvContent = [headers, ...rows].map((row) => row.map((cell: any) => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n")
+                        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
+                        const url = URL.createObjectURL(blob)
+                        const link = document.createElement("a")
+                        const className = submissionClassFilter !== "all" ? classes.find((c: any) => c.id === submissionClassFilter)?.name || "class" : "all-classes"
+                        link.href = url
+                        link.download = `submissions-${className.replace(/\s+/g, "-").toLowerCase()}-${new Date().toISOString().split("T")[0]}.csv`
+                        link.click()
+                        URL.revokeObjectURL(url)
+                      }}
+                    >
+                      <FileSpreadsheet className="h-4 w-4 mr-1" />
+                      Export CSV
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-gray-300 text-black hover:bg-gray-100"
+                      onClick={() => {
+                        const filtered = allSubmissions
+                          .filter((s) => submissionClassFilter === "all" || s.classId === submissionClassFilter)
+                          .filter((s) => {
+                            const query = submissionSearchQuery.toLowerCase()
+                            return (
+                              (s.student?.name || "").toLowerCase().includes(query) ||
+                              (s.assignmentTitle || "").toLowerCase().includes(query) ||
+                              (s.assignmentSubject || "").toLowerCase().includes(query)
+                            )
+                          })
+                        const className = submissionClassFilter !== "all" ? classes.find((c: any) => c.id === submissionClassFilter)?.name || "All Classes" : "All Classes"
+                        const printWindow = window.open("", "_blank")
+                        if (!printWindow) return
+                        printWindow.document.write(`
+                          <html>
+                          <head>
+                            <title>Submissions Report - ${className}</title>
+                            <style>
+                              body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
+                              h1 { color: #7C3AED; font-size: 22px; margin-bottom: 4px; }
+                              .meta { color: #666; font-size: 13px; margin-bottom: 20px; }
+                              table { width: 100%; border-collapse: collapse; font-size: 12px; }
+                              th { background: #7C3AED; color: white; padding: 8px 10px; text-align: left; }
+                              td { padding: 7px 10px; border-bottom: 1px solid #e5e7eb; }
+                              tr:nth-child(even) { background: #f9fafb; }
+                              .graded { color: #16a34a; font-weight: 600; }
+                              .pending { color: #ea580c; }
+                              @media print { body { padding: 0; } }
+                            </style>
+                          </head>
+                          <body>
+                            <h1>Gradex - Submissions Report</h1>
+                            <div class="meta">Class: ${className} &nbsp;|&nbsp; Generated: ${new Date().toLocaleDateString()} &nbsp;|&nbsp; Total: ${filtered.length} submissions</div>
+                            <table>
+                              <thead>
+                                <tr>
+                                  <th>#</th>
+                                  <th>Student</th>
+                                  <th>Assignment</th>
+                                  <th>Subject</th>
+                                  <th>Marks</th>
+                                  <th>Percentage</th>
+                                  <th>Status</th>
+                                  <th>Submitted</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                ${filtered.map((s, i) => `
+                                  <tr>
+                                    <td>${i + 1}</td>
+                                    <td>${s.student?.name || s.student?.username || "Unknown"}</td>
+                                    <td>${s.assignmentTitle || ""}</td>
+                                    <td>${s.assignmentSubject || "N/A"}</td>
+                                    <td>${s.status === "graded" ? `${s.marks}/${s.assignmentTotalMarks}` : "-"}</td>
+                                    <td class="${s.status === "graded" ? "graded" : ""}">${s.status === "graded" ? ((s.marks / s.assignmentTotalMarks) * 100).toFixed(1) + "%" : "-"}</td>
+                                    <td class="${s.status === "graded" ? "graded" : "pending"}">${s.status}</td>
+                                    <td>${s.submittedAt ? new Date(s.submittedAt).toLocaleDateString() : "-"}</td>
+                                  </tr>
+                                `).join("")}
+                              </tbody>
+                            </table>
+                          </body>
+                          </html>
+                        `)
+                        printWindow.document.close()
+                        printWindow.focus()
+                        setTimeout(() => printWindow.print(), 500)
+                      }}
+                    >
+                      <Download className="h-4 w-4 mr-1" />
+                      Export PDF
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -916,11 +1362,13 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                     <div className="text-lg text-gray-500">Loading submissions...</div>
                   </div>
                 ) : allSubmissions.length > 0 ? (
+                  <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead>Student Name</TableHead>
                         <TableHead>Assignment Name</TableHead>
+                        <TableHead>Class</TableHead>
                         <TableHead>Subject</TableHead>
                         <TableHead>Graded Marks</TableHead>
                         <TableHead>Status</TableHead>
@@ -930,6 +1378,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                     <TableBody>
                       {allSubmissions
                         .filter((submission) => {
+                          if (submissionClassFilter !== "all" && submission.classId !== submissionClassFilter) return false
                           const query = submissionSearchQuery.toLowerCase()
                           return (
                             (submission.student?.name || "").toLowerCase().includes(query) ||
@@ -943,6 +1392,9 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                               {submission.student?.name || submission.student?.username || "Unknown"}
                             </TableCell>
                             <TableCell>{submission.assignmentTitle}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="border-violet-200 text-violet-700">{submission.className}</Badge>
+                            </TableCell>
                             <TableCell>
                               <Badge variant="outline">{submission.assignmentSubject || "N/A"}</Badge>
                             </TableCell>
@@ -996,6 +1448,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                         ))}
                     </TableBody>
                   </Table>
+                  </div>
                 ) : (
                   <div className="text-center py-12">
                     <FileCheck className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -1030,11 +1483,11 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                         <div className="text-lg text-gray-500">Loading students...</div>
                       </div>
                     ) : allStudents.length > 0 ? (
+                      <div className="overflow-x-auto">
                       <Table>
                         <TableHeader>
                           <TableRow>
                             <TableHead>Student Name</TableHead>
-                            <TableHead>Email</TableHead>
                             <TableHead>Class</TableHead>
                             <TableHead>Joined Date</TableHead>
                             <TableHead>Status</TableHead>
@@ -1045,15 +1498,20 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                           {allStudents.map((student) => (
                             <TableRow key={student.id}>
                               <TableCell className="font-medium">{student.username || "Unknown"}</TableCell>
-                              <TableCell>{student.email}</TableCell>
                               <TableCell>
-                                <Badge variant="outline" className="bg-violet-50 text-violet-700">
+                                <Badge variant="outline" className="bg-violet-50 text-black border-violet-200">
                                   {student.className}
                                 </Badge>
                               </TableCell>
                               <TableCell>{new Date(student.enrolledAt).toLocaleDateString()}</TableCell>
                               <TableCell>
-                                <Badge variant={student.status === 'active' ? 'default' : 'outline'}>
+                                <Badge
+                                  variant="outline"
+                                  className={student.status === 'active'
+                                    ? 'bg-green-100 text-green-800 border-green-300'
+                                    : 'bg-red-100 text-red-800 border-red-300'
+                                  }
+                                >
                                   {student.status}
                                 </Badge>
                               </TableCell>
@@ -1073,6 +1531,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                           ))}
                         </TableBody>
                       </Table>
+                      </div>
                     ) : (
                       <div className="text-center py-12">
                         <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -1428,6 +1887,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                         <div className="text-lg text-gray-500">Loading classes...</div>
                       </div>
                     ) : classes.length > 0 ? (
+                      <div className="overflow-x-auto">
                       <Table>
                         <TableHeader>
                           <TableRow>
@@ -1449,9 +1909,26 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                                 )}
                               </TableCell>
                               <TableCell>
-                                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 font-mono">
-                                  {classItem.classCode}
-                                </Badge>
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="outline" className="bg-violet-50 text-violet-700 border-violet-200 font-mono">
+                                    {classItem.classCode}
+                                  </Badge>
+                                  <button
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(classItem.classCode)
+                                      setCopiedCode(classItem.classCode)
+                                      setTimeout(() => setCopiedCode(null), 2000)
+                                    }}
+                                    className="p-1 rounded hover:bg-gray-100 transition-colors cursor-pointer"
+                                    title="Copy class code"
+                                  >
+                                    {copiedCode === classItem.classCode ? (
+                                      <Check className="h-3.5 w-3.5 text-green-600" />
+                                    ) : (
+                                      <Copy className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600" />
+                                    )}
+                                  </button>
+                                </div>
                               </TableCell>
                               <TableCell>
                                 <div className="flex items-center space-x-1">
@@ -1487,6 +1964,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                           ))}
                         </TableBody>
                       </Table>
+                      </div>
                     ) : (
                       <div className="text-center py-12">
                         <GraduationCap className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -1970,39 +2448,16 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
               <div>
                 <label className="text-sm font-medium text-gray-600 mb-2 block">Attached File</label>
                 {selectedSubmission.fileUrl ? (
-                  <div className="space-y-3">
-                    {/* File Preview */}
-                    <div className="border border-gray-300 rounded-lg overflow-hidden">
-                      {selectedSubmission.fileUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                        // Image preview
-                        <img
-                          src={selectedSubmission.fileUrl}
-                          alt="Submitted file"
-                          className="w-full max-h-96 object-contain bg-gray-50"
-                        />
-                      ) : selectedSubmission.fileUrl.match(/\.pdf$/i) || selectedSubmission.fileUrl.includes('pdf') ? (
-                        // PDF preview - Using react-pdf viewer
-                        <PDFViewer fileUrl={selectedSubmission.fileUrl} />
-                      ) : (
-                        // Other files - show link
-                        <div className="p-8 bg-gray-50 text-center">
-                          <FileCheck className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                          <p className="text-gray-600 mb-2">File attached</p>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Download button only - PDF already visible above */}
-                    <div className="flex justify-center">
-                      <a
-                        href={selectedSubmission.fileUrl}
-                        download
-                        className="inline-flex items-center px-6 py-3 bg-green-50 border border-green-200 rounded-lg text-green-700 hover:bg-green-100 hover:border-green-300 transition-colors"
-                      >
-                        <Download className="h-4 w-4 mr-2" />
-                        Download File
-                      </a>
-                    </div>
+                  <div className="flex justify-center">
+                    <a
+                      href={selectedSubmission.fileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center px-5 py-2.5 bg-violet-50 border border-violet-200 rounded-lg text-violet-700 hover:bg-violet-100 hover:border-violet-300 transition-colors"
+                    >
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      View Assignment in New Tab
+                    </a>
                   </div>
                 ) : (
                   <p className="text-gray-400 italic">No file attached</p>
@@ -2012,8 +2467,20 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
               {selectedSubmission.feedback && (
                 <div>
                   <label className="text-sm font-medium text-gray-600 mb-2 block">Feedback</label>
-                  <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                    <p className="text-gray-900">{selectedSubmission.feedback}</p>
+                  <div className="space-y-2">
+                    {selectedSubmission.feedback.split("\n\n").map((section: string, i: number) => (
+                      <div key={i} className={`p-3 rounded-lg text-sm leading-relaxed ${
+                        section.startsWith("🚨")
+                          ? "bg-red-50 border border-red-300 text-red-800"
+                          : section.startsWith("✅")
+                          ? "bg-green-50 border border-green-200 text-green-800"
+                          : section.startsWith("⚠️")
+                          ? "bg-orange-50 border border-orange-200 text-orange-800"
+                          : "bg-gray-50 border border-gray-200 text-gray-700"
+                      }`}>
+                        {section}
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}

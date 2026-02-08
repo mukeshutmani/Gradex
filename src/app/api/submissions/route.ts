@@ -193,13 +193,11 @@ export async function POST(request: NextRequest) {
           // Remove extension from filename to avoid double extension
           const fileNameWithoutExt = file.name.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9-]/g, '_')
 
-          // Detect if file is PDF or image
-          const isPDF = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
-          const resourceType = isPDF ? 'raw' : 'auto' // Use 'raw' for PDFs to enable direct viewing
-
+          // Use 'image' for all files (PDFs + images) so URLs are publicly accessible
+          // Cloudinary serves PDFs under /image/upload/ which allows server-side downloads
           const uploadResponse = await cloudinary.uploader.upload(dataURI, {
             folder: 'gradex/submissions',
-            resource_type: resourceType,
+            resource_type: 'image',
             public_id: `${Date.now()}-${fileNameWithoutExt}`,
             type: 'upload',
             access_mode: 'public',

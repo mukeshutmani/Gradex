@@ -31,9 +31,9 @@ export default function TermsPage() {
       <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-16">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <div className="flex justify-center mb-4">
-            <FileText className="h-16 w-16" />
+            <FileText className="h-10 w-10 sm:h-16 sm:w-16" />
           </div>
-          <h1 className="text-5xl font-bold mb-4">Terms of Service</h1>
+          <h1 className="text-3xl sm:text-5xl font-bold mb-4">Terms of Service</h1>
           <p className="text-xl text-indigo-100">Please read these terms carefully</p>
           <p className="text-sm text-indigo-200 mt-2">Last updated: {new Date().toLocaleDateString()}</p>
         </div>

@@ -30,7 +30,7 @@ export default function DashboardPreview() {
       {/* Topbar */}
       <header className="flex items-center justify-between gap-4 p-4 bg-white shadow-sm sticky top-0 z-40">
         <div className="flex items-center gap-4">
-          <h2 className="text-xl font-bold text-blue-600">GradeX Dashboard</h2>
+          <h2 className="text-xl font-bold text-violet-600">GradeX Dashboard</h2>
           <div className="hidden sm:flex items-center bg-gray-100 rounded-md px-2 py-1 gap-2">
             <Search className="w-4 h-4 text-gray-500" />
             <Input className="w-64 bg-transparent border-0 p-0" placeholder="Search students or assignments" />
@@ -42,7 +42,7 @@ export default function DashboardPreview() {
           <Button variant="ghost"><Download className="mr-2" />Export</Button>
           <div className="flex items-center gap-2">
             <Avatar>
-              <span className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-blue-600 text-white">T</span>
+              <span className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-violet-600 text-white">T</span>
             </Avatar>
             <div className="text-sm text-gray-700">Teacher A</div>
             <Settings className="w-5 h-5 text-gray-500 ml-2" />
@@ -61,7 +61,7 @@ export default function DashboardPreview() {
                     <div className="text-sm text-gray-500">{s.label}</div>
                     <div className="text-2xl font-semibold mt-1">{s.value}</div>
                   </div>
-                  <div className="text-blue-600 text-3xl font-bold">{s.id === 4 ? "📈" : "📄"}</div>
+                  <div className="text-violet-600 text-3xl font-bold">{s.id === 4 ? "📈" : "📄"}</div>
                 </div>
               </CardContent>
             </Card>
@@ -71,13 +71,14 @@ export default function DashboardPreview() {
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Recent Submissions */}
           <div className="lg:col-span-2">
-            <Card className="overflow-x-auto">
+            <Card className="overflow-hidden">
               <CardContent>
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold">Recent Submissions</h3>
                   <div className="text-sm text-gray-500">Showing latest 10</div>
                 </div>
 
+                <div className="overflow-x-auto">
                 <table className="min-w-full text-left">
                   <thead>
                     <tr className="text-gray-600 text-sm">
@@ -94,7 +95,7 @@ export default function DashboardPreview() {
                       <tr key={row.id} className="border-t">
                         <td className="py-3">{row.student}</td>
                         <td className="py-3 text-gray-700">{row.title}</td>
-                        <td className={`py-3 font-medium ${row.status === 'Graded' ? 'text-green-600' : row.status === 'Pending' ? 'text-yellow-600' : 'text-blue-600'}`}>{row.status}</td>
+                        <td className={`py-3 font-medium ${row.status === 'Graded' ? 'text-green-600' : row.status === 'Pending' ? 'text-yellow-600' : 'text-violet-600'}`}>{row.status}</td>
                         <td className="py-3">{row.grade}</td>
                         <td className="py-3 text-gray-500">{row.date}</td>
                         <td className="py-3">
@@ -107,6 +108,7 @@ export default function DashboardPreview() {
                     ))}
                   </tbody>
                 </table>
+                </div>
               </CardContent>
             </Card>
 
@@ -129,7 +131,7 @@ export default function DashboardPreview() {
                     <div key={c} className="flex items-center gap-3">
                       <div className="w-20 text-sm text-gray-600">{c}</div>
                       <div className="flex-1 bg-gray-100 rounded h-3 overflow-hidden">
-                        <div className={`h-3 rounded bg-blue-600`} style={{ width: `${60 + i*8}%` }} />
+                        <div className={`h-3 rounded bg-violet-600`} style={{ width: `${60 + i*8}%` }} />
                       </div>
                       <div className="w-12 text-sm text-gray-700 text-right">{60 + i*8}%</div>
                     </div>

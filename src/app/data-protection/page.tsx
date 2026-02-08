@@ -31,9 +31,9 @@ export default function DataProtectionPage() {
       <div className="bg-gradient-to-r from-green-600 to-blue-600 text-white py-16">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <div className="flex justify-center mb-4">
-            <Lock className="h-16 w-16" />
+            <Lock className="h-10 w-10 sm:h-16 sm:w-16" />
           </div>
-          <h1 className="text-5xl font-bold mb-4">Data Protection Policy</h1>
+          <h1 className="text-3xl sm:text-5xl font-bold mb-4">Data Protection Policy</h1>
           <p className="text-xl text-green-100">Your data security is our priority</p>
           <p className="text-sm text-green-200 mt-2">Last updated: {new Date().toLocaleDateString()}</p>
         </div>

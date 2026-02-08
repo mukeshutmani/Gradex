@@ -31,9 +31,9 @@ export default function PrivacyPage() {
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-16">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <div className="flex justify-center mb-4">
-            <Shield className="h-16 w-16" />
+            <Shield className="h-10 w-10 sm:h-16 sm:w-16" />
           </div>
-          <h1 className="text-5xl font-bold mb-4">Privacy Policy</h1>
+          <h1 className="text-3xl sm:text-5xl font-bold mb-4">Privacy Policy</h1>
           <p className="text-xl text-blue-100">Your privacy is important to us</p>
           <p className="text-sm text-blue-200 mt-2">Last updated: {new Date().toLocaleDateString()}</p>
         </div>

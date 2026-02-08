@@ -1,0 +1,11 @@
+{
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "postgres"
+  ],
+  "permissions": {
+    "allow": [
+      "mcp__postgres__query"
+    ]
+  }
+}

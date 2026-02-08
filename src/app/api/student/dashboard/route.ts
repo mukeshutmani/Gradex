@@ -44,7 +44,8 @@ export async function GET(request: NextRequest) {
                     id: true,
                     marks: true,
                     status: true,
-                    submittedAt: true
+                    submittedAt: true,
+                    feedback: true
                   }
                 }
               },
@@ -137,7 +138,8 @@ export async function GET(request: NextRequest) {
                     id: true,
                     marks: true,
                     status: true,
-                    submittedAt: true
+                    submittedAt: true,
+                    feedback: true
                   }
                 }
               },

@@ -3,6 +3,9 @@ import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
+import cloudinary from "@/lib/cloudinary"
+
+export const runtime = 'nodejs'
 
 // Validation schema for assignment creation
 const createAssignmentSchema = z.object({
@@ -64,6 +67,12 @@ export async function GET(request: NextRequest) {
             name: true,
             email: true
           }
+        },
+        class: {
+          select: {
+            id: true,
+            name: true
+          }
         }
       },
       orderBy: {
@@ -81,7 +90,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Create a new assignment
+// POST - Create a new assignment (supports FormData with file upload)
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
@@ -93,31 +102,23 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const body = await request.json()
+    const formData = await request.formData()
+    const title = formData.get("title") as string
+    const subject = formData.get("subject") as string
+    const description = formData.get("description") as string | null
+    const textContent = formData.get("textContent") as string | null
+    const totalMarks = parseInt(formData.get("totalMarks") as string)
+    const dueDate = formData.get("dueDate") as string
+    const classId = formData.get("classId") as string
+    const file = formData.get("file") as File | null
 
-    // Validate the request data
-    const validationResult = createAssignmentSchema.safeParse(body)
-
-    if (!validationResult.success) {
+    // Validate required fields
+    if (!title || !subject || !totalMarks || !dueDate || !classId) {
       return NextResponse.json(
-        {
-          error: "Validation failed",
-          details: validationResult.error.issues
-        },
+        { error: "Missing required fields: title, subject, totalMarks, dueDate, classId" },
         { status: 400 }
       )
     }
-
-    const {
-      title,
-      subject,
-      description,
-      textContent,
-      imageUrl,
-      totalMarks,
-      dueDate,
-      classId,
-    } = validationResult.data
 
     // Verify that the class exists and belongs to the teacher
     const classExists = await prisma.class.findFirst({
@@ -134,18 +135,46 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Handle file upload to Cloudinary
+    let imageUrl: string | null = null
+    if (file) {
+      try {
+        const bytes = await file.arrayBuffer()
+        const buffer = Buffer.from(bytes)
+        const base64Data = buffer.toString("base64")
+        const dataURI = `data:${file.type};base64,${base64Data}`
+        const fileNameWithoutExt = file.name.replace(/\.[^/.]+$/, "").replace(/[^a-zA-Z0-9-]/g, "_")
+
+        const uploadResponse = await cloudinary.uploader.upload(dataURI, {
+          folder: "gradex/assignments",
+          resource_type: "image",
+          public_id: `${Date.now()}-${fileNameWithoutExt}`,
+          type: "upload",
+          access_mode: "public",
+        })
+
+        imageUrl = uploadResponse.secure_url
+      } catch (uploadError) {
+        console.error("Error uploading assignment file:", uploadError)
+        return NextResponse.json(
+          { error: "Failed to upload assignment file" },
+          { status: 500 }
+        )
+      }
+    }
+
     // Create the assignment
     const assignment = await prisma.assignment.create({
       data: {
         title,
         subject,
-        description,
-        textContent,
-        imageUrl: imageUrl || null,
+        description: description || null,
+        textContent: textContent || null,
+        imageUrl,
         totalMarks,
         dueDate: new Date(dueDate),
         teacherId: session.user.id,
-        classId: classId,
+        classId,
       },
       include: {
         teacher: {
