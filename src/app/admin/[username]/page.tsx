@@ -19,6 +19,7 @@ import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
 import { CreateClassModal } from "@/components/classes/create-class-modal"
 import { InviteStudentModal } from "@/components/classes/invite-student-modal"
 import { PDFViewer } from "@/components/pdf-viewer"
+import { FeedbackSections } from "@/components/feedback-section"
 import {
   ClipboardCheck,
   Upload,
@@ -53,7 +54,8 @@ import {
   FileSpreadsheet,
   Filter,
   ExternalLink,
-  FileText
+  FileText,
+  RefreshCw
 } from "lucide-react"
 
 // Remove mock data - will use real data from database
@@ -105,6 +107,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
   const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null)
   const [assignments, setAssignments] = useState<Assignment[]>([])
   const [loading, setLoading] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [userProfile, setUserProfile] = useState<any>(null)
   const [profileLoading, setProfileLoading] = useState(false)
@@ -1228,6 +1231,20 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
                     onChange={(e) => setSubmissionSearchQuery(e.target.value)}
                     className="flex-1"
                   />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={async () => {
+                      setRefreshing(true)
+                      await fetchAssignments(false)
+                      setRefreshing(false)
+                    }}
+                    disabled={refreshing}
+                    className="border-gray-300 text-gray-600 hover:bg-gray-100 hover:text-violet-600 h-9 w-9 shrink-0"
+                    title="Refresh"
+                  >
+                    <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                  </Button>
                   <div className="flex items-center gap-2">
                     <Button
                       variant="outline"
@@ -2467,21 +2484,7 @@ export default function AdminDashboard({ params }: { params: Promise<{ username:
               {selectedSubmission.feedback && (
                 <div>
                   <label className="text-sm font-medium text-gray-600 mb-2 block">Feedback</label>
-                  <div className="space-y-2">
-                    {selectedSubmission.feedback.split("\n\n").map((section: string, i: number) => (
-                      <div key={i} className={`p-3 rounded-lg text-sm leading-relaxed ${
-                        section.startsWith("🚨")
-                          ? "bg-red-50 border border-red-300 text-red-800"
-                          : section.startsWith("✅")
-                          ? "bg-green-50 border border-green-200 text-green-800"
-                          : section.startsWith("⚠️")
-                          ? "bg-orange-50 border border-orange-200 text-orange-800"
-                          : "bg-gray-50 border border-gray-200 text-gray-700"
-                      }`}>
-                        {section}
-                      </div>
-                    ))}
-                  </div>
+                  <FeedbackSections feedback={selectedSubmission.feedback} size="md" />
                 </div>
               )}
             </div>

@@ -289,7 +289,7 @@ ${submissionContent}`
       ? `\nDUPLICATE ALERT: This submission is ${duplicateCheck.similarity}% similar to another student's submission. Factor this into your grading — deduct marks significantly if the work appears copied.`
       : ""
 
-    const gradingPrompt = `You are a teacher grading a student's assignment. Be concise.
+    const gradingPrompt = `You are a teacher grading a student's assignment. Analyze step by step.
 
 ASSIGNMENT:
 - Title: ${submission.assignment.title}
@@ -304,13 +304,19 @@ ${studentAnswerSection}
 
 GRADING RULES:
 ${!hasContext ? `- Grade based on the assignment title, subject, and quality of the student's response.` : `- Grade strictly based on how well the student answered the assignment requirements.`}
-- Be SHORT and SPECIFIC. No generic advice.
+- Keep each field to 1-2 simple sentences. Be specific, not generic.
+- Use simple language a student can understand.
 
 Respond in JSON only:
 {
   "marks": <number 0-${submission.assignment.totalMarks}>,
-  "good": "<1-2 sentences: what the student did well>",
-  "improve": "<1-2 sentences: what specifically needs improvement, or 'Nothing major' if excellent>"
+  "originality": { "score": "<Good/Average/Poor>", "comment": "<1 sentence: is the work original or copied?>" },
+  "ai_check": { "score": "<Human/Likely AI/Mixed>", "comment": "<1 sentence: does it look AI-generated or human-written?>" },
+  "grammar": { "score": "<Good/Average/Poor>", "comment": "<1 sentence: grammar and structure quality>" },
+  "accuracy": { "score": "<Good/Average/Poor>", "comment": "<1 sentence: how accurate and relevant is the answer?>" },
+  "strengths": "<1-2 sentences: what the student did well>",
+  "improvements": "<1-2 sentences: what to fix, or 'Nothing major' if excellent>",
+  "marks_breakdown": "<list each question/section with marks, e.g. 'Q1: 8/10 - good definitions | Q2: 5/10 - wrong formula | Q3: 0/10 - not attempted'. If no clear questions, break down by topic areas.>"
 }`
 
     // Call Anthropic Claude API
@@ -326,8 +332,8 @@ Respond in JSON only:
 
       message = await anthropic.messages.create({
         model: "claude-sonnet-4-5-20250929",
-        max_tokens: 300,
-        system: "You are a concise grader. Respond with valid JSON only. Keep feedback SHORT: 1-2 sentences for what's good, 1-2 sentences for what to improve. Never write long paragraphs.",
+        max_tokens: 800,
+        system: "You are a concise grader. Respond with valid JSON only. Keep each field to 1-2 simple sentences. Use plain language students can understand.",
         messages: [
           {
             role: "user",
@@ -369,6 +375,13 @@ Respond in JSON only:
     // Parse the AI response
     let parsedResult: {
       marks: number
+      originality?: { score: string; comment: string } | string
+      ai_check?: { score: string; comment: string } | string
+      grammar?: { score: string; comment: string } | string
+      accuracy?: { score: string; comment: string } | string
+      strengths?: string
+      improvements?: string
+      marks_breakdown?: string
       good?: string
       improve?: string
       feedback?: string
@@ -398,18 +411,53 @@ Respond in JSON only:
     // Validate the marks
     const marks = Math.min(Math.max(0, Math.round(parsedResult.marks)), submission.assignment.totalMarks)
 
-    // Build concise feedback
-    let feedback = ""
-    if (parsedResult.good && parsedResult.improve) {
-      feedback = `✅ ${parsedResult.good}\n\n⚠️ ${parsedResult.improve}`
-    } else {
-      feedback = parsedResult.feedback || parsedResult.good || "No feedback provided"
+    // Helper to extract score/comment from structured or plain string
+    const extractSection = (val: { score: string; comment: string } | string | undefined) => {
+      if (!val) return null
+      if (typeof val === "string") return { score: "", comment: val }
+      return { score: val.score || "", comment: val.comment || "" }
     }
 
-    // Add duplicate warning to feedback
+    // Build structured feedback with [Section] markers
+    const feedbackParts: string[] = []
+
     if (duplicateCheck.isDuplicate) {
-      feedback = `🚨 Duplicate Alert: ${duplicateCheck.similarity}% match with ${duplicateCheck.similarStudent}. Marks deducted.\n\n${feedback}`
+      feedbackParts.push(`[Duplicate Alert] ${duplicateCheck.similarity}% match\nThis submission is ${duplicateCheck.similarity}% similar to ${duplicateCheck.similarStudent}'s work. Marks have been deducted.`)
     }
+
+    const originality = extractSection(parsedResult.originality)
+    if (originality) {
+      feedbackParts.push(`[Originality] ${originality.score}\n${originality.comment}`)
+    }
+
+    const aiCheck = extractSection(parsedResult.ai_check)
+    if (aiCheck) {
+      feedbackParts.push(`[AI Detection] ${aiCheck.score}\n${aiCheck.comment}`)
+    }
+
+    const grammar = extractSection(parsedResult.grammar)
+    if (grammar) {
+      feedbackParts.push(`[Grammar & Structure] ${grammar.score}\n${grammar.comment}`)
+    }
+
+    const accuracy = extractSection(parsedResult.accuracy)
+    if (accuracy) {
+      feedbackParts.push(`[Accuracy & Relevance] ${accuracy.score}\n${accuracy.comment}`)
+    }
+
+    if (parsedResult.strengths || parsedResult.good) {
+      feedbackParts.push(`[Strengths]\n${parsedResult.strengths || parsedResult.good}`)
+    }
+    if (parsedResult.improvements || parsedResult.improve) {
+      feedbackParts.push(`[Improvements]\n${parsedResult.improvements || parsedResult.improve}`)
+    }
+    if (parsedResult.marks_breakdown) {
+      feedbackParts.push(`[Marks Breakdown]\n${parsedResult.marks_breakdown}`)
+    }
+
+    const feedback = feedbackParts.length > 0
+      ? feedbackParts.join("\n\n")
+      : parsedResult.feedback || "No feedback provided"
 
     // Calculate percentage and grade letter
     const percentage = (marks / submission.assignment.totalMarks) * 100

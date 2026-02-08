@@ -166,7 +166,10 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    if (existingSubmission) {
+    // If there's an existing reset submission (from resubmit), update it instead of creating new
+    const isResubmit = existingSubmission && existingSubmission.status === "pending" && !existingSubmission.content
+
+    if (existingSubmission && !isResubmit) {
       return NextResponse.json(
         { error: "You have already submitted this assignment" },
         { status: 400 }
@@ -247,34 +250,49 @@ export async function POST(request: NextRequest) {
     // Don't auto-grade immediately - let the AI grading modal handle it
     // This allows for the step-by-step grading UI experience
 
-    // Create the submission
-    const submission = await prisma.submission.create({
-      data: {
-        assignmentId: assignment.id,
-        studentId: userId,
-        content: content || null,
-        fileUrl: fileUrl,
-        marks: null,
-        feedback: null,
-        status: "submitted",
+    // Create or update submission
+    const submissionInclude = {
+      assignment: {
+        select: {
+          id: true,
+          title: true,
+          totalMarks: true
+        }
       },
-      include: {
-        assignment: {
-          select: {
-            id: true,
-            title: true,
-            totalMarks: true
-          }
-        },
-        student: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
+      student: {
+        select: {
+          id: true,
+          name: true,
+          email: true
         }
       }
-    })
+    }
+
+    const submission = isResubmit
+      ? await prisma.submission.update({
+          where: { id: existingSubmission.id },
+          data: {
+            content: content || null,
+            fileUrl: fileUrl,
+            marks: null,
+            feedback: null,
+            status: "submitted",
+            submittedAt: new Date(),
+          },
+          include: submissionInclude
+        })
+      : await prisma.submission.create({
+          data: {
+            assignmentId: assignment.id,
+            studentId: userId,
+            content: content || null,
+            fileUrl: fileUrl,
+            marks: null,
+            feedback: null,
+            status: "submitted",
+          },
+          include: submissionInclude
+        })
 
     return NextResponse.json(
       {

@@ -294,6 +294,38 @@ export function AIGradingModal({
     }
   }
 
+  // Parse feedback section: "[Title] Score\nContent" or legacy emoji format
+  const parseFeedbackSection = (section: string) => {
+    const bracketMatch = section.match(/^\[(.+?)\]\s*(.*?)\n(.+)$/s)
+    if (bracketMatch) {
+      return { title: bracketMatch[1], score: bracketMatch[2].trim(), content: bracketMatch[3].trim() }
+    }
+    // Legacy: emoji prefix
+    return { title: "", score: "", content: section }
+  }
+
+  const getSectionStyle = (title: string, content: string) => {
+    const t = title.toLowerCase()
+    if (t.includes("duplicate")) return "bg-red-50 border-red-300 text-red-800"
+    if (t.includes("strength")) return "bg-green-50 border-green-200 text-green-800"
+    if (t.includes("improvement")) return "bg-orange-50 border-orange-200 text-orange-800"
+    if (t.includes("marks breakdown")) return "bg-gray-50 border-gray-200 text-gray-700"
+    if (t) return "bg-violet-50 border-violet-200 text-violet-800"
+    // Legacy emoji fallback
+    if (content.startsWith("🚨")) return "bg-red-50 border-red-300 text-red-800"
+    if (content.startsWith("✅")) return "bg-green-50 border-green-200 text-green-800"
+    if (content.startsWith("⚠️")) return "bg-orange-50 border-orange-200 text-orange-800"
+    return "bg-gray-50 border-gray-200 text-gray-700"
+  }
+
+  const getScoreBadgeColor = (score: string) => {
+    const s = score.toLowerCase()
+    if (s === "good" || s === "human") return "bg-green-100 text-green-700"
+    if (s === "average" || s === "mixed") return "bg-yellow-100 text-yellow-700"
+    if (s === "poor" || s === "likely ai") return "bg-red-100 text-red-700"
+    return "bg-violet-100 text-violet-700"
+  }
+
   const getGradeColor = (percentage: number): string => {
     if (percentage >= 90) return "text-green-600"
     if (percentage >= 80) return "text-blue-600"
@@ -447,24 +479,47 @@ export function AIGradingModal({
 
               {/* Feedback - sections appear one by one */}
               <div className="space-y-2">
-                {gradingResult.feedback.split("\n\n").map((section, i) => (
-                  i < visibleFeedbackSections && (
+                {gradingResult.feedback.split("\n\n").map((section, i) => {
+                  if (i >= visibleFeedbackSections) return null
+                  const parsed = parseFeedbackSection(section)
+                  return (
                     <div
                       key={i}
-                      className={`p-3 rounded-lg text-sm leading-relaxed animate-in fade-in slide-in-from-bottom-2 duration-300 ${
-                        section.startsWith("🚨")
-                          ? "bg-red-50 border border-red-300 text-red-800"
-                          : section.startsWith("✅")
-                          ? "bg-green-50 border border-green-200 text-green-800"
-                          : section.startsWith("⚠️")
-                          ? "bg-orange-50 border border-orange-200 text-orange-800"
-                          : "bg-gray-50 border border-gray-200 text-gray-700"
-                      }`}
+                      className={`p-3 rounded-lg text-sm leading-relaxed animate-in fade-in slide-in-from-bottom-2 duration-300 border ${getSectionStyle(parsed.title, parsed.content)}`}
                     >
-                      {section}
+                      {parsed.title ? (
+                        <>
+                          <div className="flex items-center justify-between">
+                            <span className="font-semibold text-sm">{parsed.title}</span>
+                            {parsed.score && (
+                              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${getScoreBadgeColor(parsed.score)}`}>
+                                {parsed.score}
+                              </span>
+                            )}
+                          </div>
+                          {parsed.title.toLowerCase().includes("marks breakdown") ? (
+                            <div className="mt-2 space-y-1.5">
+                              {parsed.content.split("|").map(s => s.trim()).filter(Boolean).map((item, j) => {
+                                const match = item.match(/^(.+?:\s*\d+\/\d+)\s*[-–]\s*(.+)$/)
+                                return (
+                                  <div key={j} className="flex items-start gap-2 text-sm">
+                                    <span className="font-medium text-gray-700 whitespace-nowrap">{match ? match[1] : item.split("-")[0]?.trim()}</span>
+                                    {match && <span className="text-gray-500">—</span>}
+                                    {match && <span className="opacity-80">{match[2]}</span>}
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          ) : (
+                            <p className="text-sm opacity-90 mt-1">{parsed.content}</p>
+                          )}
+                        </>
+                      ) : (
+                        <p>{parsed.content}</p>
+                      )}
                     </div>
                   )
-                ))}
+                })}
               </div>
 
               {/* Success Message - appears after all feedback sections */}

@@ -59,3 +59,73 @@ export async function DELETE(
     )
   }
 }
+
+// POST - Resubmit: reset a graded submission so student can submit again (max 2 attempts)
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await getServerSession(authOptions)
+
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      )
+    }
+
+    const { id } = await params
+
+    const submission = await prisma.submission.findUnique({
+      where: { id },
+    })
+
+    if (!submission) {
+      return NextResponse.json(
+        { error: "Submission not found" },
+        { status: 404 }
+      )
+    }
+
+    if (submission.studentId !== session.user.id) {
+      return NextResponse.json(
+        { error: "Not authorized" },
+        { status: 403 }
+      )
+    }
+
+    // Check attempt limit
+    if (submission.attemptNumber >= 2) {
+      return NextResponse.json(
+        { error: "You have used all 2 submission attempts for this assignment." },
+        { status: 400 }
+      )
+    }
+
+    // Reset submission for resubmit
+    const updated = await prisma.submission.update({
+      where: { id },
+      data: {
+        content: null,
+        fileUrl: null,
+        marks: null,
+        feedback: null,
+        gradedAt: null,
+        status: "pending",
+        attemptNumber: submission.attemptNumber + 1,
+      }
+    })
+
+    return NextResponse.json({
+      message: "Submission reset. You can now submit again.",
+      submission: updated
+    })
+  } catch (error) {
+    console.error("Error resetting submission:", error)
+    return NextResponse.json(
+      { error: "Failed to reset submission" },
+      { status: 500 }
+    )
+  }
+}

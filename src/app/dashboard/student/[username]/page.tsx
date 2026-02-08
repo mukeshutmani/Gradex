@@ -41,10 +41,14 @@ import {
   ChevronUp,
   MessageSquare,
   MoreVertical,
-  ExternalLink
+  ExternalLink,
+  RefreshCw,
+  RotateCcw,
+  AlertTriangle
 } from "lucide-react"
 import { SubmitAssignmentModal } from "@/components/assignments/submit-assignment-modal"
 import { ViewAssignmentModal } from "@/components/assignments/view-assignment-modal"
+import { FeedbackSections } from "@/components/feedback-section"
 
 interface Assignment {
   id: string
@@ -70,6 +74,8 @@ interface Assignment {
     status: string
     submittedAt: string
     feedback?: string
+    attemptNumber?: number
+    content?: string | null
   }
 }
 
@@ -81,6 +87,7 @@ interface Submission {
   marks?: number
   feedback?: string
   status: string
+  attemptNumber?: number
   assignment: {
     id: string
     title: string
@@ -133,6 +140,9 @@ export default function StudentDashboard({ params }: { params: Promise<{ usernam
   const [expandedFeedbackId, setExpandedFeedbackId] = useState<string | null>(null)
   const [openActionMenuId, setOpenActionMenuId] = useState<string | null>(null)
   const [actionMenuPos, setActionMenuPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 })
+  const [resubmitLimitPopup, setResubmitLimitPopup] = useState(false)
+  const [resubmitting, setResubmitting] = useState(false)
+  const [resubmitConfirm, setResubmitConfirm] = useState<{ submissionId: string; attemptNumber: number } | null>(null)
 
   // Fetch student's enrolled classes and assignments
   const fetchStudentData = async () => {
@@ -166,6 +176,40 @@ export default function StudentDashboard({ params }: { params: Promise<{ usernam
       }
     } catch (error) {
       console.error('Error fetching submissions:', error)
+    }
+  }
+
+  // Handle resubmit - show confirmation popup
+  const handleResubmit = (submissionId: string, attemptNumber: number) => {
+    if (attemptNumber >= 2) {
+      setResubmitLimitPopup(true)
+      setOpenActionMenuId(null)
+      return
+    }
+    setOpenActionMenuId(null)
+    setResubmitConfirm({ submissionId, attemptNumber })
+  }
+
+  // Execute resubmit after confirmation
+  const executeResubmit = async () => {
+    if (!resubmitConfirm) return
+    setResubmitting(true)
+    setResubmitConfirm(null)
+    try {
+      const res = await fetch(`/api/submissions/${resubmitConfirm.submissionId}`, { method: "POST" })
+      if (res.ok) {
+        fetchStudentData()
+        fetchSubmissions()
+      } else {
+        const data = await res.json()
+        if (data.error?.includes("all 2")) {
+          setResubmitLimitPopup(true)
+        }
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setResubmitting(false)
     }
   }
 
@@ -343,15 +387,17 @@ export default function StudentDashboard({ params }: { params: Promise<{ usernam
           comparison = new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
           break
         case "submittedDate":
-          // Submitted assignments first, then unsubmitted. asc = oldest first, desc = latest first
+          // Pending (unsubmitted) assignments always show first (need attention), then by submission date
           if (a.submission?.submittedAt && b.submission?.submittedAt) {
             comparison = new Date(a.submission.submittedAt).getTime() - new Date(b.submission.submittedAt).getTime()
           } else if (a.submission?.submittedAt) {
-            // a has submission, b doesn't — a should come first in desc (return positive so -comparison = negative)
-            comparison = 1
-          } else if (b.submission?.submittedAt) {
+            // b is pending, b should come first in desc
             comparison = -1
+          } else if (b.submission?.submittedAt) {
+            // a is pending, a should come first in desc
+            comparison = 1
           } else {
+            // Both pending — latest due date first
             comparison = new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
           }
           break
@@ -877,14 +923,29 @@ export default function StudentDashboard({ params }: { params: Promise<{ usernam
         {/* Assignments Tab */}
         {activeTab === "assignments" && (
           <div className="space-y-6">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search assignments..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 w-full sm:w-64"
-              />
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Search assignments..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 w-full sm:w-64"
+                />
+              </div>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => {
+                  fetchStudentData()
+                  fetchSubmissions()
+                }}
+                disabled={loading}
+                className="border-gray-300 text-gray-600 hover:bg-gray-100 hover:text-violet-600 h-9 w-9 shrink-0"
+                title="Refresh"
+              >
+                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              </Button>
             </div>
 
             {assignments.length === 0 ? (
@@ -902,7 +963,8 @@ export default function StudentDashboard({ params }: { params: Promise<{ usernam
               {/* Mobile Card View */}
               <div className="space-y-3 md:hidden">
                 {getFilteredAndSortedAssignments().map((assignment) => {
-                  const hasSubmission = assignment.submission
+                  const isResetSubmission = assignment.submission?.status === "pending" && !assignment.submission?.content
+                  const hasSubmission = isResetSubmission ? null : assignment.submission
                   const isGraded = hasSubmission?.status === "graded"
                   const isOverdue = new Date(assignment.dueDate) < new Date() && !hasSubmission
 
@@ -987,21 +1049,38 @@ export default function StudentDashboard({ params }: { params: Promise<{ usernam
                               </Button>
                             )
                           ) : isGraded ? (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="border-gray-300 text-black hover:bg-gray-100 text-xs px-2 py-1 h-7"
-                              onClick={() => {
-                                setSelectedDescription({
-                                  title: `AI Feedback`,
-                                  description: assignment.submission?.feedback || "No feedback provided yet."
-                                })
-                                setIsDescriptionModalOpen(true)
-                              }}
-                            >
-                              <Eye className="h-3 w-3 mr-1" />
-                              Feedback
-                            </Button>
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="border-gray-300 text-black hover:bg-gray-100 text-xs px-2 py-1 h-7"
+                                onClick={() => {
+                                  setSelectedDescription({
+                                    title: `AI Feedback`,
+                                    description: assignment.submission?.feedback || "No feedback provided yet."
+                                  })
+                                  setIsDescriptionModalOpen(true)
+                                }}
+                              >
+                                <Eye className="h-3 w-3 mr-1" />
+                                Feedback
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="border-orange-200 text-orange-600 hover:bg-orange-50 text-xs px-2 py-1 h-7"
+                                disabled={resubmitting}
+                                onClick={() => {
+                                  handleResubmit(
+                                    assignment.submission!.id,
+                                    assignment.submission!.attemptNumber || 1
+                                  )
+                                }}
+                              >
+                                <RotateCcw className="h-3 w-3 mr-1" />
+                                Resubmit
+                              </Button>
+                            </>
                           ) : (
                             <Button
                               size="sm"
@@ -1105,7 +1184,9 @@ export default function StudentDashboard({ params }: { params: Promise<{ usernam
                     </TableHeader>
                     <TableBody>
                       {getFilteredAndSortedAssignments().map((assignment) => {
-                        const hasSubmission = assignment.submission
+                        // A reset submission (pending + no content) is treated as "no submission"
+                        const isResetSubmission = assignment.submission?.status === "pending" && !assignment.submission?.content
+                        const hasSubmission = isResetSubmission ? null : assignment.submission
                         const isGraded = hasSubmission?.status === "graded"
                         const isOverdue = new Date(assignment.dueDate) < new Date() && !hasSubmission
 
@@ -1126,7 +1207,7 @@ export default function StudentDashboard({ params }: { params: Promise<{ usernam
                                         })
                                         setIsDescriptionModalOpen(true)
                                       }}
-                                      className="text-violet-600 hover:text-violet-700 text-xs font-normal ml-1"
+                                      className="text-gray-900 hover:text-gray-700 text-xs font-normal ml-1"
                                     >
                                       see more
                                     </button>
@@ -1149,7 +1230,7 @@ export default function StudentDashboard({ params }: { params: Promise<{ usernam
                                     })
                                     setIsDescriptionModalOpen(true)
                                   }}
-                                  className="text-violet-600 hover:text-violet-700 hover:bg-violet-50 h-7 w-7"
+                                  className="text-gray-900 hover:text-gray-700 hover:bg-gray-100 h-7 w-7"
                                 >
                                   <Eye className="h-4 w-4" />
                                 </Button>
@@ -1324,6 +1405,24 @@ export default function StudentDashboard({ params }: { params: Promise<{ usernam
                           View Assignment
                         </button>
                       )}
+                      {assignment.submission && assignment.submission.status === "graded" && (
+                        <button
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 border-t border-gray-100"
+                          disabled={resubmitting}
+                          onClick={() => {
+                            handleResubmit(
+                              assignment.submission!.id,
+                              assignment.submission!.attemptNumber || 1
+                            )
+                          }}
+                        >
+                          <RotateCcw className="h-4 w-4 text-orange-500" />
+                          {resubmitting ? "Resetting..." : "Resubmit"}
+                          {(assignment.submission.attemptNumber || 1) >= 2 && (
+                            <span className="ml-auto text-xs text-red-500">Limit</span>
+                          )}
+                        </button>
+                      )}
                     </div>
                   </>
                 )
@@ -1400,20 +1499,8 @@ export default function StudentDashboard({ params }: { params: Promise<{ usernam
                                 </button>
                               )}
                               {expandedFeedbackId === submission.id && submission.feedback && (
-                                <div className="mt-2 space-y-1.5">
-                                  {submission.feedback.split("\n\n").map((section: string, i: number) => (
-                                    <div key={i} className={`p-2.5 rounded-lg text-xs leading-relaxed ${
-                                      section.startsWith("🚨")
-                                        ? "bg-red-50 border border-red-300 text-red-800"
-                                        : section.startsWith("✅")
-                                        ? "bg-green-50 border border-green-200 text-green-800"
-                                        : section.startsWith("⚠️")
-                                        ? "bg-orange-50 border border-orange-200 text-orange-800"
-                                        : "bg-violet-50 border border-violet-200 text-gray-700"
-                                    }`}>
-                                      {section}
-                                    </div>
-                                  ))}
+                                <div className="mt-2">
+                                  <FeedbackSections feedback={submission.feedback} size="sm" />
                                 </div>
                               )}
                             </CardContent>
@@ -1525,20 +1612,8 @@ export default function StudentDashboard({ params }: { params: Promise<{ usernam
                                   {isExpanded && submission.feedback && (
                                     <TableRow>
                                       <TableCell colSpan={8} className="py-2 px-6">
-                                        <div className="grid grid-cols-2 gap-2 max-w-3xl">
-                                          {submission.feedback.split("\n\n").filter(Boolean).map((section: string, i: number) => (
-                                            <div key={i} className={`p-2.5 rounded-lg text-xs leading-relaxed ${
-                                              section.startsWith("🚨")
-                                                ? "bg-red-50 border border-red-300 text-red-800 col-span-2"
-                                                : section.startsWith("✅")
-                                                ? "bg-green-50 border border-green-100 text-green-800"
-                                                : section.startsWith("⚠️")
-                                                ? "bg-orange-50 border border-orange-100 text-orange-800"
-                                                : "bg-violet-50 border border-violet-100 text-gray-700"
-                                            }`}>
-                                              {section}
-                                            </div>
-                                          ))}
+                                        <div className="max-w-3xl">
+                                          <FeedbackSections feedback={submission.feedback} size="sm" />
                                         </div>
                                       </TableCell>
                                     </TableRow>
@@ -1607,20 +1682,8 @@ export default function StudentDashboard({ params }: { params: Promise<{ usernam
               </Button>
             </div>
             {selectedDescription.description && (
-              <div className="space-y-2">
-                {selectedDescription.description.split("\n\n").map((section: string, i: number) => (
-                  <div key={i} className={`p-3 rounded-lg text-sm leading-relaxed ${
-                    section.startsWith("🚨")
-                      ? "bg-red-50 border border-red-300 text-red-800"
-                      : section.startsWith("✅")
-                      ? "bg-green-50 border border-green-100 text-green-800"
-                      : section.startsWith("⚠️")
-                      ? "bg-orange-50 border border-orange-100 text-orange-800"
-                      : "bg-gray-50 border border-gray-100 text-gray-700"
-                  }`}>
-                    {section}
-                  </div>
-                ))}
+              <div>
+                <FeedbackSections feedback={selectedDescription.description} size="md" />
               </div>
             )}
             {selectedDescription.imageUrl && (
@@ -1636,6 +1699,61 @@ export default function StudentDashboard({ params }: { params: Promise<{ usernam
                 </a>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Resubmit Confirmation Popup */}
+      {resubmitConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setResubmitConfirm(null)}>
+          <div className="bg-white rounded-xl p-6 max-w-sm w-full shadow-xl text-center" onClick={(e) => e.stopPropagation()}>
+            <div className="w-14 h-14 bg-violet-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <RotateCcw className="h-7 w-7 text-violet-600" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Resubmit Assignment?</h3>
+            <p className="text-sm text-gray-600 mb-1">
+              Your current submission and grade will be deleted.
+            </p>
+            <p className="text-sm text-violet-600 font-medium mb-5">
+              You have 1 resubmit remaining after this.
+            </p>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setResubmitConfirm(null)}
+                className="flex-1 border-violet-200 text-violet-700 hover:bg-violet-50"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={executeResubmit}
+                disabled={resubmitting}
+                className="flex-1 bg-violet-600 hover:bg-violet-700 text-white"
+              >
+                {resubmitting ? "Resetting..." : "Yes, Resubmit"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Resubmit Limit Popup */}
+      {resubmitLimitPopup && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setResubmitLimitPopup(false)}>
+          <div className="bg-white rounded-xl p-6 max-w-sm w-full shadow-xl text-center" onClick={(e) => e.stopPropagation()}>
+            <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertTriangle className="h-7 w-7 text-red-600" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Submission Limit Reached</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              You have used all 2 submission attempts for this assignment. No more resubmissions are allowed.
+            </p>
+            <Button
+              onClick={() => setResubmitLimitPopup(false)}
+              className="bg-violet-600 hover:bg-violet-700 text-white w-full"
+            >
+              Understood
+            </Button>
           </div>
         </div>
       )}

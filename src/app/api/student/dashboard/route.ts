@@ -45,7 +45,9 @@ export async function GET(request: NextRequest) {
                     marks: true,
                     status: true,
                     submittedAt: true,
-                    feedback: true
+                    feedback: true,
+                    attemptNumber: true,
+                    content: true
                   }
                 }
               },
@@ -139,7 +141,9 @@ export async function GET(request: NextRequest) {
                     marks: true,
                     status: true,
                     submittedAt: true,
-                    feedback: true
+                    feedback: true,
+                    attemptNumber: true,
+                    content: true
                   }
                 }
               },

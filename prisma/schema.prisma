@@ -114,6 +114,7 @@ model Submission {
   marks           Int?
   feedback        String?  @db.Text
   status          String   @default("pending") // pending, submitted, graded
+  attemptNumber   Int      @default(1)
 
   // References
   assignmentId    String
