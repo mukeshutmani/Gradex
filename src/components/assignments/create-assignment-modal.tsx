@@ -344,12 +344,12 @@ export function CreateAssignmentModal({ isOpen, onClose, onSuccess }: CreateAssi
                   ) : (
                     <label className="flex flex-col items-center cursor-pointer">
                       <Upload className="h-8 w-8 text-gray-400 mb-2" />
-                      <span className="text-sm text-gray-600">Click to upload PDF or Image</span>
-                      <span className="text-xs text-gray-400 mt-1">PDF, JPG, PNG (max 5MB)</span>
+                      <span className="text-sm text-gray-600">Click to upload PDF, DOC or Image</span>
+                      <span className="text-xs text-gray-400 mt-1">PDF, DOC, DOCX, JPG, PNG (max 5MB)</span>
                       <input
                         type="file"
                         className="hidden"
-                        accept=".pdf,.jpg,.jpeg,.png"
+                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
                         disabled={loading}
                         onChange={(e) => {
                           const file = e.target.files?.[0]

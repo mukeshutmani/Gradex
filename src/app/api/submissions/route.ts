@@ -196,12 +196,16 @@ export async function POST(request: NextRequest) {
           // Remove extension from filename to avoid double extension
           const fileNameWithoutExt = file.name.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9-]/g, '_')
 
-          // Use 'image' for all files (PDFs + images) so URLs are publicly accessible
-          // Cloudinary serves PDFs under /image/upload/ which allows server-side downloads
+          // Use 'auto' resource type - Cloudinary determines best type
+          // This keeps files publicly accessible while preserving content
+          const fileName = file.name.toLowerCase()
+          const fileExt = fileName.match(/\.[^/.]+$/)?.[0] || ''
+          const isDocument = fileName.endsWith('.pdf') || fileName.endsWith('.docx') || fileName.endsWith('.doc')
+
           const uploadResponse = await cloudinary.uploader.upload(dataURI, {
             folder: 'gradex/submissions',
-            resource_type: 'image',
-            public_id: `${Date.now()}-${fileNameWithoutExt}`,
+            resource_type: 'auto',
+            public_id: `${Date.now()}-${fileNameWithoutExt}${isDocument ? fileExt : ''}`,
             type: 'upload',
             access_mode: 'public',
             invalidate: true,

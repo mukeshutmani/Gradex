@@ -3,12 +3,17 @@ import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import Anthropic from "@anthropic-ai/sdk"
+import mammoth from "mammoth"
+import cloudinary from "@/lib/cloudinary"
+
+// Allow up to 60 seconds for AI grading (PDF download + Anthropic API call)
+export const maxDuration = 60
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 })
 
-type FileType = "pdf" | "image" | "unsupported"
+type FileType = "pdf" | "image" | "doc" | "unsupported"
 
 function isValidCloudinaryUrl(fileUrl: string): boolean {
   try {
@@ -23,16 +28,41 @@ function detectFileType(fileUrl: string): FileType {
   if (!isValidCloudinaryUrl(fileUrl)) return "unsupported"
   const url = fileUrl.toLowerCase()
 
-  if (url.endsWith(".pdf") || url.includes("/raw/upload/")) return "pdf"
+  // Extract the file extension from URL path (before query params)
+  const urlPath = url.split("?")[0]
+
+  // Check for DOC/DOCX (must end with .doc or .docx)
+  if (urlPath.endsWith(".docx") || urlPath.endsWith(".doc")) return "doc"
+
+  // Check for PDF: ends with .pdf or raw upload path
+  if (urlPath.endsWith(".pdf") || url.includes(".pdf") || url.includes("/raw/upload/")) return "pdf"
 
   if (url.includes("/image/upload/")) {
-    if (url.endsWith(".jpg") || url.endsWith(".jpeg") || url.endsWith(".png") ||
-        url.endsWith(".gif") || url.endsWith(".webp")) {
+    if (urlPath.endsWith(".jpg") || urlPath.endsWith(".jpeg") || urlPath.endsWith(".png") ||
+        urlPath.endsWith(".gif") || urlPath.endsWith(".webp")) {
       return "image"
     }
+    // URL under /image/upload/ but no recognized extension - treat as image
     return "image"
   }
 
+  return "unsupported"
+}
+
+// Check actual content type via HEAD request for ambiguous URLs
+async function detectFileTypeWithFetch(fileUrl: string): Promise<FileType> {
+  const urlType = detectFileType(fileUrl)
+  if (urlType !== "unsupported") return urlType
+
+  try {
+    const response = await fetch(fileUrl, { method: "HEAD" })
+    const contentType = response.headers.get("content-type") || ""
+    if (contentType.includes("pdf")) return "pdf"
+    if (contentType.includes("wordprocessingml") || contentType.includes("msword")) return "doc"
+    if (contentType.includes("image/")) return "image"
+  } catch {
+    // Ignore fetch errors, fall through to unsupported
+  }
   return "unsupported"
 }
 
@@ -44,13 +74,85 @@ function getImageMediaType(fileUrl: string): "image/jpeg" | "image/png" | "image
   return "image/jpeg"
 }
 
+// Extract Cloudinary public_id from URL for signed URL generation
+function getCloudinaryPublicId(url: string): { publicId: string; resourceType: string } | null {
+  const match = url.match(/\/(?:image|raw|video)\/upload\/(?:v\d+\/)?(.+)$/)
+  if (!match) return null
+  const resourceType = url.includes("/raw/upload/") ? "raw" : url.includes("/video/upload/") ? "video" : "image"
+  return { publicId: match[1], resourceType }
+}
+
 async function fetchAsBase64(url: string): Promise<string> {
-  const response = await fetch(url)
-  if (!response.ok) {
-    throw new Error(`Failed to download file: ${response.status}`)
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 30000)
+
+  try {
+    let response = await fetch(url, { signal: controller.signal })
+
+    // If 401 (Cloudinary raw files need auth), try with a signed URL
+    if (response.status === 401 && isValidCloudinaryUrl(url)) {
+      const info = getCloudinaryPublicId(url)
+      if (info) {
+        const signedUrl = cloudinary.url(info.publicId, {
+          resource_type: info.resourceType,
+          sign_url: true,
+          type: "upload",
+        })
+        console.log(`[AI Grade] Retrying with signed URL: ${signedUrl}`)
+        response = await fetch(signedUrl, { signal: controller.signal })
+      }
+    }
+
+    if (!response.ok) {
+      throw new Error(`Failed to download file: ${response.status}`)
+    }
+    const arrayBuffer = await response.arrayBuffer()
+    return Buffer.from(arrayBuffer).toString("base64")
+  } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") {
+      throw new Error("File download timed out. Please check your internet connection and try again.")
+    }
+    throw err
+  } finally {
+    clearTimeout(timeout)
   }
-  const arrayBuffer = await response.arrayBuffer()
-  return Buffer.from(arrayBuffer).toString("base64")
+}
+
+async function extractTextFromDoc(url: string): Promise<string> {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 30000)
+
+  try {
+    let response = await fetch(url, { signal: controller.signal })
+
+    // If 401, retry with signed URL
+    if (response.status === 401 && isValidCloudinaryUrl(url)) {
+      const info = getCloudinaryPublicId(url)
+      if (info) {
+        const signedUrl = cloudinary.url(info.publicId, {
+          resource_type: info.resourceType,
+          sign_url: true,
+          type: "upload",
+        })
+        response = await fetch(signedUrl, { signal: controller.signal })
+      }
+    }
+
+    if (!response.ok) {
+      throw new Error(`Failed to download DOC file: ${response.status}`)
+    }
+    const arrayBuffer = await response.arrayBuffer()
+    const buffer = Buffer.from(arrayBuffer)
+    const result = await mammoth.extractRawText({ buffer })
+    return result.value.trim()
+  } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") {
+      throw new Error("DOC file download timed out. Please check your internet connection and try again.")
+    }
+    throw err
+  } finally {
+    clearTimeout(timeout)
+  }
 }
 
 async function addFileToContent(
@@ -70,6 +172,14 @@ async function addFileToContent(
       type: "image",
       source: { type: "base64", media_type: getImageMediaType(fileUrl), data: base64Data },
     } as Anthropic.ImageBlockParam)
+  } else if (fileType === "doc") {
+    const extractedText = await extractTextFromDoc(fileUrl)
+    if (extractedText) {
+      content.push({
+        type: "text",
+        text: `EXTRACTED TEXT FROM DOC/DOCX FILE:\n${extractedText}`,
+      } as Anthropic.TextBlockParam)
+    }
   }
 }
 
@@ -234,9 +344,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Detect file type for AI vision grading
-    const fileType = hasFile ? detectFileType(submission.fileUrl!) : null
-    const canAIGradeFile = fileType === "pdf" || fileType === "image"
+    // Detect file type for AI vision grading (use async version to check content-type for ambiguous URLs)
+    const fileType = hasFile ? await detectFileTypeWithFetch(submission.fileUrl!) : null
+    const canAIGradeFile = fileType === "pdf" || fileType === "image" || fileType === "doc"
+    console.log(`[AI Grade] File URL: ${submission.fileUrl}, Detected type: ${fileType}, Can AI grade: ${canAIGradeFile}`)
 
     // File-only submission with unsupported type - needs manual review
     if (!hasText && hasFile && !canAIGradeFile) {
@@ -244,13 +355,14 @@ export async function POST(request: NextRequest) {
         where: { id: submissionId },
         data: {
           status: "submitted",
-          feedback: "File submission received. DOC/DOCX files require manual review by your teacher.",
+          feedback: "File submission received. This file type requires manual review by your teacher.",
         }
       })
 
       return NextResponse.json({
         success: true,
         requiresManualReview: true,
+        manualReviewReason: "unsupported_file_type",
         message: "File submitted successfully. Your teacher will review and grade it manually.",
         submission: await prisma.submission.findUnique({ where: { id: submissionId } })
       })
@@ -273,14 +385,18 @@ export async function POST(request: NextRequest) {
     // Build the grading prompt
     const hasVisualFile = hasFile && canAIGradeFile
 
+    const fileTypeLabel = fileType === "pdf" ? "PDF document" : fileType === "doc" ? "DOC/DOCX document" : "image"
+
     let studentAnswerSection: string
     if (hasText && hasVisualFile) {
-      studentAnswerSection = `The student submitted both text and a ${fileType === "pdf" ? "PDF document" : "image"} (attached above). Evaluate both together.
+      studentAnswerSection = `The student submitted both text and a ${fileTypeLabel} (attached above). Evaluate both together.
 
 TEXT CONTENT:
 ${submissionContent}`
     } else if (hasVisualFile) {
-      studentAnswerSection = `The student submitted a ${fileType === "pdf" ? "PDF document" : "image"} (attached above). Read and evaluate its contents carefully. If it contains handwritten work, do your best to read it. If parts are unreadable, note that in your feedback.`
+      studentAnswerSection = fileType === "doc"
+        ? `The student submitted a DOC/DOCX document. The extracted text from the document is provided above. Evaluate it carefully.`
+        : `The student submitted a ${fileTypeLabel} (attached above). Read and evaluate its contents carefully. If it contains handwritten work, do your best to read it. If parts are unreadable, note that in your feedback.`
     } else {
       studentAnswerSection = submissionContent
     }
@@ -344,19 +460,23 @@ Respond in JSON only:
       })
     } catch (apiError) {
       // If file download or vision processing fails, fall back to manual review
+      const apiErrorMessage = apiError instanceof Error ? apiError.message : String(apiError)
+      console.error("File processing failed, falling back to manual review:", apiErrorMessage)
+
       if (hasVisualFile) {
-        console.error("File processing failed, falling back to manual review:", apiError instanceof Error ? apiError.message : apiError)
         await prisma.submission.update({
           where: { id: submissionId },
           data: {
             status: "submitted",
-            feedback: "File submission received. AI was unable to process this file. Your teacher will review and grade it manually.",
+            feedback: "File submission received. AI grading encountered an issue. Your teacher will review and grade it manually.",
           }
         })
         return NextResponse.json({
           success: true,
           requiresManualReview: true,
-          message: "File submitted successfully. Your teacher will review and grade it manually.",
+          manualReviewReason: "ai_processing_failed",
+          errorDetail: apiErrorMessage,
+          message: "File submitted successfully but AI grading failed. Your teacher will review and grade it manually.",
           submission: await prisma.submission.findUnique({ where: { id: submissionId } })
         })
       }

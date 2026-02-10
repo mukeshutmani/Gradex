@@ -147,7 +147,7 @@ export function ViewAssignmentModal({ isOpen, onClose, assignment }: ViewAssignm
                 <div>
                   <label className="text-sm font-medium text-gray-500">Attached File</label>
                   <div className="mt-1">
-                    {assignment.imageUrl.toLowerCase().includes("pdf") ? (
+                    {assignment.imageUrl.toLowerCase().includes(".pdf") ? (
                       <div className="space-y-3">
                         <PDFViewer fileUrl={assignment.imageUrl} />
                         <div className="flex justify-center">
@@ -161,6 +161,22 @@ export function ViewAssignmentModal({ isOpen, onClose, assignment }: ViewAssignm
                             View Assignment in New Tab
                           </a>
                         </div>
+                      </div>
+                    ) : assignment.imageUrl.toLowerCase().includes(".doc") ? (
+                      <div className="border rounded-md p-4 bg-violet-50 text-center space-y-3">
+                        <FileText className="h-12 w-12 mx-auto text-violet-500" />
+                        <p className="text-sm font-medium text-violet-800">
+                          {assignment.imageUrl.toLowerCase().includes(".docx") ? "DOCX" : "DOC"} Document Attached
+                        </p>
+                        <a
+                          href={assignment.imageUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center px-4 py-2 bg-white border border-violet-200 rounded-lg text-violet-700 hover:bg-violet-100 hover:border-violet-300 transition-colors text-sm"
+                        >
+                          <ExternalLink className="h-4 w-4 mr-2" />
+                          Download Document
+                        </a>
                       </div>
                     ) : (
                       <div className="border rounded-md p-2 bg-gray-50">

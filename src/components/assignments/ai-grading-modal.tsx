@@ -49,6 +49,8 @@ export function AIGradingModal({
   } | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [manualReview, setManualReview] = useState(false)
+  const [manualReviewReason, setManualReviewReason] = useState<string | null>(null)
+  const [errorDetail, setErrorDetail] = useState<string | null>(null)
   const [duplicateInfo, setDuplicateInfo] = useState<{
     similarity: number
     similarStudent: string
@@ -68,6 +70,7 @@ export function AIGradingModal({
     feedback: string
     duplicate?: { similarity: number; similarStudent: string }
     requiresManualReview?: boolean
+    manualReviewReason?: string
     error?: string
   } | null>(null)
   const stepsReachedLast = useRef(false)
@@ -156,6 +159,8 @@ export function AIGradingModal({
 
     if (result.requiresManualReview) {
       setManualReview(true)
+      setManualReviewReason(result.manualReviewReason || null)
+      setErrorDetail(result.error || null)
       setIsComplete(true)
       return
     }
@@ -191,6 +196,7 @@ export function AIGradingModal({
     setGradingResult(null)
     setError(null)
     setManualReview(false)
+    setManualReviewReason(null)
     setDuplicateInfo(null)
     setShowResult(false)
     setDisplayedMarks(0)
@@ -242,20 +248,26 @@ export function AIGradingModal({
     const animationPromise = animateSteps()
 
     try {
+      // 55s timeout - slightly less than server's 60s maxDuration
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 55000)
+
       const response = await fetch("/api/submissions/ai-grade", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ submissionId }),
+        signal: controller.signal,
       })
+      clearTimeout(timeout)
 
       const data = await response.json()
 
       if (!response.ok) {
         apiResultRef.current = { error: data.error || "Failed to grade submission", marks: 0, percentage: 0, grade: "", feedback: "" }
       } else if (data.requiresManualReview) {
-        apiResultRef.current = { requiresManualReview: true, marks: 0, percentage: 0, grade: "", feedback: "" }
+        apiResultRef.current = { requiresManualReview: true, manualReviewReason: data.manualReviewReason, error: data.errorDetail, marks: 0, percentage: 0, grade: "", feedback: "" }
       } else {
         apiResultRef.current = {
           marks: data.marks,
@@ -278,8 +290,11 @@ export function AIGradingModal({
       await animationPromise
 
     } catch (err) {
+      const isTimeout = err instanceof Error && err.name === "AbortError"
       apiResultRef.current = {
-        error: err instanceof Error ? err.message : "Failed to grade submission",
+        error: isTimeout
+          ? "Grading timed out due to slow connection. Please try again."
+          : err instanceof Error ? err.message : "Failed to grade submission",
         marks: 0, percentage: 0, grade: "", feedback: ""
       }
       apiResolved.current = true
@@ -436,8 +451,15 @@ export function AIGradingModal({
                 <div className="text-4xl mb-3">📄</div>
                 <h3 className="text-lg font-semibold text-violet-900 mb-2">File Submitted Successfully</h3>
                 <p className="text-sm text-violet-700">
-                  Your file has been uploaded. DOC/DOCX files require manual review — your teacher will grade it shortly.
+                  {manualReviewReason === "ai_processing_failed"
+                    ? "Your file has been uploaded but AI grading encountered an issue processing it. Your teacher will review and grade it shortly."
+                    : "Your file has been uploaded. This file type requires manual review — your teacher will grade it shortly."}
                 </p>
+                {errorDetail && (
+                  <p className="text-xs text-red-500 mt-2 bg-red-50 p-2 rounded border border-red-200">
+                    Error: {errorDetail}
+                  </p>
+                )}
               </div>
               <div className="flex items-center justify-center space-x-2 text-green-600">
                 <CheckCircle2 className="h-5 w-5" />
@@ -445,6 +467,17 @@ export function AIGradingModal({
                   Submission saved — awaiting teacher review
                 </span>
               </div>
+              {manualReviewReason === "ai_processing_failed" && (
+                <div className="flex justify-center">
+                  <Button
+                    onClick={startGrading}
+                    variant="outline"
+                    className="border-violet-200 text-violet-700 hover:bg-violet-50"
+                  >
+                    Retry AI Grading
+                  </Button>
+                </div>
+              )}
             </div>
           )}
 

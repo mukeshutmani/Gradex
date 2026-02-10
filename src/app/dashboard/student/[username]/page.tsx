@@ -1405,6 +1405,30 @@ export default function StudentDashboard({ params }: { params: Promise<{ usernam
                           View Assignment
                         </button>
                       )}
+                      {assignment.submission && assignment.submission.status === "submitted" && (
+                        <button
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 border-t border-gray-100"
+                          disabled={resubmitting}
+                          onClick={async () => {
+                            setResubmitting(true)
+                            setOpenActionMenuId(null)
+                            try {
+                              await fetch(`/api/submissions/${assignment.submission!.id}`, { method: "DELETE" })
+                              await fetchStudentData()
+                              await fetchSubmissions()
+                              setSelectedAssignmentForSubmission(assignment)
+                              setIsSubmissionModalOpen(true)
+                            } catch {
+                              // silently fail
+                            } finally {
+                              setResubmitting(false)
+                            }
+                          }}
+                        >
+                          <RotateCcw className="h-4 w-4 text-violet-600" />
+                          {resubmitting ? "Resetting..." : "Resubmit"}
+                        </button>
+                      )}
                       {assignment.submission && assignment.submission.status === "graded" && (
                         <button
                           className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 border-t border-gray-100"

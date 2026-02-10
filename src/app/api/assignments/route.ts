@@ -144,11 +144,14 @@ export async function POST(request: NextRequest) {
         const base64Data = buffer.toString("base64")
         const dataURI = `data:${file.type};base64,${base64Data}`
         const fileNameWithoutExt = file.name.replace(/\.[^/.]+$/, "").replace(/[^a-zA-Z0-9-]/g, "_")
+        const assignmentFileName = file.name.toLowerCase()
+        const assignmentFileExt = assignmentFileName.match(/\.[^/.]+$/)?.[0] || ""
+        const isAssignmentDoc = assignmentFileName.endsWith(".pdf") || assignmentFileName.endsWith(".docx") || assignmentFileName.endsWith(".doc")
 
         const uploadResponse = await cloudinary.uploader.upload(dataURI, {
           folder: "gradex/assignments",
-          resource_type: "image",
-          public_id: `${Date.now()}-${fileNameWithoutExt}`,
+          resource_type: "auto",
+          public_id: `${Date.now()}-${fileNameWithoutExt}${isAssignmentDoc ? assignmentFileExt : ""}`,
           type: "upload",
           access_mode: "public",
         })
