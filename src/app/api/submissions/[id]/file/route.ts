@@ -77,10 +77,13 @@ export async function GET(
     const contentType = getContentType(ext)
     const fileName = `submission-${id}.${ext}`
 
+    // Determine the resource type from the URL
+    const resourceType = submission.fileUrl.includes("/raw/upload/") ? "raw" : "image"
+
     // Try 1: private_download_url (serves actual file, not ZIP)
     try {
       const privateUrl = cloudinary.utils.private_download_url(publicId, ext, {
-        resource_type: "image",
+        resource_type: resourceType as "image" | "raw" | "video",
         type: "upload",
       })
 
@@ -119,7 +122,7 @@ export async function GET(
     // Fallback: ZIP download via Cloudinary Admin API (always works)
     const zipUrl = cloudinary.utils.download_zip_url({
       public_ids: [publicId],
-      resource_type: "image",
+      resource_type: resourceType as "image" | "raw" | "video",
       flatten_folders: true,
     })
 

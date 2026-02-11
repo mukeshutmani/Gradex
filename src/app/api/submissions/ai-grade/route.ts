@@ -75,11 +75,44 @@ function getImageMediaType(fileUrl: string): "image/jpeg" | "image/png" | "image
 }
 
 // Extract Cloudinary public_id from URL for signed URL generation
-function getCloudinaryPublicId(url: string): { publicId: string; resourceType: string } | null {
+function getCloudinaryPublicId(url: string): { publicId: string; resourceType: string; extension: string } | null {
   const match = url.match(/\/(?:image|raw|video)\/upload\/(?:v\d+\/)?(.+)$/)
   if (!match) return null
   const resourceType = url.includes("/raw/upload/") ? "raw" : url.includes("/video/upload/") ? "video" : "image"
-  return { publicId: match[1], resourceType }
+  const fullPath = match[1]
+  // Extract extension from the public ID
+  const extMatch = fullPath.match(/\.([^.]+)$/)
+  const extension = extMatch ? extMatch[1] : ""
+  // For private_download_url, we need the public ID without extension
+  const publicId = extension ? fullPath.replace(/\.[^.]+$/, "") : fullPath
+  return { publicId, resourceType, extension }
+}
+
+// Generate a signed download URL for Cloudinary files
+function getSignedCloudinaryUrl(url: string): string | null {
+  const info = getCloudinaryPublicId(url)
+  if (!info) return null
+
+  try {
+    // private_download_url generates a properly authenticated download URL
+    const signedUrl = cloudinary.utils.private_download_url(
+      info.publicId,
+      info.extension || "pdf",
+      {
+        resource_type: info.resourceType as "image" | "raw" | "video",
+        type: "upload",
+      }
+    )
+    return signedUrl
+  } catch {
+    // Fallback to sign_url approach
+    const signedUrl = cloudinary.url(info.publicId + (info.extension ? `.${info.extension}` : ""), {
+      resource_type: info.resourceType,
+      sign_url: true,
+      type: "upload",
+    })
+    return signedUrl
+  }
 }
 
 async function fetchAsBase64(url: string): Promise<string> {
@@ -89,16 +122,11 @@ async function fetchAsBase64(url: string): Promise<string> {
   try {
     let response = await fetch(url, { signal: controller.signal })
 
-    // If 401 (Cloudinary raw files need auth), try with a signed URL
+    // If 401 (Cloudinary raw files need auth), try with a signed download URL
     if (response.status === 401 && isValidCloudinaryUrl(url)) {
-      const info = getCloudinaryPublicId(url)
-      if (info) {
-        const signedUrl = cloudinary.url(info.publicId, {
-          resource_type: info.resourceType,
-          sign_url: true,
-          type: "upload",
-        })
-        console.log(`[AI Grade] Retrying with signed URL: ${signedUrl}`)
+      const signedUrl = getSignedCloudinaryUrl(url)
+      if (signedUrl) {
+        console.log(`[AI Grade] Retrying with signed URL`)
         response = await fetch(signedUrl, { signal: controller.signal })
       }
     }
@@ -125,15 +153,10 @@ async function extractTextFromDoc(url: string): Promise<string> {
   try {
     let response = await fetch(url, { signal: controller.signal })
 
-    // If 401, retry with signed URL
+    // If 401, retry with signed download URL
     if (response.status === 401 && isValidCloudinaryUrl(url)) {
-      const info = getCloudinaryPublicId(url)
-      if (info) {
-        const signedUrl = cloudinary.url(info.publicId, {
-          resource_type: info.resourceType,
-          sign_url: true,
-          type: "upload",
-        })
+      const signedUrl = getSignedCloudinaryUrl(url)
+      if (signedUrl) {
         response = await fetch(signedUrl, { signal: controller.signal })
       }
     }
